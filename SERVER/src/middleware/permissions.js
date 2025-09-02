@@ -44,17 +44,5 @@ module.exports = {
     }
 },
 
-    isStaff: (req, res, next) => {
-
-        // only Admin or Staff:
-        if (req.user && req.user.isActive && (req.user.isAdmin || req.user.isStaff)) {
-
-            next()
-
-        } else {
-
-            res.errorStatusCode = 403
-            throw new Error('NoPermission: You must login and to be Staff.')
-        }
-    },
+    
 }

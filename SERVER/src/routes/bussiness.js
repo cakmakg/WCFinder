@@ -1,37 +1,23 @@
-"use strict";
+"use strict"
 /* -------------------------------------------------------
-                    Router for Bussiness
+    | FULLSTACK TEAM | NODEJS / EXPRESS |
 ------------------------------------------------------- */
-const router = require('express').Router();
+const router = require('express').Router()
+/* ------------------------------------------------------- */
 
-// Middleware'lar ve Controller'lar
-const { 
-  list, 
-  create, 
-  read, 
-  update, 
-  delete: deleteFunc,
-  joinbussiness 
-} = require('../controller/bussiness');
+const { list, create, read, update, delete: deleteFunc,joinbussiness } = require('../controller/bussiness');
+const { isLogin, isAdmin, isOwner,  } = require('../middleware/permissions');
 
-const { isLogin, isStaff,  } = require('../middleware/permissions');
+// URL: /brands
 
-// URL: /bussiness
+router.route('/').get(isLogin, list).post(isOwner, create);
+router.put('/join/:bussinessId', isOwner, joinbussiness);
 
-router.route('/')
-    .get(isLogin, list)
-    .post(isLogin, create);
-
-// "joinbussiness" için ayrı bir rota
-// Yetkilendirme middleware'i olan 'isLogin' eklendi
-router.put('/join/:bussinessId', isLogin, joinbussiness);
-
-// Temel CRUD işlemleri için rotalar
 router.route('/:id')
-    .get(isLogin, read)
-    .put(isLogin,  update)
-    .patch(isLogin,  update)
-    .delete(isLogin,  deleteFunc);
+    .get(isLogin, read)
+    .put(isLogin,isOwner, update)
+    .patch(isLogin,isOwner, update)
+    .delete(isLogin,isOwner, deleteFunc);
 
 /* ------------------------------------------------------- */
 module.exports = router;

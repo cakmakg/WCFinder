@@ -17,7 +17,7 @@ module.exports = async function () {
     await User.deleteMany() // Koleksiyonu temizle
     await User.create({
         "username": "admin",
-        "password": "password123", // Şifrelerinizi mutlaka güncelleyin
+        "password": "Password123?", // Şifrelerinizi mutlaka güncelleyin
         "email": "admin@site.com",
         "firstName": "admin",
         "lastName": "admin",
@@ -28,7 +28,7 @@ module.exports = async function () {
     })
     await User.create({
         "username": "owner",
-        "password": "password123",
+        "password": "Password123?",
         "email": "owner@site.com",
         "firstName": "owner",
         "lastName": "owner",
@@ -39,7 +39,7 @@ module.exports = async function () {
     })
     await User.create({
         "username": "user",
-        "password": "password123",
+        "password": "Password123?",
         "email": "user@site.com",
         "firstName": "user",
         "lastName": "user",
@@ -53,50 +53,54 @@ module.exports = async function () {
     /* BussinessType */
     const BussinessType = require('../models/bussinessType')
     await BussinessType.deleteMany()
-    await BussinessType.create({ "Spanish": "Restoran" })
-    await BussinessType.create({ "Express": "Kafe" })
-    await BussinessType.create({ "Huma": "Alışveriş Merkezi" })
-    await BussinessType.create({ "ARal": "Benzin İstasyonu" })
-    await BussinessType.create({ "One": "Otel" })
+
+    await BussinessType.insertMany([
+        { name: "Restaurant" },
+        { name: "Kafe" },
+        { name: "Shopping Center" },
+        { name: "TankStelle" },
+        { name: "Otel" }
+    ])
+
     console.log('- BussinessTypes synchronized.')
     
     // Oluşturulan verilerin ID'lerini almak için tekrar sorgulama
     const adminUser = await User.findOne({ username: 'admin' })
     const ownerUser = await User.findOne({ username: 'owner' })
     const cafeType = await BussinessType.findOne({ name: 'Kafe' })
-    const restaurantType = await BussinessType.findOne({ name: 'Restoran' })
+    const restaurantType = await BussinessType.findOne({ name: 'Restaurant' })
     const hotelType = await BussinessType.findOne({ name: 'Otel' })
 
     /* Bussiness (İşletme) */
     const Bussiness = require('../models/bussiness')
     await Bussiness.deleteMany()
     const bussiness1 = await Bussiness.create({
-       "name": "Deutsche Cafe",
-            "address": "Hauptstraße 1, 53111 Bonn, Germany",
-            "location": {
-                "type": "Point",
-                "coordinates": [7.10093, 50.7374]
-            },
+        "name": "Deutsche Cafe",
+        "address": "Hauptstraße 1, 53111 Bonn, Germany",
+        "location": {
+            "type": "Point",
+            "coordinates": [7.10093, 50.7374]
+        },
         "type": cafeType._id,
         "owner": ownerUser._id
     })
     const bussiness2 = await Bussiness.create({
-    "name": "Bonn Restaurant",
-            "address": "Münsterplatz 1, 53111 Bonn, Germany",
-            "location": {
-                "type": "Point",
-                "coordinates": [7.10087, 50.7358]
-            },
+        "name": "Bonn Restaurant",
+        "address": "Münsterplatz 1, 53111 Bonn, Germany",
+        "location": {
+            "type": "Point",
+            "coordinates": [7.10087, 50.7358]
+        },
         "type": restaurantType._id,
         "owner": ownerUser._id
     })
     const bussiness3 = await Bussiness.create({
-       "name": "Cologne Hotel",
-            "address": "Domkloster 4, 50667 Köln, Germany",
-            "location": {
-                "type": "Point",
-                "coordinates": [6.95831, 50.9413]
-            },
+        "name": "Cologne Hotel",
+        "address": "Domkloster 4, 50667 Köln, Germany",
+        "location": {
+            "type": "Point",
+            "coordinates": [6.95831, 50.9413]
+        },
         "type": hotelType._id,
         "owner": ownerUser._id
     })

@@ -57,4 +57,4 @@ app.use(require('./src/middleware/errorHnadler'))
 app.listen(PORT, HOST, () => console.log(`http://${HOST}:${PORT}`))
 
 // Syncronization (must be in commentLine):
-/require('./src/helper/sync')() // !!! It clear database.
+//require('./src/helper/sync')() // !!! It clear database.

@@ -18,7 +18,7 @@ const UserSchema = new mongoose.Schema(
 
         password: {
             type: String,
-            
+            trim: true,
             required: true,
             
         },
@@ -28,10 +28,7 @@ const UserSchema = new mongoose.Schema(
             trim: true,
             required: [true, "An Email address is required"],
             unique: true, // mongodb uniqe veriler için kendi mesajını gönderir
-            validate: [
-                // (email) => emailValidation(email),
-                // "Email format is not valid",
-            ],
+            index:true
         },
 
         role: {
@@ -39,6 +36,10 @@ const UserSchema = new mongoose.Schema(
             enum: ['user', 'owner', 'admin'],
             default: 'user'
         },
+          isActive: {
+        type: Boolean,
+        default: true
+    },
         isStaff: {
             type: Boolean,
             default: false
@@ -56,8 +57,6 @@ const UserSchema = new mongoose.Schema(
     
 );
 
-
-// https://mongoosejs.com/docs/middleware.html
 
 UserSchema.pre(['save', 'updateOne'], function (next) {
 

@@ -8,6 +8,7 @@ const jwt = require("jsonwebtoken");
 // Auth Controller:
 
 const User = require("../models/user");
+const Token = require('../models/token');
 
 module.exports = {
   login: async (req, res) => {
@@ -62,15 +63,16 @@ module.exports = {
             email: user.email,
             isActive: user.isActive,
             isAdmin: user.isAdmin,
+             isOwner: user.isOwner, 
         };
 
-        const accessToken = jwt.sign(accessData, process.env.ACCESS_KEY, { expiresIn: '30m' })
+        const accessToken = jwt.sign(accessData, process.env.ACCESS_KEY, { expiresIn: '1h' })
         const refreshToken = jwt.sign({ _id: user._id, password: user.password }, process.env.REFRESH_KEY, { expiresIn: '3d' })
         /* JWT */
 
         res.send({
             error: false,
-            token: tokenData.token,
+            
             bearer: { accessToken, refreshToken },
             user,
         });
