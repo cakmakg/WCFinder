@@ -1,40 +1,62 @@
 "use strict";
 /* -------------------------------------------------------
-                Bussiness model 
+                Bussiness model 
 ------------------------------------------------------- */
 const { mongoose } = require("../config/dbConnection");
 
 const BussinessSchema = new mongoose.Schema(
-    {
-        name: {
-            type: String,
+{
+        owner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
             required: true,
-            trim: true,
+            index: true,
         },
-     
-        location: { // GeoJSON formatı için güncellendi
+
+        businessName: {
+            type: String,
+            trim: true,
+            required: [true, "Business name is required."],
+        },
+
+        businessType: {
+            type: String,
+            enum: ['Cafe', 'Restaurant', 'Hotel', 'Shop', 'Gas Station', 'Other'],
+            required: true,
+        },
+
+        // Physical location details
+        address: {
+            street: { type: String, trim: true, required: true },
+            city: { type: String, trim: true, required: true },
+            postalCode: { type: String, trim: true, required: true },
+            country: { type: String, trim: true, required: true },
+        },
+
+        // GeoJSON for geospatial queries (e.g., "find WCs near me")
+        location: {
             type: {
                 type: String,
                 enum: ['Point'],
                 default: 'Point',
-                required: true
             },
             coordinates: {
                 type: [Number], // [longitude, latitude]
                 required: true,
-                index: '2dsphere'
             }
         },
-        type: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'BusinessType',
-            required: true
+
+        openingHours: {
+            type: String, // e.g., "Mon-Fri 09:00-18:00; Sat 10:00-16:00"
+            trim: true,
         },
-        owner: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true
+
+        approvalStatus: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'pending',
         }
+
     },
     {
         collection: "bussiness",

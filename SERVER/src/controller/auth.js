@@ -103,7 +103,7 @@ module.exports = {
         console.log(isUserExist);
 
         if (isUserExist) {
-            res.errorStatusCode = 401;
+            res.errorStatusCode = 409;
             throw new Error("Already used username or email.");
         };
 

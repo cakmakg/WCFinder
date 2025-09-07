@@ -29,7 +29,7 @@ import Dashboard from './Dashboard';
 import { useSelector } from 'react-redux'; // Redux'u kullanmak için import
 //import useAuthCall from '../hook/useAuthCall'; // Custom hook'unuzu kullanmak için import
 
-const drawerWidth = 350;
+const drawerWidth = 500;
 
 // Renk paleti, daha sonra ThemeProvider'a taşınabilir
 const palette = {

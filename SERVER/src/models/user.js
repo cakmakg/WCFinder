@@ -12,7 +12,6 @@ const UserSchema = new mongoose.Schema(
             type: String,
             trim: true,
             required: true,
-            unique: true,
             index: true,
         },
 
@@ -33,7 +32,7 @@ const UserSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: ['user', 'owner', 'admin'],
+            enum: ['user', 'owner'],
             default: 'user'
         },
           isActive: {

@@ -1,173 +1,197 @@
+// sync.js
+
 "use strict"
 /* -------------------------------------------------------
-    WCFinder Project - Syncronization
+    WCFinder Project - Veritabanı Senkronizasyon Betiği
+    (Geliştirme ortamını başlangıç verileriyle doldurur)
 ------------------------------------------------------- */
-// sync():
+
+// Bu betiği projenizin ana dizininden `node sync.js` komutuyla çalıştırabilirsiniz.
 
 module.exports = async function () {
 
-    /* REMOVE DATABASE */
-    const { mongoose } = require('../config/dbConnection')
-    await mongoose.connection.dropDatabase()
-    console.log('- Database and all data DELETED!')
-    /* REMOVE DATABASE */
+    console.log('--- Senkronizasyon Başladı ---');
 
-    /* User */
-    const User = require('../models/user')
-    await User.deleteMany() // Koleksiyonu temizle
-    await User.create({
-        "username": "admin",
-        "password": "Password123?", // Şifrelerinizi mutlaka güncelleyin
-        "email": "admin@site.com",
-        "firstName": "admin",
-        "lastName": "admin",
-        "role": "admin",
-        "isStaff": true,
-        "isAdmin": true,
-        "isActive": true
-    })
-    await User.create({
-        "username": "owner",
-        "password": "Password123?",
-        "email": "owner@site.com",
-        "firstName": "owner",
-        "lastName": "owner",
-        "role": "owner",
-        "isStaff": true,
-        "isAdmin": false,
-        "isActive": true
-    })
-    await User.create({
-        "username": "user",
-        "password": "Password123?",
-        "email": "user@site.com",
-        "firstName": "user",
-        "lastName": "user",
-        "role": "user",
-        "isStaff": false,
-        "isAdmin": false,
-        "isActive": true
-    })
-    console.log('- Users synchronized.')
+    /* 1. VERİTABANINI TEMİZLE */
+    const { mongoose } = require('../config/dbConnection');
+    await mongoose.connection.dropDatabase();
+    console.log('- Veritabanı başarıyla silindi.');
 
-    /* BussinessType */
-    const BussinessType = require('../models/bussinessType')
-    await BussinessType.deleteMany()
-
-    await BussinessType.insertMany([
-        { name: "Restaurant" },
-        { name: "Kafe" },
-        { name: "Shopping Center" },
-        { name: "TankStelle" },
-        { name: "Otel" }
-    ])
-
-    console.log('- BussinessTypes synchronized.')
+       const User = require('../models/user');
+    const Business = require('../models/bussiness');
+    const Toilet = require('../models/toilet');
+    const Usage = require('../models/usage');
+    const Payment = require('../models/payment');
+    const Review = require('../models/review');
     
-    // Oluşturulan verilerin ID'lerini almak için tekrar sorgulama
-    const adminUser = await User.findOne({ username: 'admin' })
-    const ownerUser = await User.findOne({ username: 'owner' })
-    const cafeType = await BussinessType.findOne({ name: 'Kafe' })
-    const restaurantType = await BussinessType.findOne({ name: 'Restaurant' })
-    const hotelType = await BussinessType.findOne({ name: 'Otel' })
+    /* ------------------------------------------------------- */
 
-    /* Bussiness (İşletme) */
-    const Bussiness = require('../models/bussiness')
-    await Bussiness.deleteMany()
-    const bussiness1 = await Bussiness.create({
-        "name": "Deutsche Cafe",
-        "address": "Hauptstraße 1, 53111 Bonn, Germany",
-        "location": {
-            "type": "Point",
-            "coordinates": [7.10093, 50.7374]
-        },
-        "type": cafeType._id,
-        "owner": ownerUser._id
-    })
-    const bussiness2 = await Bussiness.create({
-        "name": "Bonn Restaurant",
-        "address": "Münsterplatz 1, 53111 Bonn, Germany",
-        "location": {
-            "type": "Point",
-            "coordinates": [7.10087, 50.7358]
-        },
-        "type": restaurantType._id,
-        "owner": ownerUser._id
-    })
-    const bussiness3 = await Bussiness.create({
-        "name": "Cologne Hotel",
-        "address": "Domkloster 4, 50667 Köln, Germany",
-        "location": {
-            "type": "Point",
-            "coordinates": [6.95831, 50.9413]
-        },
-        "type": hotelType._id,
-        "owner": ownerUser._id
-    })
-    console.log('- Bussiness synchronized.')
+    /* 2. KULLANICILARI OLUŞTUR */
     
-    /* Toilet (Tuvalet) */
-    const Toilet = require('../models/toilet')
-    await Toilet.deleteMany()
-    const toilet1 = await Toilet.create({
-        "business": bussiness1._id,
-        "isAvailable": true,
-        "price": 2,
-        "gender": "Unisex",
-        "accessible": true
-    })
-    const toilet2 = await Toilet.create({
-        "business": bussiness2._id,
-        "isAvailable": false,
-        "price": 2,
-        "gender": "Male",
-        "accessible": false
-    })
-    const toilet3 = await Toilet.create({
-        "business": bussiness3._id,
-        "isAvailable": true,
-        "price": 2,
-        "gender": "Female",
-        "accessible": true
-    })
-    console.log('- Toilets synchronized.')
+    // Not: Şifreler, User modelindeki 'set' metodu sayesinde otomatik olarak hash'lenecektir.
+    const admin = await User.create({
+        username: "admin",
+        password: "Password123?", 
+        email: "admin@site.com",
+        role: "user", // Adminler aynı zamanda birer kullanıcıdır.
+        isAdmin: true, // Admin yetkisi bu alanla verilir.
+        isActive: true
+    });
 
-    /* Review (Yorum) */
-    const Review = require('../models/review')
-    await Review.deleteMany()
-    await Review.create({
-        "userId": adminUser._id,
-        "toiletId": toilet1._id,
-        "rating": 5,
-        "comment": "Çok temiz ve modern bir tuvalet!"
-    })
-    await Review.create({
-        "userId": ownerUser._id,
-        "toiletId": toilet2._id,
-        "rating": 2,
-        "comment": "Kullanım için para alınıyor, bu yüzden puanım düşük."
-    })
-    await Review.create({
-        "userId": adminUser._id,
-        "toiletId": toilet3._id,
-        "rating": 4,
-        "comment": "Oldukça iyi, ama biraz daha temiz olabilirdi."
-    })
-    console.log('- Reviews synchronized.')
+    const ownerUser = await User.create({
+        username: "owner",
+        password: "Password123?",
+        email: "owner@site.com",
+        role: "owner", // Bu kullanıcı bir işletme sahibidir.
+        isActive: true
+    });
 
-    /* Reservation (Rezervasyon) */
-    const Reservation = require('../models/reservation')
-    await Reservation.deleteMany()
-    await Reservation.create({
-        "userId": ownerUser._id,
-        "toiletId": toilet1._id
-    })
-    await Reservation.create({
-        "userId": adminUser._id,
-        "toiletId": toilet3._id
-    })
-    console.log('- Reservations synchronized.')
+    const normalUser = await User.create({
+        username: "user",
+        password: "Password123?",
+        email: "user@site.com",
+        role: "user", // Standart kullanıcı.
+        isActive: false
+    });
+    console.log('- Kullanıcılar oluşturuldu.');
+    
+    /* ------------------------------------------------------- */
 
-    /* Finished */
-    console.log('* All data synchronized successfully.')
+    /* 3. İŞLETMELERİ (BUSINESS) OLUŞTUR */
+
+    const cafeBusiness = await Business.create({
+        owner: ownerUser._id,
+        businessName: "Harika Kahve Dükkanı",
+        businessType: "Cafe", // Modeldeki enum'dan gelen değer
+        address: {
+            street: "Musterstr. 1",
+            city: "Bonn",
+            postalCode: "53111",
+            country: "Germany"
+        },
+        location: {
+            type: "Point",
+            coordinates: [7.10093, 50.7374] // [longitude, latitude]
+        },
+        openingHours: "08:00-20:00",
+        approvalStatus: "approved"
+    });
+
+    const hotelBusiness = await Business.create({
+        owner: ownerUser._id,
+        businessName: "Konforlu Köln Oteli",
+        businessType: "Hotel", // Modeldeki enum'dan gelen değer
+        address: {
+            street: "Domplatz 5",
+            city: "Köln",
+            postalCode: "50667",
+            country: "Germany"
+        },
+        location: {
+            type: "Point",
+            coordinates: [6.95831, 50.9413]
+        },
+        openingHours: "24/7",
+        approvalStatus: "approved"
+    });
+    console.log('- İşletmeler oluşturuldu.');
+
+    /* ------------------------------------------------------- */
+
+    /* 4. TUVALETLERİ (WC) OLUŞTUR */
+
+    const wc1 = await Toilet.create({
+        business: cafeBusiness._id,
+        name: "Giriş Katı Tuvaleti",
+        fee: 0.50,
+        status: "available",
+        features: {
+            gender: "Unisex",
+            isAccessible: true,
+            hasBabyChangingStation: true
+        }
+    });
+
+   const wc2 = await Toilet.create({
+        business: hotelBusiness._id,
+        name: "Lobi Erkek WC",
+        fee: 1.00,
+        status: "available",
+        features: {
+            gender: "Male",
+            isAccessible: false,
+            hasBabyChangingStation: false
+        }
+    });
+
+    const wc3 = await Toilet.create({
+        business: hotelBusiness._id,
+        name: "Lobi Kadın WC",
+        fee: 1.00,
+        status: "out_of_order", // Örnek olarak arızalı bir tuvalet
+        features: {
+            gender: "Female",
+            isAccessible: true,
+            hasBabyChangingStation: true
+        }
+    });
+    console.log('- Tuvaletler oluşturuldu.');
+
+    /* ------------------------------------------------------- */
+
+    /* 5. ÖRNEK BİR KULLANIM VE ÖDEME İŞLEMİ OLUŞTUR */
+
+    // 'normalUser', 'wc1' tuvaletini kullanıyor.
+    const usage1 = await Usage.create({
+        userId: normalUser._id,
+        toiletId: wc1._id,
+        totalFee: 2,
+        status: "completed"
+    });
+
+    // Bu kullanıma ait ödeme kaydı.
+    await Payment.create({
+        usage: usage1._id,
+        user: normalUser._id,
+        amount: 2,
+        currency: "EUR",
+        status: "succeeded",
+        transactionId: "pi_" + require('crypto').randomBytes(12).toString('hex') // Rastgele bir işlem ID'si
+    });
+    console.log('- Örnek kullanım ve ödeme işlemi oluşturuldu.');
+
+    /* ------------------------------------------------------- */
+
+    /* 6. YORUMLARI (REVIEW) OLUŞTUR */
+
+    // 'normalUser', tamamladığı 'usage1' işlemi için 'wc1'e yorum yapıyor.
+    // Not: Review modeli, bu yorum kaydedildikten sonra wc1'in ortalama puanını otomatik güncelleyecektir.
+    await Review.create({
+        userId: normalUser._id,
+        toiletId: wc1._id,
+        usage: usage1._id, // Yorumu gerçek bir kullanıma bağlıyoruz.
+        ratings: {
+            cleanliness: 5,
+            accessibility: 5,
+            overall: 5
+        },
+        comment: "Çok temiz ve erişilebilir olması harika. Bebek bakım masası da büyük bir artı!"
+    });
+
+    // Örnek bir başka yorum (her yorumun bir usage'a bağlı olması gerekmez)
+    await Review.create({
+        userId: admin._id,
+        toiletId: wc2._id,
+        ratings: {
+            cleanliness: 3,
+            accessibility: 1,
+            overall: 2
+        },
+        comment: "Temizliği fena değil ama engelli erişimi olmaması büyük bir eksiklik."
+    });
+    console.log('- Yorumlar oluşturuldu.');
+    
+    /* ------------------------------------------------------- */
+
+    console.log('--- Senkronizasyon Başarıyla Tamamlandı ---');
 }

@@ -19,7 +19,7 @@ router.use('/tokens', require('./token'));
 // bussiness:
 router.use('/bussiness', require('./bussiness'));
 // bussinessType:
-router.use('/bussinessType', require('./bussinessType'));
+
 // document:
 router.use('/documents', require('./document'))
 

@@ -13,11 +13,17 @@ module.exports = {
           #swagger.summary="List all businesses"
           #swagger.description=`You can send query with endpoint for filter[], search[], sort[], page and limit. ...`
         */
-        const result = await res.getModelList(Bussiness, {}, ["type", "owner"]);
+        const filter = req.user?.isAdmin ? {} : { approvalStatus: 'approved' };
+        const populateOptions = { 
+            path: 'owner', 
+            select: 'username' 
+        };
+
+        const result = await res.getModelList(Bussiness, filter, populateOptions);
 
         res.status(200).send({
             error: false,
-            details: await res.getModelListDetails(Bussiness),
+            details: await res.getModelListDetails(Bussiness, filter),
             result,
         });
     },
@@ -40,7 +46,8 @@ module.exports = {
           }
         */
         // Oturum açmış kullanıcının ID'sini `owner` alanına ekleyin
-        req.body.owner = req.user?._id;
+        req.body.owner = req.user._id;
+        req.body.approvalStatus = 'pending';
 
         const result = await Bussiness.create(req.body);
 
@@ -57,22 +64,20 @@ module.exports = {
           #swagger.tags=["Bussiness"]
           #swagger.summary="Get a single business by ID"
         */
-        const result = await Bussiness.findOne({ _id: req.params.id }).populate([
-            { path: "type", select: "name" },
-            { path: "owner", select: "firstName lastName email" },
-        ]);
+        const filter = req.user?.isAdmin ? { _id: req.params.id } : { _id: req.params.id, approvalStatus: 'approved' };
+        // Modelinize uygun olarak `populate` güncellendi.
+    const result = await Bussiness.findOne(filter).populate({
+        path: 'owner', select: 'username email'
+    });
 
-        if (!result) {
-            return res.status(404).send({
-                error: true,
-                message: "Business not found",
-            });
-        }
-
-        res.status(200).send({
-            error: false,
-            result,
-        });
+         if (!result) {
+        res.errorStatusCode = 404;
+        throw new Error("Business not found or not approved.");
+    }
+    res.status(200).send({
+        error: false,
+        result,
+    });
     },
 
     // PUT/PATCH: Belirli bir işletmeyi güncelleme
@@ -89,27 +94,35 @@ module.exports = {
             }
           }
         */
-        const result = await Bussiness.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+       const business = await Bssiness.findById(req.params.id);
+         if (!business) {
+        res.errorStatusCode = 404;
+        throw new Error("Business not found.");
+    }
+    const isOwner = business.owner.toString() === req.user._id.toString();
+    if (!req.user.isAdmin && !isOwner) {
+        res.errorStatusCode = 403; // Forbidden
+        throw new Error("You are not authorized to update this business.");
+    }
+     const updateData = req.body;
+    // Bir işletmenin sahibi asla değiştirilemez.
+    delete updateData.owner;
+    // Onay durumunu sadece admin değiştirebilir.
+    if (!req.user.isAdmin) {
+        delete updateData.approvalStatus;
+    }
+// 4. Güvenli Veriyle Güncelleme Yap
+    const result = await Bussiness.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
 
-        if (!result) {
-            return res.status(404).send({
-                error: true,
-                message: "Business not found for update",
-            });
-        }
-
-        res.status(202).send({
-            error: false,
-            result,
-        });
+    res.status(202).send({
+        error: false,
+        result,
+    });
+      
     },
 
     // DELETE: Belirli bir işletmeyi silme
-    delete: async (req, res) => {
+    deletee: async (req, res) => {
         /*
           #swagger.tags=["Bussiness"]
           #swagger.summary="Delete a business"
@@ -126,57 +139,5 @@ module.exports = {
         }
     },
 
-    // İşletmeye katılma veya ayrılma
-    joinbussiness: async (req, res) => {
-        /*
-          #swagger.tags=["Bussiness"]
-          #swagger.summary="Join or leave a business"
-          #swagger.description="Adds or removes the current user from the participants list of a business."
-        */
-        const businessId = req.params.bussinessId;
-        const userId = req.user._id;
-
-        if (!businessId || !userId) {
-            return res.status(400).send({
-                error: true,
-                message: "Business ID or user ID not found."
-            });
-        }
-
-        try {
-            const business = await Bussiness.findById(businessId);
-
-            if (!business) {
-                return res.status(404).send({
-                    error: true,
-                    message: "Business not found."
-                });
-            }
-
-            // Katılımcı listesinde kullanıcı varsa, çıkar
-            if (business.participants.includes(userId)) {
-                business.participants.pull(userId);
-                await business.save();
-                return res.status(200).send({
-                    error: false,
-                    message: "You have successfully left the business.",
-                    result: business
-                });
-            } else {
-                // Katılımcı listesinde kullanıcı yoksa, ekle
-                business.participants.push(userId);
-                await business.save();
-                return res.status(200).send({
-                    error: false,
-                    message: "You have successfully joined the business.",
-                    result: business
-                });
-            }
-        } catch (error) {
-            res.status(500).send({
-                error: true,
-                message: "An error occurred while trying to join or leave the business."
-            });
-        }
-    },
+    
 };
