@@ -1,47 +1,26 @@
-import * as React from 'react';
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
-  AppBar,
-  Box,
-  Toolbar,
-  Typography,
-  IconButton,
-  Menu,
-  MenuItem,
-  styled,
-  alpha,
-  Badge,
-  Button,
-  Avatar,
-  Drawer,
-  CssBaseline,
+  AppBar, Box, Toolbar, Typography, IconButton, Menu, MenuItem,
+  styled, alpha, Badge, Avatar, Drawer, CssBaseline, Grid,
+  CircularProgress, Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import InputBase from '@mui/material/InputBase';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AccountCircle from '@mui/icons-material/AccountCircle';
 import MailIcon from '@mui/icons-material/Mail';
-import MenüListItem from '../components/MenüListItem';
+import BusinessCard from '../components/BusinessCard';
+import useCrudCall from '../hook/useCrudCall'; // GENEL VERİ ÇEKME HOOK'U
+import useAuthCall from '../hook/useAuthCall'; // AUTH İŞLEMLERİ İÇİN HOOK
 import Dashboard from './Dashboard';
-import { useSelector } from 'react-redux'; // Redux'u kullanmak için import
-//import useAuthCall from '../hook/useAuthCall'; // Custom hook'unuzu kullanmak için import
+
+
 
 const drawerWidth = 500;
 
-// Renk paleti, daha sonra ThemeProvider'a taşınabilir
-const palette = {
-  primary: {
-    main: '#454F5B', // Koyu gri tonu
-  },
-  secondary: {
-    main: '#F4F6F8', // Beyazımsı ton
-  },
-};
-
-// Özelleştirilmiş arama bileşenleri
+// === STYLED COMPONENTS (DEĞİŞİKLİK YOK) ===
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: theme.shape.borderRadius,
@@ -49,7 +28,8 @@ const Search = styled('div')(({ theme }) => ({
   '&:hover': {
     backgroundColor: alpha(theme.palette.common.white, 0.25),
   },
-  marginLeft: theme.spacing(2),
+  marginRight: theme.spacing(2),
+  marginLeft: 0,
   width: '100%',
   [theme.breakpoints.up('sm')]: {
     marginLeft: theme.spacing(3),
@@ -79,14 +59,42 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
     },
   },
 }));
+// ===============================================
 
 export default function Home() {
   const navigate = useNavigate();
-  // const { logout } = useAuthCall(); // Redux hook'unuzu buradan çağırın
-  // const { user } = useSelector((state) => state.auth); // Kullanıcı bilgisini alın
+  // === YENİ EKLENEN STATE'LER VE HOOK'LAR ===
+  const { logout } = useAuthCall();
+  const { getCrudData } = useCrudCall();
+  const { user } = useSelector((state) => state.auth);
+  const { businesses, loading, error } = useSelector((state) => state.crud);
+  const [search, setSearch] = useState("");
+  // ==========================================
 
   const [anchorElUser, setAnchorElUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // === VERİ ÇEKME İŞLEMİ ===
+  useEffect(() => {
+    getCrudData('bussiness');
+  }, []);
+  // ==========================
+
+  // === FİLTRELEME MANTIĞI ===
+  const normalize = (str) => (str || "").toLocaleLowerCase("tr-TR").trim();
+
+  const filteredBusinesses = businesses?.filter((business) => {
+    const searchableValues = [
+      business.businessName,
+      business.businessType,
+      business.address.city,
+      business.address.street,
+    ];
+    return searchableValues.some((value) =>
+      normalize(String(value)).includes(normalize(search))
+    );
+  });
+  // ===========================
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -101,8 +109,8 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    // logout();
-    navigate('/');
+    logout(); // Artık gerçek logout fonksiyonunu çağırıyoruz
+    // navigate('/'); // logout fonksiyonu zaten yönlendirme yapabilir
     handleCloseUserMenu();
   };
 
@@ -116,7 +124,7 @@ export default function Home() {
       open={Boolean(anchorElUser)}
       onClose={handleCloseUserMenu}
     >
-      <MenuItem onClick={() => navigate('/home/profile')}>
+      <MenuItem onClick={() => navigate('/profile')}>
         <Typography textAlign="center">Profile</Typography>
       </MenuItem>
       <MenuItem onClick={handleLogout}>
@@ -132,7 +140,7 @@ export default function Home() {
         position="fixed"
         sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: palette.primary.main, // Beyaz tonları
+          backgroundColor: '#454F5B',
         }}
       >
         <Toolbar>
@@ -160,6 +168,9 @@ export default function Home() {
             <StyledInputBase
               placeholder="Search…"
               inputProps={{ 'aria-label': 'search' }}
+              // Arama state'ini input'a bağlıyoruz
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </Search>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -173,11 +184,8 @@ export default function Home() {
                 <NotificationsIcon />
               </Badge>
             </IconButton>
-            <IconButton
-              onClick={handleOpenUserMenu}
-              sx={{ p: 0 }}
-            >
-              <Avatar alt="User Avatar" src="/static/images/avatar/1.jpg" />
+            <IconButton onClick={handleOpenUserMenu} sx={{ p: 0, ml: 1 }}>
+              <Avatar alt={user?.username} src="/static/images/avatar/1.jpg" />
             </IconButton>
           </Box>
           {userMenu}
@@ -188,35 +196,57 @@ export default function Home() {
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
         aria-label="mailbox folders"
       >
+        {/* Drawer'lar şimdilik statik kalabilir veya buraya da dinamik veri basılabilir */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, backgroundColor: palette.secondary.main },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, backgroundColor: '#F4F6F8' },
           }}
         >
           <Toolbar />
-          <MenüListItem />
+          <Typography variant="h6" sx={{ p: 2 }}>Map & Filters</Typography>
+          {/* Buraya harita ve filtre component'leri gelecek */}
         </Drawer>
         <Drawer
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, backgroundColor: palette.secondary.main },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, backgroundColor: '#F4F6F8' },
           }}
           open
         >
           <Toolbar />
-          <MenüListItem />
+           <Typography variant="h6" sx={{ p: 2 }}>Map & Filters</Typography>
+           {/* Buraya harita ve filtre component'leri gelecek */}
         </Drawer>
       </Box>
       <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}>
         <Toolbar />
+
+        {/* === DİNAMİK İÇERİK BURADA RENDER EDİLİYOR === */}
+        {loading && <CircularProgress sx={{ display: 'block', margin: '2rem auto' }} />}
+        {error && <Alert severity="error">Veriler yüklenirken bir hata oluştu.</Alert>}
+        {!loading && !error && (
+          <Grid container spacing={2}>
+            {filteredBusinesses?.length > 0 ? (
+              filteredBusinesses.map((business) => (
+                <Grid item key={business._id} xs={12} sm={6} md={4} lg={3}>
+                  <BusinessCard business={business} />
+                </Grid>
+              ))
+            ) : (
+              <Box textAlign="center" mt={3} width="100%">
+                <Typography>
+                  {search ? `"${search}" için sonuç bulunamadı.` : "Gösterilecek işletme bulunamadı."}
+                </Typography>
+              </Box>
+            )}
+          </Grid>
+        )}
         <Dashboard />
         <Outlet />
       </Box>

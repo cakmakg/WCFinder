@@ -1,44 +1,81 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css'; // Leaflet için CSS import'u
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+import { useSelector } from 'react-redux';
+import useCrudCall from '../hook/useCrudCall';
+import { Box, CircularProgress, Alert, Typography } from '@mui/material';
+
+// Leaflet's default icon can sometimes break with bundlers like Vite.
+// This code fixes the issue by manually setting the icon paths.
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
 
 
 const Dashboard = () => {
-    // Harita merkezini ve zoom seviyesini ayarlayın
-    const center = [40.7128, -74.0060]; // Örnek olarak New York koordinatları
-    const zoom = 13;
+    const { getCrudData } = useCrudCall();
+    const { toilets, loading, error } = useSelector((state) => state.crud);
 
-    // Örnek tuvalet lokasyon verileri
-    const toiletLocations = [
-        { id: 1, name: "Public Toilet A", lat: 40.712, lng: -74.005, price: "Free" },
-        { id: 2, name: "Cafe XYZ", lat: 40.715, lng: -74.01, price: "$2" },
-        { id: 3, name: "Hotel ABC", lat: 40.710, lng: -74.008, price: "Free" }
-    ];
+    // Fetch toilet data when the component first mounts.
+    useEffect(() => {
+        getCrudData('toilets');
+    }, []);
+
+    // Determine the map center dynamically. Use the first toilet's location,
+    // or fall back to a default location (Bonn, Germany) if no data exists.
+    const mapCenter =
+        toilets && toilets.length > 0
+            ? [toilets[0].business.location.coordinates[1], toilets[0].business.location.coordinates[0]] // Lat, Lng
+            : [50.7374, 7.0982]; // Default to Bonn
+
+    if (loading) {
+        return <CircularProgress sx={{ display: 'block', margin: '2rem auto' }} />;
+    }
+
+    if (error) {
+        return <Alert severity="error">Map data could not be loaded.</Alert>;
+    }
 
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100%' }}>
-            {/* Harita Bileşeni */}
-            <div style={{ flex: 2 }}>
-                <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                    />
+        <Box sx={{ height: 'calc(100vh - 64px)', width: '100%' }}> {/* 64px is the typical AppBar height */}
+            <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                />
 
-                    {/* Lokasyonları harita üzerinde işaretle */}
-                    {toiletLocations.map(location => (
-                        <Marker key={location.id} position={[location.lat, location.lng]}>
+                {/* Map over the live toilet data from the Redux store */}
+                {toilets?.map(toilet => {
+                    // Backend sends [longitude, latitude], Leaflet needs [latitude, longitude].
+                    const position = [
+                        toilet.business.location.coordinates[1],
+                        toilet.business.location.coordinates[0]
+                    ];
+
+                    return (
+                        <Marker key={toilet._id} position={position}>
                             <Popup>
-                                <strong>{location.name}</strong><br />
-                                Fiyat: {location.price}
+                                <Typography variant="subtitle1" component="strong">
+                                    {toilet.business.businessName}
+                                </Typography>
+                                <br />
+                                <Typography variant="body2">
+                                    {toilet.name}
+                                </Typography>
+                                <Typography variant="caption">
+                                    Fee: {toilet.fee > 0 ? `${toilet.fee.toFixed(2)}€` : 'Free'}
+                                </Typography>
                             </Popup>
                         </Marker>
-                    ))}
-                </MapContainer>
-                
-            </div>
-
-        </div>
+                    );
+                })}
+            </MapContainer>
+        </Box>
     );
 }
 

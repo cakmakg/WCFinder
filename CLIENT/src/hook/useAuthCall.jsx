@@ -1,57 +1,57 @@
-// src/hooks/useAuthCall.jsx
-
-import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchFail, fetchStart, loginSuccess, logoutSuccess, registerSuccess } from "../features/authSlice";
-import { toastErrorNotify, toastSuccessNotify } from "../helper/ToastNotify";
-import useAxios from "./useAxios";
-import axios from "axios";
+import {
+  fetchStart,
+  loginSuccess,
+  registerSuccess,
+  fetchFail,
+  logoutSuccess,
+} from "../features/authSlice";
+import useApiCall from "./useApiCall"; // Yeni hook'umuzu import ediyoruz
 
 const useAuthCall = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { axiosWithoutHeader, axiosWithToken } = useAxios();
-
-  const register = async (userInfo) => {
-    dispatch(fetchStart());
-    try {
-      const { data } = await axiosWithoutHeader.post(`/auth/register`, userInfo);
-      dispatch(registerSuccess(data));
-      navigate("/"); // Kayıt başarılıysa anasayfaya yönlendir
-      toastSuccessNotify("Kayıt başarılı.");
-    } catch (error) {
-      dispatch(fetchFail());
-      toastErrorNotify(error?.response?.data?.message || "Kayıt başarısız.");
-    }
-  };
+  const apiCall = useApiCall(); // Yeni hook'umuzu çağırıyoruz
 
   const login = async (userInfo) => {
-    dispatch(fetchStart());
-    try {
-      const { data } = await axiosWithoutHeader.post(`/auth/login`, userInfo);
-      dispatch(loginSuccess(data));
-      navigate("/"); // Giriş başarılıysa anasayfaya yönlendir
-      toastSuccessNotify("Giriş başarılı.");
-    } catch (error) {
-      dispatch(fetchFail());
-      toastErrorNotify(error?.response?.data?.message || "Giriş başarısız.");
-    }
+    await apiCall({
+      url: "/auth/login",
+      method: "post",
+      body: userInfo,
+      startAction: fetchStart,
+      successAction: loginSuccess,
+      errorAction: fetchFail,
+      successMessage: "Giriş işlemi başarılı.",
+    });
+    // Başarılı olursa yönlendirmeyi burada yapabiliriz
+    navigate("/dashboard");
+  };
+
+  const register = async (userInfo) => {
+    await apiCall({
+      url: "/users",
+      method: "post",
+      body: userInfo,
+      startAction: fetchStart,
+      successAction: registerSuccess,
+      errorAction: fetchFail,
+      successMessage: "Kayıt işlemi başarılı.",
+    });
+    navigate("/login");
   };
 
   const logout = async () => {
-    dispatch(fetchStart());
-    try {
-      await axiosWithToken.post(`/auth/logout`);
-      dispatch(logoutSuccess());
-      toastSuccessNotify("Çıkış yapıldı.");
-      navigate("/"); // Çıkış yapınca anasayfaya yönlendir
-    } catch (error) {
-      dispatch(fetchFail());
-      toastErrorNotify(error?.response?.data?.message || "Çıkış başarısız.");
-    }
+    await apiCall({
+        url: "/auth/logout",
+        method: "post",
+        startAction: fetchStart,
+        successAction: logoutSuccess,
+        errorAction: fetchFail,
+        successMessage: "Çıkış işlemi başarılı.",
+      });
+    navigate("/");
   };
 
-  return { register, login, logout };
+  return { login, register, logout };
 };
 
 export default useAuthCall;

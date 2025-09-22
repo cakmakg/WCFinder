@@ -7,11 +7,15 @@ import { useSelector } from "react-redux";
     const { token } = useSelector((state) => state.auth);
 
     const axiosWithToken = axios.create({
-        baseURL: process.env.REACT_APP_BASE_URL, // .env dosyanızdan
-        headers: { Authorization: `Bearer ${token}` }
+        baseURL: import.meta.env.VITE_BASE_URL,
+        headers: { Authorization: `Token ${token}` },
     });
+    const axiosPublic = axios.create({
+    // DEĞİŞİKLİK BURADA
+    baseURL: import.meta.env.VITE_BASE_URL,
+  });
 console.log("💡 2. FRONTEND: Axios isteğe token ekliyor mu?", { header: `Bearer ${token}` });
-  return { axiosWithToken, axiosWithoutHeader };
+  return { axiosWithToken, axiosPublic  };
 };
 
 export default useAxios;

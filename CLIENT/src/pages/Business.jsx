@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Box, List, CircularProgress, Alert, Typography } from '@mui/material';
-import useBusinessCall from '../hook/useBussinesscCall';
+import useBusinessCall from '../hook/useBusinessCall';
 import BusinessListItem from '../components/BusinessListItem';
 
 const Businesses = () => {
