@@ -23,7 +23,7 @@ const ReviewSchema = new mongoose.Schema(
             unique: true,
             sparse: true,
         },
-        ratings: {
+        rating: {
             cleanliness: { type: Number, min: 1, max: 5, required: true },
             accessibility: { type: Number, min: 1, max: 5, required: true },
             overall: { type: Number, min: 1, max: 5, required: true },

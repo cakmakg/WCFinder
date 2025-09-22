@@ -19,26 +19,20 @@ module.exports = {
   },
 
   // POST: Yeni bir yorum oluşturma
-  create: async (req, res) => {
+ create: async (req, res) => {
     /*
       #swagger.tags = ["Reviews"]
-      #swagger.summary = "Create a new review"
-      #swagger.parameters['body'] = {
-        in: 'body',
-        required: true,
-        schema: {
-          "userId": "60c72b2f9b1e8e001c8e4a9e",
-          "toiletId": "60c72b2f9b1e8e001c8e4a9e",
-          "rating": 5,
-          "comment": "Very clean and well-maintained!"
-        }
-      }
+      #swagger.summary = "Create Review"
     */
-    const result = await Review.create(req.body);
+
+    // Bu satır çok önemli! Yorumu yapan kullanıcının ID'sini ekler.
+    req.body.userId = req.user._id;
+
+    const data = await Review.create(req.body);
 
     res.status(201).send({
       error: false,
-      result,
+      data,
     });
   },
 

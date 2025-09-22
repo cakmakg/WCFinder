@@ -30,6 +30,30 @@ module.exports = {
       result,
     });
   },
+
+    create: async (req, res) => {
+    /*
+      #swagger.tags = ["Users"]
+      #swagger.summary = "Create User"
+      #swagger.parameters['body'] = {
+          in: 'body',
+          required: true,
+          schema: {
+              "email": "user@example.com",
+              "password": "Password123",
+              "username": "username",
+              "firstName": "FirstName",
+              "lastName": "LastName"
+          }
+      }
+    */
+    const result = await User.create(req.body);
+
+    res.status(201).send({
+      error: false,
+      result,
+    });
+  },
   
 
   read:async(req,res)=>{

@@ -17,7 +17,7 @@ router.use('/tokens', require('./token'));
 
 
 // bussiness:
-router.use('/bussiness', require('./bussiness'));
+router.use('/business', require('./business'));
 // bussinessType:
 
 // document:

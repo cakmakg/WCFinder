@@ -1,15 +1,15 @@
 "use strict";
 /* -------------------------------------------------------
-                Bussiness Controller
+                Business Controller
 ------------------------------------------------------- */
 
-const Bussiness = require("../models/bussiness");
+const Business = require("../models/business");
 
 module.exports = {
     // GET: Tüm işletmeleri listeleme
     list: async (req, res) => {
         /*
-          #swagger.tags=["Bussiness"]
+          #swagger.tags=["Business"]
           #swagger.summary="List all businesses"
           #swagger.description=`You can send query with endpoint for filter[], search[], sort[], page and limit. ...`
         */
@@ -19,11 +19,11 @@ module.exports = {
             select: 'username' 
         };
 
-        const result = await res.getModelList(Bussiness, filter, populateOptions);
+        const result = await res.getModelList(Business, filter, populateOptions);
 
         res.status(200).send({
             error: false,
-            details: await res.getModelListDetails(Bussiness, filter),
+            details: await res.getModelListDetails(Business, filter),
             result,
         });
     },
@@ -31,7 +31,7 @@ module.exports = {
     // POST: Yeni bir işletme oluşturma
     create: async (req, res) => {
         /*
-          #swagger.tags=["Bussiness"]
+          #swagger.tags=["Business"]
           #swagger.summary="Create a new business"
           #swagger.parameters['body']={
             in: "body",
@@ -49,7 +49,7 @@ module.exports = {
         req.body.owner = req.user._id;
         req.body.approvalStatus = 'pending';
 
-        const result = await Bussiness.create(req.body);
+        const result = await Business.create(req.body);
 
         res.status(201).send({
             error: false,
@@ -61,12 +61,12 @@ module.exports = {
     // GET: Belirli bir işletmeyi ID ile okuma
     read: async (req, res) => {
         /*
-          #swagger.tags=["Bussiness"]
+          #swagger.tags=["Business"]
           #swagger.summary="Get a single business by ID"
         */
         const filter = req.user?.isAdmin ? { _id: req.params.id } : { _id: req.params.id, approvalStatus: 'approved' };
         // Modelinize uygun olarak `populate` güncellendi.
-    const result = await Bussiness.findOne(filter).populate({
+    const result = await Business.findOne(filter).populate({
         path: 'owner', select: 'username email'
     });
 
@@ -83,7 +83,7 @@ module.exports = {
     // PUT/PATCH: Belirli bir işletmeyi güncelleme
     update: async (req, res) => {
         /*
-          #swagger.tags=["Bussiness"]
+          #swagger.tags=["Business"]
           #swagger.summary="Update an existing business"
           #swagger.parameters['body']={
             in: "body",
@@ -94,7 +94,7 @@ module.exports = {
             }
           }
         */
-       const business = await Bssiness.findById(req.params.id);
+       const business = await Business.findById(req.params.id);
          if (!business) {
         res.errorStatusCode = 404;
         throw new Error("Business not found.");
@@ -112,7 +112,7 @@ module.exports = {
         delete updateData.approvalStatus;
     }
 // 4. Güvenli Veriyle Güncelleme Yap
-    const result = await Bussiness.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
+    const result = await Business.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
 
     res.status(202).send({
         error: false,
@@ -124,10 +124,10 @@ module.exports = {
     // DELETE: Belirli bir işletmeyi silme
     deletee: async (req, res) => {
         /*
-          #swagger.tags=["Bussiness"]
+          #swagger.tags=["Business"]
           #swagger.summary="Delete a business"
         */
-        const result = await Bussiness.deleteOne({ _id: req.params.id });
+        const result = await Business.deleteOne({ _id: req.params.id });
 
         if (result.deletedCount) {
             res.status(204).send(); // Silme başarılıysa 204 No Content döndür

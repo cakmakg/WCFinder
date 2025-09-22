@@ -4,7 +4,7 @@
 ------------------------------------------------------- */
 const { mongoose } = require("../config/dbConnection");
 
-const BussinessSchema = new mongoose.Schema(
+const BusinessSchema = new mongoose.Schema(
 {
         owner: {
             type: mongoose.Schema.Types.ObjectId,
@@ -59,9 +59,9 @@ const BussinessSchema = new mongoose.Schema(
 
     },
     {
-        collection: "bussiness",
+        collection: "business",
         timestamps: true,
     }
 );
 
-module.exports = mongoose.model("Bussiness", BussinessSchema);
+module.exports = mongoose.model("Business", BusinessSchema);

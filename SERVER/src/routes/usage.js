@@ -1,24 +1,28 @@
-
 "use strict";
-
+/* -------------------------------------------------------
+    | Usage Route (Best Practice) |
+------------------------------------------------------- */
 const router = require('express').Router();
-// 'update' fonksiyonunu da import listesine ekliyoruz.
+
 const { list, create, read, update, deletee } = require('../controller/usage');
-// 'isOwnerOrAdmin' middleware'ini, 'owner'ların bu yola erişebilmesi için kullanacağız.
-const { isLogin, isAdmin, isOwnerOrAdmin } = require('../middleware/permissions');
+const { isLogin, isOwnerOrAdmin } = require('../middleware/permissions');
+const Usage = require('../models/usage'); // Usage modelini içeri aktarıyoruz
 
 // URL: /usages
 
 router.route('/')
+    // Giriş yapmış her kullanıcı kendi kullanım kayıtlarını listeleyebilir.
     .get(isLogin, list)
+    // Giriş yapmış her kullanıcı yeni bir kullanım kaydı oluşturabilir.
     .post(isLogin, create);
 
 router.route('/:id')
-    .get(isLogin, read)
-    // YENİ EKLENEN ROTALAR
-    // Sadece admin veya owner rolündekiler bu yola erişebilir.
-    .put(isOwnerOrAdmin, update)
-    .patch(isOwnerOrAdmin, update)
-    .delete(isAdmin, deletee);
+    // Bir kullanım kaydını sadece sahibi veya Admin görebilir, güncelleyebilir veya silebilir.
+    // isOwnerOrAdmin fonksiyonuna Usage modelini ve sahip alanının adını ('userId') veriyoruz.
+    .get(isLogin, isOwnerOrAdmin(Usage, 'userId'), read)
+    .put(isLogin, isOwnerOrAdmin(Usage, 'userId'), update)
+    .patch(isLogin, isOwnerOrAdmin(Usage, 'userId'), update)
+    .delete(isLogin, isOwnerOrAdmin(Usage, 'userId'), deletee);
 
+/* ------------------------------------------------------- */
 module.exports = router;

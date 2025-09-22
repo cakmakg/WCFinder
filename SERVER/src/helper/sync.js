@@ -18,7 +18,7 @@ module.exports = async function () {
     console.log('- Veritabanı başarıyla silindi.');
 
        const User = require('../models/user');
-    const Business = require('../models/bussiness');
+    const Business = require('../models/business');
     const Toilet = require('../models/toilet');
     const Usage = require('../models/usage');
     const Payment = require('../models/payment');

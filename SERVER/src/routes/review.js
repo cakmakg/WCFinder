@@ -1,22 +1,24 @@
 "use strict"
 /* -------------------------------------------------------
-    | FULLSTACK TEAM | NODEJS / EXPRESS |
+    | Review Route (Best Practice) |
 ------------------------------------------------------- */
-const router = require('express').Router()
-/* ------------------------------------------------------- */
+const router = require('express').Router();
 
 const { list, create, read, update, deletee } = require('../controller/review');
-const { isLogin, isAdmin, isOwner } = require('../middleware/permissions');
+const { isLogin, isOwnerOrAdmin } = require('../middleware/permissions');
+const Review = require('../models/review'); // Yorum modelini içeri aktarıyoruz
 
-// URL: /products
-
-router.route('/').get(isLogin, list).post(isOwner, create);
+// URL: /reviews
+router.route('/')
+    // Her giriş yapmış kullanıcı yorumları listeleyebilir.
+    .get(isLogin, list)
+    // Her giriş yapmış kullanıcı YENİ bir yorum oluşturabilir.
+    .post(isLogin, create);
 
 router.route('/:id')
-    .get(isLogin, read)
-    .put(isAdmin, update)
-    .patch(isAdmin, update)
-    .delete(isAdmin, deletee);
+    .get(isLogin, isOwnerOrAdmin(Review, 'userId'), read)
+    .put(isLogin, isOwnerOrAdmin(Review, 'userId'), update)
+    .delete(isLogin, isOwnerOrAdmin(Review, 'userId'), deletee);
 
 /* ------------------------------------------------------- */
 module.exports = router;
