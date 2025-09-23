@@ -12,23 +12,23 @@ const router = require('express').Router()
 router.use('/auth', require('./auth'));
 // user:
 router.use('/users', require('./user'));
-// token:/
+// token:
 router.use('/tokens', require('./token'));
 
-
-// bussiness:
+// business: (NOT bussiness)
 router.use('/business', require('./business'));
-// bussinessType:
 
 // document:
-router.use('/documents', require('./document'))
+router.use('/documents', require('./document'));
 
+// reservation:
 router.use('/reservation', require('./reservation'));
-// toilet:
+
+// review:
 router.use('/review', require('./review'));
+
+// toilet:
 router.use('/toilet', require('./toilet'));
-
-
 
 /* ------------------------------------------------------- */
 module.exports = router;

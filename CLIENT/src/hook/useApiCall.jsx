@@ -37,11 +37,11 @@ const useApiCall = () => {
   }) => {
     dispatch(startAction());
     try {
-      const { data } = await axiosWithToken({
-        method: method,
-        url: url,
-        data: body,
-      });
+      const { data } = await axiosWithToken.request({
+  method: method,
+  url: url,
+  data: body,
+});
       dispatch(successAction(data));
       if (successMessage) {
         toastSuccessNotify(successMessage);

@@ -15,6 +15,35 @@ import useAuthCall from "../hook/useAuthCall";
 
 const Login = () => {
   const { login } = useAuthCall();
+
+  // Manuel login testi
+  const handleManualLogin = async () => {
+    try {
+      setTestResult('Testing login...');
+      
+      // Doğrudan axios ile test
+      const response = await axiosPublic.post('/auth/login', credentials);
+      
+      console.log('🔍 Raw login response:', response.data);
+      setTestResult(`✅ Raw Response: ${JSON.stringify(response.data, null, 2)}`);
+      
+    } catch (error) {
+      console.error('❌ Login test error:', error);
+      setTestResult(`❌ Error: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  // Hook ile login testi
+  const handleHookLogin = async () => {
+    try {
+      setTestResult('Testing with hook...');
+      await login(credentials);
+      setTestResult('✅ Hook login successful');
+    } catch (error) {
+      console.error('❌ Hook login error:', error);
+      setTestResult(`❌ Hook Error: ${error.message}`);
+    }
+  };
   return (
     <Container maxWidth="lg">
       <Grid

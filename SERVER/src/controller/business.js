@@ -7,27 +7,31 @@ const Business = require("../models/business");
 
 module.exports = {
     // GET: Tüm işletmeleri listeleme
-    list: async (req, res) => {
+   list: async (req, res) => {
         /*
-          #swagger.tags=["Business"]
-          #swagger.summary="List all businesses"
-          #swagger.description=`You can send query with endpoint for filter[], search[], sort[], page and limit. ...`
+            #swagger.tags = ["Bussiness"]
+            #swagger.summary = "List Bussiness"
+            #swagger.description = `
+                You can use filter[] & search[] & sort[] & page & limit queries with endpoint.
+                <ul> Examples:
+                    <li>URL/?<b>filter[field1]=value1&filter[field2]=value2</b></li>
+                    <li>URL/?<b>search[field1]=value1&search[field2]=value2</b></li>
+                    <li>URL/?<b>sort[field1]=1&sort[field2]=-1</b></li>
+                    <li>URL/?<b>page=2&limit=1</b></li>
+                </ul>
+            `
         */
-        const filter = req.user?.isAdmin ? {} : { approvalStatus: 'approved' };
-        const populateOptions = { 
-            path: 'owner', 
-            select: 'username' 
-        };
 
-        const result = await res.getModelList(Business, filter, populateOptions);
+        // DÜZELTME: Herhangi bir kullanıcı rolü kontrolü yapmadan,
+        // tüm işletmeleri getirmesini sağlıyoruz.
+        const data = await res.getModelList(Bussiness)
 
         res.status(200).send({
             error: false,
-            details: await res.getModelListDetails(Business, filter),
-            result,
-        });
+            details: await res.getModelListDetails(Bussiness),
+            result: data // 'result' anahtarı ile gönderiyoruz
+        })
     },
-
     // POST: Yeni bir işletme oluşturma
     create: async (req, res) => {
         /*
