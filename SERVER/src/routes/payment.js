@@ -1,27 +1,20 @@
 "use strict";
-/* -------------------------------------------------------
-    | Payment Route (Best Practice) |
-------------------------------------------------------- */
-const router = require('express').Router();
 
-const { list, read, update, remove } = require('../controller/payment');
-const { isLogin, isAdmin, isOwnerOrAdmin } = require('../middleware/permissions');
-const Payment = require('../models/payment'); // Payment modelini içeri aktarıyoruz
+const router = require('express').Router();
+const { list, read, update, deletee } = require('../controller/payment');
+const{ isLogin, isAdmin } = require('../middleware/permissions'); // Sadece isAdmin'i kullanacağız
 
 // URL: /payments
 
+// === YENİ VE GÜVENLİ YAPI ===
+// Hem listeleme hem de tekil veri okuma dahil TÜM yolları `isAdmin` ile koruyoruz.
 router.route('/')
-    .get(isLogin, list);
+    .get(isAdmin, list);
 
 router.route('/:id')
-    // Bir ödemeyi sadece sahibi VEYA bir Admin görüntüleyebilir.
-    .get(isLogin, isOwnerOrAdmin(Payment, 'userId'), read)
-    
-    // Bir ödemeyi SADECE Admin güncelleyebilir.
+    .get(isLogin, read)
     .put(isAdmin, update)
     .patch(isAdmin, update)
-    
-    // Bir ödemeyi SADECE Admin silebilir.
-    .delete(isAdmin, remove);
+    .delete(isAdmin, deletee);
 
 module.exports = router;

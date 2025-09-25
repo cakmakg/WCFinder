@@ -24,11 +24,11 @@ module.exports = {
 
         // DÜZELTME: Herhangi bir kullanıcı rolü kontrolü yapmadan,
         // tüm işletmeleri getirmesini sağlıyoruz.
-        const data = await res.getModelList(Bussiness)
+        const data = await res.getModelList(Business)
 
         res.status(200).send({
             error: false,
-            details: await res.getModelListDetails(Bussiness),
+            details: await res.getModelListDetails(Business),
             result: data // 'result' anahtarı ile gönderiyoruz
         })
     },

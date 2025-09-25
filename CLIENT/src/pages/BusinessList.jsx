@@ -2,39 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import useCrudCall from '../hook/useCrudCall';
 import BusinessCard from '../components/BusinessCard';
-import { Box, Typography, CircularProgress, Alert, Grid, TextField } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  CircularProgress, 
+  Alert,
+  TextField, 
+  InputAdornment,
+  useTheme
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 
 const BusinessList = () => {
+  const theme = useTheme();
+  
   const { getCrudData } = useCrudCall();
-  // DÜZELTME: crudSlice'da field adı 'business' (businesses değil!)
   const { business, loading, error } = useSelector((state) => state.crud);
   const { token } = useSelector((state) => state.auth);
   const [search, setSearch] = useState("");
 
-  // Veri çekme işlemi burada yapılmalı
   useEffect(() => {
-    if (!token) {
-      console.warn('No token available, cannot fetch business data');
-      return;
-    }
-    
-    console.log('BusinessList: Fetching business data...');
+    if (!token) return;
     getCrudData('business');
   }, [token]);
 
-  // Debug için state'i kontrol et
-  useEffect(() => {
-    console.log('BusinessList Debug:', {
-      businessCount: business?.length || 0,
-      loading,
-      error,
-      tokenExists: !!token
-    });
-  }, [business, loading, error, token]);
-
   const normalize = (str) => (str || "").toLowerCase("tr-TR").trim();
 
-  // DÜZELTME: business array'ini kullan (businesses değil)
   const filteredBusinesses = business?.filter((businessItem) => {
     const searchableValues = [
       businessItem.businessName,
@@ -48,63 +41,84 @@ const BusinessList = () => {
   });
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        İşletmeler ({business?.length || 0})
-      </Typography>
-
+    <Box sx={{ 
+      p: 2,
+      maxHeight: '100vh',
+      overflowY: 'auto',
+      backgroundColor: 'white'
+    }}>
+      {/* Simple Search */}
       <TextField
-        label="İşletme Ara..."
-        variant="outlined"
         fullWidth
-        size="small"
+        variant="outlined"
+        placeholder="Search locations..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        size="small"
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon fontSize="small" color="action" />
+            </InputAdornment>
+          ),
+          sx: {
+            borderRadius: 2,
+            '& .MuiOutlinedInput-notchedOutline': {
+              borderColor: theme.palette.grey[300],
+            }
+          }
+        }}
         sx={{ mb: 2 }}
       />
 
-      {/* Debug Bilgisi */}
-      <Box sx={{ mb: 2, p: 1, bgcolor: 'info.light', borderRadius: 1 }}>
-        <Typography variant="caption" sx={{ color: 'info.contrastText' }}>
-          Debug: {business?.length || 0} işletme | Loading: {loading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
+      {/* Results Count */}
+      {business && business.length > 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {filteredBusinesses?.length || 0} Locations found
         </Typography>
-      </Box>
+      )}
 
+      {/* Loading */}
       {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           <CircularProgress size={30} />
         </Box>
       )}
       
+      {/* Error */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          İşletmeler yüklenemedi. Tekrar deneyin.
+        <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
+          Failed to load locations.
         </Alert>
       )}
 
-      {!loading && !error && (
-        <Grid container spacing={1}>
-          {filteredBusinesses && filteredBusinesses.length > 0 ? (
-            filteredBusinesses.map((businessItem) => (
-              <Grid item key={businessItem._id} xs={12}>
-                <BusinessCard business={businessItem} />
-              </Grid>
-            ))
-          ) : (
-            <Grid item xs={12}>
-              <Box textAlign="center" sx={{ p: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {search 
-                    ? `"${search}" için sonuç bulunamadı.` 
-                    : business && business.length === 0
-                    ? "Henüz işletme kaydı bulunmuyor."
-                    : "Veri yükleniyor..."
-                  }
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
+      {/* Business Cards - FIXED CONTAINER */}
+      {!loading && !error && filteredBusinesses && filteredBusinesses.length > 0 ? (
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: 2 // Card'lar arasında 16px gap
+        }}>
+          {filteredBusinesses.map((businessItem) => (
+            <Box key={businessItem._id} sx={{ 
+              height: '180px', // SABİT YÜKSEKLİK BURADA DA
+              flexShrink: 0 // Card'ın küçülmesini engelle
+            }}>
+              <BusinessCard business={businessItem} />
+            </Box>
+          ))}
+        </Box>
+      ) : (
+        !loading && !error && (
+          <Box sx={{ textAlign: 'center', p: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              {search 
+                ? `No results found for "${search}"` 
+                : "No locations available"
+              }
+            </Typography>
+          </Box>
+        )
       )}
     </Box>
   );

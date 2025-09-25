@@ -6,19 +6,19 @@ const router = require('express').Router();
 /* ------------------------------------------------------- */
 
 const { list, create, read, update, deletee } = require('../controller/business');
-const { isLogin, isOwnerOrAdmin } = require('../middleware/permissions');
-const Business = require('../models/business');
+const { isLogin, isAdmin } = require('../middleware/permissions');
 
 // URL: /bussiness
 
 router.route('/')
-    .get(isLogin, list)             // Her giriş yapan kullanıcı işletmeleri listeleyebilir.
-    .post(isLogin, create);         // Her giriş yapan kullanıcı YENİ bir işletme oluşturabilir.
+    .get(isLogin, list)
+    .post(isAdmin, create); // create, update, delete için Admin olmak (isAdmin) gerekli.
 
 router.route('/:id')
     .get(isLogin, read)
-    .put(isLogin, isOwnerOrAdmin(Business, 'owner'), update)
-    .delete(isLogin, isOwnerOrAdmin(Business, 'owner'), deletee);
+    .put(isAdmin, update)
+    .patch(isAdmin, update)
+    .delete(isAdmin, deletee);
 
 /* ------------------------------------------------------- */
 module.exports = router;

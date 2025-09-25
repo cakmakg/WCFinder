@@ -21,8 +21,6 @@ router.use('/business', require('./business'));
 // document:
 router.use('/documents', require('./document'));
 
-// reservation:
-router.use('/reservation', require('./reservation'));
 
 // review:
 router.use('/review', require('./review'));

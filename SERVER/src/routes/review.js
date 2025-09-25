@@ -1,24 +1,24 @@
 "use strict"
 /* -------------------------------------------------------
-    | Review Route (Best Practice) |
+    | Business Route |
 ------------------------------------------------------- */
 const router = require('express').Router();
+/* ------------------------------------------------------- */
 
 const { list, create, read, update, deletee } = require('../controller/review');
-const { isLogin, isOwnerOrAdmin } = require('../middleware/permissions');
-const Review = require('../models/review'); // Yorum modelini içeri aktarıyoruz
+const { isLogin, isAdmin } = require('../middleware/permissions');
 
-// URL: /reviews
+// URL: /bussiness
+
 router.route('/')
-    // Her giriş yapmış kullanıcı yorumları listeleyebilir.
     .get(isLogin, list)
-    // Her giriş yapmış kullanıcı YENİ bir yorum oluşturabilir.
-    .post(isLogin, create);
+    .post(isLogin, create); // create, update, delete için Admin olmak (isAdmin) gerekli.
 
 router.route('/:id')
-    .get(isLogin, isOwnerOrAdmin(Review, 'userId'), read)
-    .put(isLogin, isOwnerOrAdmin(Review, 'userId'), update)
-    .delete(isLogin, isOwnerOrAdmin(Review, 'userId'), deletee);
+    .get(isLogin, read)
+    .put(isAdmin, update)
+    .patch(isAdmin, update)
+    .delete(isAdmin, deletee);
 
 /* ------------------------------------------------------- */
 module.exports = router;
