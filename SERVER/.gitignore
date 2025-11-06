@@ -1,0 +1,49 @@
+# ---------------------------------------------
+# 🧰 Node.js Server Gitignore (WCFinder)
+# ---------------------------------------------
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Node modules
+node_modules/
+jspm_packages/
+bower_components/
+
+# Build output
+dist/
+build/
+out/
+.cache/
+.temp/
+
+# Environment files (server secrets)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# ✅ allow example env
+!.env.example
+
+# Runtime / Cache
+coverage/
+.nyc_output
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

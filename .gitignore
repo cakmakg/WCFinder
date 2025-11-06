@@ -1,0 +1,67 @@
+# ---------------------------------------------
+# 🌍 Root .gitignore (WCFinder Monorepo)
+# ---------------------------------------------
+
+# Node modules (global)
+node_modules/
+client/node_modules/
+SERVER/node_modules/
+
+# Build outputs
+dist/
+build/
+client/dist/
+SERVER/dist/
+out/
+.cache/
+.temp/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files (global)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+client/.env
+client/.env.local
+client/.env.development
+client/.env.production
+SERVER/.env
+SERVER/.env.local
+SERVER/.env.development
+SERVER/.env.production
+
+# ✅ allow only example env files
+!.env.example
+!client/.env.example
+!SERVER/.env.example
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode-test/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Misc
+coverage/
+.nyc_output
+bower_components/
+jspm_packages/
+web_modules/
+pm2/
