@@ -1,5 +1,5 @@
-// hook/useAuthCall.jsx - FIXED VERSION
-import { useNavigate } from "react-router-dom";
+// hook/useAuthCall.jsx
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   fetchStart,
@@ -12,6 +12,7 @@ import useApiCall from "./useApiCall";
 
 const useAuthCall = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const apiCall = useApiCall();
 
@@ -25,13 +26,16 @@ const useAuthCall = () => {
         successAction: loginSuccess,
         errorAction: fetchFail,
         successMessage: "Giriş işlemi başarılı.",
-        requiresAuth: false, // ✅ ÖNEMLİ: Login için token gerekmez!
+        requiresAuth: false,
       });
       
       console.log('🔐 Login response:', data);
       
       if (data?.bearer?.accessToken || data?.token) {
-        setTimeout(() => navigate("/"), 100); // ✅ "/" route'una git
+        // Login sonrası yönlendirme
+        // Eğer location.state.from varsa oraya git, yoksa /home'a git
+        const redirectTo = location.state?.from || '/home';
+        setTimeout(() => navigate(redirectTo, { replace: true }), 100);
       }
       
       return data;
@@ -51,9 +55,10 @@ const useAuthCall = () => {
         successAction: registerSuccess,
         errorAction: fetchFail,
         successMessage: "Kayıt işlemi başarılı.",
-        requiresAuth: false, // ✅ ÖNEMLİ: Register için de token gerekmez!
+        requiresAuth: false,
       });
       
+      // Register sonrası login sayfasına yönlendir
       navigate("/login");
       return data;
     } catch (error) {
@@ -71,14 +76,14 @@ const useAuthCall = () => {
         successAction: logoutSuccess,
         errorAction: fetchFail,
         successMessage: "Çıkış işlemi başarılı.",
-        requiresAuth: true, // ✅ Logout için token gerekir
+        requiresAuth: true,
       });
     } catch (error) {
       console.error('❌ Logout API failed:', error);
-      // API başarısız olsa bile kullanıcıyı çıkart
       dispatch(logoutSuccess());
     } finally {
-      navigate("/login");
+      // Logout sonrası StartPage'e git
+      navigate("/");
     }
   };
 

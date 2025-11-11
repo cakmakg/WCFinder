@@ -15,7 +15,7 @@ export const DrawerContent = ({
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ 
         p: 2, 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
         color: 'white',
         position: 'relative'
       }}>

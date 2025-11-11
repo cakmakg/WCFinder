@@ -8,11 +8,11 @@ const { isLogin, isAdmin } = require('../middleware/permissions');
 // URL: /toilets
 
 router.route('/')
-    .get(isLogin, list)        // ✅ Herkes görebilir
+    .get(list)                 // ✅ Herkes görebilir (public - login gerektirmez)
     .post(isAdmin, create);    // ✅ Sadece Admin ekler
 
 router.route('/:id')
-    .get(isLogin, read)        // ✅ Herkes görebilir
+    .get(read)                 // ✅ Herkes görebilir (public - login gerektirmez)
     .put(isAdmin, update)      // ✅ Sadece Admin günceller
     .patch(isAdmin, update)    // ✅ Sadece Admin günceller
     .delete(isAdmin, deletee); // ✅ Sadece Admin siler

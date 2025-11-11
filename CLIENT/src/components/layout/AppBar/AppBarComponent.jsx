@@ -13,7 +13,8 @@ export const AppBarComponent = ({
   onUserMenuClose,
   onMyBookingsClick,
   onLogoutClick,
-  theme
+  theme,
+  onTitleClick
 }) => {
   return (
     <AppBar
@@ -46,8 +47,10 @@ export const AppBarComponent = ({
           sx={{ 
             flexGrow: 1,
             fontWeight: 700,
-            letterSpacing: '0.5px'
+            letterSpacing: '0.5px',
+            cursor: 'pointer'
           }}
+          onClick={onTitleClick}
         >
           WCFINDER
         </Typography>

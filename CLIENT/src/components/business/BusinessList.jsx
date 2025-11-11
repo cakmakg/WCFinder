@@ -1,11 +1,11 @@
 // pages/BusinessList.jsx
 import React, { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import useCrudCall from '../../hook/useCrudCall'; // ✅ Düzeltildi
-import BusinessCard from '../BusinessCard'; // ✅ Düzeltildi
+import useCrudCall from '../../hook/useCrudCall';
+import BusinessCard from '../BusinessCard';
 import { BusinessSearchBar } from './BusinessSearchBar';
-import { useBusinessSearch } from '../../hook/useBusinessSearch'; // ✅ Düzeltildi
-import { useBusinessFilter } from '../../hook/useBusinessFilter'; // ✅ Düzeltildi
+import { useBusinessSearch } from '../../hook/useBusinessSearch';
+import { useBusinessFilter } from '../../hook/useBusinessFilter';
 import { 
   Box, 
   Typography, 
@@ -17,13 +17,13 @@ import {
 const BusinessList = ({ 
   onBusinessClick, 
   selectedBusinessId, 
-  onLocationSearch 
+  onLocationSearch,
+  initialSearch = '' // StartPage'den gelen search parametresi
 }) => {
   const theme = useTheme();
   
   const { getCrudData } = useCrudCall();
   const { business, loading, error } = useSelector((state) => state.crud);
-  const { token } = useSelector((state) => state.auth);
   
   const hasFetched = useRef(false);
   
@@ -36,11 +36,19 @@ const BusinessList = ({
   
   const filteredBusinesses = useBusinessFilter(business, search);
 
+  // URL'den gelen initialSearch'ü uygula
   useEffect(() => {
-    if (!token || hasFetched.current) return;
-    getCrudData('business');
+    if (initialSearch && initialSearch.trim()) {
+      setSearch(initialSearch);
+    }
+  }, [initialSearch]);
+
+  // Business verilerini yükle - auth gerekmeden
+  useEffect(() => {
+    if (hasFetched.current) return;
+    getCrudData('business', false); // ✅ Public endpoint
     hasFetched.current = true;
-  }, [token]);
+  }, []);
 
   const handleClearSearch = () => {
     clearSearch();

@@ -36,10 +36,12 @@ const Dashboard = ({ selectedBusiness, searchedLocation }) => {
   const { toilet, loading, error } = useSelector((state) => state.crud);
 
   useEffect(() => {
-    getCrudData('toilet');
-  }, []);
+    // Toilet verilerini yükle - auth gerekmeden
+    getCrudData('toilet', false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // getCrudData her render'da değişebilir, sadece mount'ta çalışmalı
 
-  // Loading state
+  // Loading state - StartPage renk teması
   if (loading) {
     return (
       <Box sx={{ 
@@ -48,11 +50,15 @@ const Dashboard = ({ selectedBusiness, searchedLocation }) => {
         justifyContent: 'center', 
         alignItems: 'center', 
         height: 'calc(100vh - 64px)',
-        backgroundColor: theme.palette.background.default
+        backgroundColor: '#f5f5f5'
       }}>
-        <CircularProgress size={60} thickness={4} />
-        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
-          Harita yükleniyor...
+        <CircularProgress 
+          size={60} 
+          thickness={4}
+          sx={{ color: '#0891b2' }}
+        />
+        <Typography variant="h6" sx={{ mt: 2, color: '#64748b', fontWeight: 500 }}>
+          Karte wird geladen...
         </Typography>
       </Box>
     );
@@ -61,12 +67,25 @@ const Dashboard = ({ selectedBusiness, searchedLocation }) => {
   // Error state
   if (error) {
     return (
-      <Box sx={{ p: 3, height: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center' }}>
-        <Alert severity="error" sx={{ width: '100%', borderRadius: 2 }}>
+      <Box sx={{ 
+        p: 3, 
+        height: 'calc(100vh - 64px)', 
+        display: 'flex', 
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            width: '100%', 
+            borderRadius: 2,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}
+        >
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Harita verileri yüklenemedi
+            Kartendaten konnten nicht geladen werden
           </Typography>
-          Lütfen sayfayı yenileyin veya daha sonra tekrar deneyin.
+          Bitte aktualisieren Sie die Seite oder versuchen Sie es später erneut.
         </Alert>
       </Box>
     );
@@ -75,20 +94,40 @@ const Dashboard = ({ selectedBusiness, searchedLocation }) => {
   // No data state
   if (!toilet || toilet.length === 0) {
     return (
-      <Box sx={{ p: 3, height: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ 
+        p: 3, 
+        height: 'calc(100vh - 64px)', 
+        display: 'flex', 
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5'
+      }}>
         <Paper sx={{ 
           p: 4, 
           textAlign: 'center', 
           width: '100%',
           borderRadius: 3,
-          backgroundColor: theme.palette.background.paper
+          backgroundColor: 'white',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
         }}>
-          <WcIcon sx={{ fontSize: '4rem', color: 'text.disabled', mb: 2 }} />
-          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-            Tuvalet verisi bulunamadı
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px',
+            }}
+          >
+            <WcIcon sx={{ fontSize: '3rem', color: 'white' }} />
+          </Box>
+          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600, color: '#1e293b' }}>
+            Keine Toiletten gefunden
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Lütfen giriş yaptığınızdan ve verilere erişim izniniz olduğundan emin olun.
+            Derzeit sind keine Toiletten in der Datenbank verfügbar.
           </Typography>
         </Paper>
       </Box>
@@ -102,7 +141,7 @@ const Dashboard = ({ selectedBusiness, searchedLocation }) => {
       height: 'calc(100vh - 64px)', 
       width: '100%', 
       position: 'relative',
-      backgroundColor: theme.palette.background.default
+      backgroundColor: '#f5f5f5'
     }}>
       <MapStatsPanel toilet={toilet} isMobile={isMobile} theme={theme} />
 

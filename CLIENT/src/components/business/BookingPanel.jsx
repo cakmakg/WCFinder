@@ -1,3 +1,4 @@
+// components/business/BookingPanel.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -9,7 +10,8 @@ import {
   Divider,
   MenuItem,
   CircularProgress,
-  Alert
+  Alert,
+  Chip
 } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LockIcon from '@mui/icons-material/Lock';
@@ -26,12 +28,26 @@ export const BookingPanel = ({ business, toilets }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // ✅ HATA KONTROLÜ - Component render aşamasında
   if (!toilets || toilets.length === 0) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 2 }}>
-        <Alert severity="warning">
-          ⚠️ Keine Toiletten verfügbar. Bitte wählen Sie ein anderes Geschäft.
+      <Paper 
+        sx={{ 
+          p: 3, 
+          borderRadius: 3,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+          border: '1px solid #e2e8f0'
+        }}
+      >
+        <Alert 
+          severity="warning"
+          sx={{ 
+            borderRadius: 2,
+            '& .MuiAlert-icon': {
+              color: '#f59e0b'
+            }
+          }}
+        >
+          Keine Toiletten verfügbar
         </Alert>
       </Paper>
     );
@@ -73,7 +89,8 @@ export const BookingPanel = ({ business, toilets }) => {
         business: {
           id: business._id,
           name: business.businessName,
-          address: business.address
+          address: business.address,
+          location: business.location
         },
         userGender,
         date,
@@ -97,17 +114,50 @@ export const BookingPanel = ({ business, toilets }) => {
   };
 
   return (
-    <Paper sx={{ p: 3, borderRadius: 2 }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-        Preisdetails
-      </Typography>
+    <Paper 
+      sx={{ 
+        p: 3, 
+        borderRadius: 3,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+        border: '1px solid #e2e8f0',
+        backgroundColor: 'white'
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
+        <Typography 
+          variant="h5" 
+          sx={{ 
+            mb: 1, 
+            fontWeight: 700,
+            color: '#1e293b'
+          }}
+        >
+          Buchung
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#64748b' }}>
+          Wählen Sie Ihre Präferenzen
+        </Typography>
+      </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mb: 2,
+            borderRadius: 2,
+            backgroundColor: '#fee2e2',
+            '& .MuiAlert-icon': {
+              color: '#ef4444'
+            }
+          }} 
+          onClose={() => setError(null)}
+        >
           {error}
         </Alert>
       )}
 
+      {/* Gender Selection */}
       <TextField
         select
         fullWidth
@@ -115,16 +165,34 @@ export const BookingPanel = ({ business, toilets }) => {
         value={userGender}
         onChange={(e) => setUserGender(e.target.value)}
         disabled={loading}
-        InputProps={{
-          startAdornment: <WcIcon sx={{ mr: 1, fontSize: '1rem', color: 'action.active' }} />
+        sx={{ 
+          mb: 2,
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            '&:hover fieldset': {
+              borderColor: '#0891b2',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#0891b2',
+            }
+          }
         }}
-        sx={{ mb: 2 }}
-        size="small"
       >
-        <MenuItem value="male">Männer</MenuItem>
-        <MenuItem value="female">Frauen</MenuItem>
+        <MenuItem value="male">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WcIcon sx={{ fontSize: '1.2rem', color: '#0891b2' }} />
+            <span>Männer</span>
+          </Box>
+        </MenuItem>
+        <MenuItem value="female">
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WcIcon sx={{ fontSize: '1.2rem', color: '#0891b2' }} />
+            <span>Frauen</span>
+          </Box>
+        </MenuItem>
       </TextField>
 
+      {/* Date Selection */}
       <TextField
         fullWidth
         type="date"
@@ -134,13 +202,23 @@ export const BookingPanel = ({ business, toilets }) => {
         disabled={loading}
         InputLabelProps={{ shrink: true }}
         InputProps={{
-          startAdornment: <CalendarTodayIcon sx={{ mr: 1, fontSize: '1rem', color: 'action.active' }} />,
           inputProps: { min: new Date().toISOString().split('T')[0] }
         }}
-        sx={{ mb: 2 }}
-        size="small"
+        sx={{ 
+          mb: 2,
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            '&:hover fieldset': {
+              borderColor: '#0891b2',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#0891b2',
+            }
+          }
+        }}
       />
 
+      {/* Person Count */}
       <TextField
         fullWidth
         select
@@ -148,51 +226,68 @@ export const BookingPanel = ({ business, toilets }) => {
         value={personCount}
         onChange={(e) => setPersonCount(e.target.value)}
         disabled={loading}
-        InputProps={{
-          startAdornment: <PeopleIcon sx={{ mr: 1, fontSize: '1rem', color: 'action.active' }} />
+        sx={{ 
+          mb: 3,
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+            '&:hover fieldset': {
+              borderColor: '#0891b2',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#0891b2',
+            }
+          }
         }}
-        sx={{ mb: 3 }}
-        size="small"
       >
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
           <MenuItem key={num} value={num}>
-            {num} {num === 1 ? 'Person' : 'Personen'}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PeopleIcon sx={{ fontSize: '1.2rem', color: '#0891b2' }} />
+              <span>{num} {num === 1 ? 'Person' : 'Personen'}</span>
+            </Box>
           </MenuItem>
         ))}
       </TextField>
 
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2">
+      {/* Price Breakdown */}
+      <Box 
+        sx={{ 
+          p: 2, 
+          borderRadius: 2,
+          backgroundColor: '#f8fafc',
+          mb: 2
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
             € {basePrice.toFixed(2)} × {personCount} {personCount === 1 ? 'Person' : 'Personen'}
           </Typography>
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
             € {(basePrice * personCount).toFixed(2)}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+          <Typography variant="body2" sx={{ color: '#64748b' }}>
             Servicegebühr
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
             € {serviceFee.toFixed(2)}
+          </Typography>
+        </Box>
+        
+        <Divider sx={{ my: 1.5, borderColor: '#e2e8f0' }} />
+        
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
+            Gesamt
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#0891b2' }}>
+            € {total.toFixed(2)}
           </Typography>
         </Box>
       </Box>
 
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          Gesamt
-        </Typography>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          € {total.toFixed(2)}
-        </Typography>
-      </Box>
-
+      {/* Booking Button */}
       <Button
         fullWidth
         variant="contained"
@@ -200,26 +295,51 @@ export const BookingPanel = ({ business, toilets }) => {
         onClick={handleReservation}
         disabled={!userGender || !date || loading}
         sx={{ 
-          py: 1.5,
-          textTransform: 'none',
+          py: 1.75,
+          background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
           fontSize: '1rem',
-          fontWeight: 600
+          fontWeight: 700,
+          textTransform: 'none',
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(8,145,178,0.3)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)',
+            boxShadow: '0 6px 16px rgba(8,145,178,0.4)',
+            transform: 'translateY(-2px)',
+          },
+          '&:disabled': {
+            background: '#cbd5e1',
+            color: '#94a3b8'
+          },
+          transition: 'all 0.3s ease'
         }}
       >
         {loading ? (
-          <>
-            <CircularProgress size={24} sx={{ color: 'white', mr: 1 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={20} sx={{ color: 'white' }} />
             Wird verarbeitet...
-          </>
+          </Box>
         ) : (
           'Weiter zur Zahlung'
         )}
       </Button>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2, gap: 0.5 }}>
-        <LockIcon fontSize="small" color="action" />
-        <Typography variant="caption" color="text.secondary">
-          Sichere Zahlung
+      {/* Security Badge */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          mt: 2.5, 
+          gap: 0.5,
+          p: 1,
+          borderRadius: 2,
+          backgroundColor: '#f0f9ff'
+        }}
+      >
+        <LockIcon sx={{ fontSize: '1rem', color: '#0891b2' }} />
+        <Typography variant="caption" sx={{ color: '#0891b2', fontWeight: 600 }}>
+          Sichere & verschlüsselte Zahlung
         </Typography>
       </Box>
     </Paper>

@@ -7,7 +7,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
+import ClearIcon from '@mui/icons-material/Clear';
 
 export const BusinessSearchBar = ({ 
   search, 
@@ -39,9 +39,9 @@ export const BusinessSearchBar = ({
             <IconButton 
               size="small" 
               onClick={onClear}
-              title="Clear and reset map"
+              title="Clear search"
             >
-              <MyLocationIcon fontSize="small" />
+              <ClearIcon fontSize="small" />
             </IconButton>
           </InputAdornment>
         ),

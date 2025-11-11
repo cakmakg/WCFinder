@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   Container,
   Box,
@@ -22,7 +23,8 @@ import usageService from '../services/usageService';
 const PaymentSuccessPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { bookingData, transactionId } = location.state || {};
+  const { bookingData, transactionId, paymentResult } = location.state || {};
+  const { currentUser } = useSelector((state) => state.auth);
 
   const [usageDetails, setUsageDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,8 +41,8 @@ const PaymentSuccessPage = () => {
   const fetchUsageDetails = async () => {
     try {
       setLoading(true);
-      const response = await usageService.getMyUsageDetail(bookingData.usageId);
-      setUsageDetails(response.result);
+      const response = await usageService.getUsage(bookingData.usageId);
+      setUsageDetails(response.result || response.data || response);
     } catch (err) {
       console.error('Error fetching usage details:', err);
       setError('Fehler beim Laden der Buchungsdetails');
@@ -69,6 +71,35 @@ const PaymentSuccessPage = () => {
     };
     
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  };
+
+  const getPaymentMethodLabel = () => {
+    // Stripe success passes paymentIntent object
+    if (paymentResult?.object === 'payment_intent' || paymentResult?.payment_method_types) {
+      return 'Kredit-/Debitkarte (Stripe)';
+    }
+    // PayPal success returns Payment model from backend with paymentMethod
+    if (paymentResult?.paymentMethod === 'paypal' || paymentResult?.paymentProvider === 'paypal') {
+      return 'PayPal';
+    }
+    return bookingData?.paymentMethod === 'paypal' ? 'PayPal' : 'Kredit-/Debitkarte';
+  };
+
+  const handleOpenMaps = () => {
+    const addr = bookingData?.business?.address || {};
+    const coords = bookingData?.business?.location?.coordinates; // [lng, lat]
+    let url = '';
+    if (Array.isArray(coords) && coords.length === 2) {
+      const lat = coords[1];
+      const lng = coords[0];
+      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + ',' + lng)}`;
+    } else {
+      const line = [addr.street, addr.postalCode, addr.city, addr.country]
+        .filter(Boolean)
+        .join(' ');
+      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(line)}`;
+    }
+    window.open(url, '_blank', 'noopener');
   };
 
   if (!bookingData) {
@@ -115,10 +146,24 @@ const PaymentSuccessPage = () => {
           {/* Booking Details */}
           <Box sx={{ textAlign: 'left', mb: 3 }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+              Name des Kunden
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              {currentUser?.username || currentUser?.email || '—'}
+            </Typography>
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
               Transaktions-ID
             </Typography>
             <Typography variant="body1" sx={{ fontFamily: 'monospace', mb: 2 }}>
               {transactionId}
+            </Typography>
+
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+              Zahlungsart
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              {getPaymentMethodLabel()}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
@@ -131,7 +176,11 @@ const PaymentSuccessPage = () => {
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
               Adresse
             </Typography>
-            <Typography variant="body1" sx={{ mb: 2 }}>
+            <Typography 
+              variant="body1" 
+              sx={{ mb: 2, textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={handleOpenMaps}
+            >
               {bookingData.business.address?.street}, {bookingData.business.address?.city}
             </Typography>
 

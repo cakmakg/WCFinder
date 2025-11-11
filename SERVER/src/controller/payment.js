@@ -43,7 +43,7 @@ module.exports = {
             }
 
             // Daha önce ödeme yapılmış mı kontrol et
-            const existingPayment = await Payment.findOne({ usage: usageId });
+            const existingPayment = await Payment.findOne({ usageId: usageId });
             if (existingPayment && existingPayment.status === 'succeeded') {
                 res.errorStatusCode = 400;
                 throw new Error("This usage has already been paid");
@@ -62,8 +62,8 @@ module.exports = {
 
             // Payment kaydı oluştur
             const payment = await Payment.create({
-                usage: usageId,
-                user: req.user._id,
+                usageId: usageId,
+                userId: req.user._id,
                 amount: usage.totalFee,
                 currency: 'EUR',
                 status: 'pending',
@@ -99,7 +99,7 @@ module.exports = {
         try {
             const { usageId } = req.body;
             
-            const usage = await Usage.findById(usageId).populate('user');
+            const usage = await Usage.findById(usageId).populate('userId');
             
             if (!usage) {
                 res.errorStatusCode = 404;
@@ -111,7 +111,7 @@ module.exports = {
                 throw new Error("Unauthorized");
             }
 
-            const existingPayment = await Payment.findOne({ usage: usageId });
+            const existingPayment = await Payment.findOne({ usageId: usageId });
             if (existingPayment && existingPayment.status === 'succeeded') {
                 res.errorStatusCode = 400;
                 throw new Error("This usage has already been paid");
@@ -135,8 +135,8 @@ module.exports = {
 
             // Payment kaydı oluştur
             const payment = await Payment.create({
-                usage: usageId,
-                user: req.user._id,
+                usageId: usageId,
+                userId: req.user._id,
                 amount: usage.totalFee,
                 currency: 'EUR',
                 status: 'pending',
@@ -190,7 +190,7 @@ module.exports = {
             await payment.save();
 
             // Usage durumunu güncelle (eğer usage modelinizde status varsa)
-            await Usage.findByIdAndUpdate(payment.usage, { 
+            await Usage.findByIdAndUpdate(payment.usageId, { 
                 paymentStatus: 'paid' 
             });
 
@@ -234,8 +234,8 @@ module.exports = {
                 await payment.save();
 
                 // ✅ YENİ: Usage'ı güncelle ve QR kod oluştur
-            const Usage = require('../models/usage.model');
-            const usage = await Usage.findById(payment.usage);
+            const Usage = require('../models/usage');
+            const usage = await Usage.findById(payment.usageId);
             
             if (usage) {
                 usage.paymentStatus = 'paid';
@@ -260,8 +260,8 @@ module.exports = {
                 await payment.save();
 
                 // ✅ Usage'ı başarısız olarak işaretle
-            const Usage = require('../models/usage.model');
-            await Usage.findByIdAndUpdate(payment.usage, {
+            const Usage = require('../models/usage');
+            await Usage.findByIdAndUpdate(payment.usageId, {
                 paymentStatus: 'failed'
             });
             }
@@ -347,8 +347,8 @@ module.exports = {
             #swagger.summary = "Get My Payments"
         */
 
-        const data = await Payment.find({ user: req.user._id })
-            .populate('usage')
+        const data = await Payment.find({ userId: req.user._id })
+            .populate('usageId')
             .sort({ createdAt: -1 });
 
         res.status(200).send({
@@ -359,7 +359,7 @@ module.exports = {
 
     // Mevcut fonksiyonlar...
     list: async (req, res) => {
-        const data = await res.getModelList(Payment, {}, ['usage', 'user']);
+        const data = await res.getModelList(Payment, {}, ['usageId', 'userId']);
         res.status(200).send({
             error: false,
             details: await res.getModelListDetails(Payment),
@@ -369,7 +369,7 @@ module.exports = {
 
     read: async (req, res) => {
         const data = await Payment.findOne({ _id: req.params.id })
-            .populate(['usage', 'user']);
+            .populate(['usageId', 'userId']);
         res.status(200).send({
             error: false,
             result: data,

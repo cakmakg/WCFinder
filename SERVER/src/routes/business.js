@@ -15,8 +15,8 @@ const { isLogin, isAdmin, isOwnerOrAdmin } = require('../middleware/permissions'
 
 // URL: /business
 
-// Herkes listeleyebilir
-router.get('/', isLogin, list);
+// Herkes listeleyebilir (public - login gerektirmez)
+router.get('/', list);
 
 // ✅ Owner kendi işletmesini görebilir
 router.get('/my-business', isOwnerOrAdmin, myBusiness);
@@ -28,7 +28,7 @@ router.get('/my-stats', isOwnerOrAdmin, getOwnerStats);
 router.post('/', isAdmin, create);
 
 router.route('/:id')
-    .get(isLogin, read)
+    .get(read)                 // ✅ Herkes görebilir (public - login gerektirmez)
     .put(isAdmin, update)
     .patch(isAdmin, update)
     .delete(isAdmin, deletee);
