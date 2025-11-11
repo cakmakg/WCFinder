@@ -34,18 +34,19 @@ const AppLayout = () => {
     <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       <CssBaseline />
 
-      {/* AppBar */}
-      <HomeAppBar
-        currentUser={currentUser}
-        anchorElUser={anchorElUser}
-        onUserMenuOpen={handleUserMenuOpen}
-        onUserMenuClose={handleUserMenuClose}
-        onMyBookingsClick={handleMyBookingsClick}
-        onLogoutClick={handleLogoutClick}
-        onLoginClick={() => navigate('/')}
-        onLogoClick={() => navigate('/home')}
-        theme={theme}
-      />
+            {/* AppBar */}
+            <HomeAppBar
+              currentUser={currentUser}
+              anchorElUser={anchorElUser}
+              onUserMenuOpen={handleUserMenuOpen}
+              onUserMenuClose={handleUserMenuClose}
+              onMyBookingsClick={handleMyBookingsClick}
+              onLogoutClick={handleLogoutClick}
+              onLoginClick={() => navigate('/')}
+              onLogoClick={() => navigate('/home')}
+              onMenuClick={undefined} // AppLayout'ta drawer yok, menu button gösterme
+              theme={theme}
+            />
 
       {/* Main Content */}
       <Box

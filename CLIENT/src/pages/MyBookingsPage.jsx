@@ -15,6 +15,8 @@ import {
   Card,
   CardContent,
   Divider,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import QrCodeIcon from '@mui/icons-material/QrCode2';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -24,6 +26,8 @@ import QRCode from 'react-qr-code';
 import usageService from '../services/usageService';
 
 const MyBookingsPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -235,7 +239,13 @@ const MyBookingsPage = () => {
             onClick={() => setSelectedBooking(null)}
           >
             <Paper 
-              sx={{ p: 4, maxWidth: 400, textAlign: 'center' }}
+              sx={{ 
+                p: { xs: 2, sm: 4 }, 
+                maxWidth: { xs: '90%', sm: 400 }, 
+                width: '100%',
+                textAlign: 'center',
+                mx: { xs: 2, sm: 0 } // Mobile'da yan padding
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <Typography variant="h6" sx={{ mb: 2 }}>
@@ -254,7 +264,7 @@ const MyBookingsPage = () => {
               >
                 <QRCode 
                   value={selectedBooking.accessCode} 
-                  size={200}
+                  size={isMobile ? 150 : 200} // Mobile'da daha küçük
                   level="H"
                 />
               </Box>

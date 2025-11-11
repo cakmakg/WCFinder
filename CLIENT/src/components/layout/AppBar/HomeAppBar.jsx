@@ -1,9 +1,10 @@
 // components/layout/AppBar/HomeAppBar.jsx
 import React from 'react';
-import { AppBar, Toolbar, IconButton, Avatar, Box } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Avatar, Box, useMediaQuery, useTheme } from '@mui/material';
 import { Logo } from '../Logo';
 import { UserMenu } from './UserMenu';
 import LoginIcon from '@mui/icons-material/Login';
+import MenuIcon from '@mui/icons-material/Menu';
 
 export const HomeAppBar = ({
   currentUser,
@@ -14,8 +15,11 @@ export const HomeAppBar = ({
   onLogoutClick,
   onLoginClick,
   onLogoClick,
-  theme
+  theme,
+  onMenuClick // Home.jsx'den gelen drawer toggle fonksiyonu
 }) => {
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  
   return (
     <AppBar
       position="fixed"
@@ -26,6 +30,17 @@ export const HomeAppBar = ({
       }}
     >
       <Toolbar>
+        {/* Mobile Menu Button - Sadece Home sayfasında görünür */}
+        {isMobile && onMenuClick && (
+          <IconButton
+            edge="start"
+            onClick={onMenuClick}
+            sx={{ mr: 1, color: '#0891b2' }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
+        
         <Logo onClick={onLogoClick} />
 
         {/* User Menu or Login Button */}

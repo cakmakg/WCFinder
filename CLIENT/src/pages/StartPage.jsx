@@ -304,13 +304,14 @@ const StartPage = () => {
         transition={{ duration: 0.8 }}
         sx={{
           position: "relative",
-          height: { xs: "auto", md: 600 },
+          height: { xs: "auto", sm: 500, md: 600 }, // Tablet için orta boy
+          minHeight: { xs: 400, sm: 500 }, // Mobile'da minimum yükseklik
           mt: 8,
           background: "linear-gradient(135deg, rgba(8,145,178,0.9) 0%, rgba(6,182,212,0.7) 100%)",
           display: "flex",
           alignItems: "center",
           overflow: "hidden",
-          py: { xs: 6, md: 0 },
+          py: { xs: 4, sm: 6, md: 0 },
         }}
       >
         {/* Background Pattern */}

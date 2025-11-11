@@ -30,7 +30,8 @@ L.Icon.Default.mergeOptions({
 
 const Dashboard = ({ selectedBusiness, searchedLocation }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  // Home.jsx ile tutarlı olması için lg breakpoint kullanıyoruz
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   
   const { getCrudData } = useCrudCall();
   const { toilet, loading, error } = useSelector((state) => state.crud);

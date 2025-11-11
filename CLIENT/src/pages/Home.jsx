@@ -16,11 +16,12 @@ import { HomeAppBar } from '../components/layout/AppBar/HomeAppBar';
 import DrawerContent from '../components/layout/SideBar/DrawerContent';
 import BusinessList from '../components/business/BusinessList';
 import Dashboard from './Dashboard';
-import { DRAWER_WIDTH } from '../constants/layout';
+import { DRAWER_WIDTH, DRAWER_WIDTH_MOBILE } from '../constants/layout';
 
 export default function Home() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,6 +81,7 @@ export default function Home() {
         onLogoutClick={handleLogoutClick}
         onLoginClick={() => navigate('/')}
         onLogoClick={() => navigate('/home')}
+        onMenuClick={handleDrawerToggle} // Mobile drawer toggle
         theme={theme}
       />
 
@@ -101,7 +103,8 @@ export default function Home() {
             display: { xs: 'block', lg: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: DRAWER_WIDTH,
+              width: { xs: DRAWER_WIDTH_MOBILE, sm: DRAWER_WIDTH },
+              maxWidth: '90vw', // Mobile'da ekran genişliğini aşmasın
               backgroundColor: 'white',
               border: 'none',
               mt: 8,

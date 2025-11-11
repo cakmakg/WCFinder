@@ -332,7 +332,10 @@ const PaymentPage = () => {
 
           {/* Right Column - Order Summary */}
           <Grid item xs={12} md={5}>
-            <Box sx={{ position: 'sticky', top: 24 }}>
+            <Box sx={{ 
+              position: { xs: 'static', md: 'sticky' }, // Mobile'da sticky kaldır
+              top: { md: 24 } 
+            }}>
               <OrderSummary bookingData={bookingData} />
             </Box>
           </Grid>

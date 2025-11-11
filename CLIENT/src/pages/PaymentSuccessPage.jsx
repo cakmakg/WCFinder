@@ -14,6 +14,8 @@ import {
   CircularProgress,
   Card,
   CardContent,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -21,6 +23,8 @@ import QRCode from 'react-qr-code';
 import usageService from '../services/usageService';
 
 const PaymentSuccessPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const location = useLocation();
   const navigate = useNavigate();
   const { bookingData, transactionId, paymentResult } = location.state || {};
@@ -125,9 +129,9 @@ const PaymentSuccessPage = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 8 }}>
-      <Container maxWidth="sm">
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: { xs: 4, md: 8 } }}>
+      <Container maxWidth="md"> {/* sm'den md'ye çıkarıldı - tablet için daha geniş */}
+        <Paper sx={{ p: { xs: 2, sm: 4 }, textAlign: 'center' }}>
           {/* Success Icon */}
           <CheckCircleIcon 
             sx={{ fontSize: 80, color: 'success.main', mb: 2 }} 
@@ -235,7 +239,7 @@ const PaymentSuccessPage = () => {
                   <div id="qr-code-svg">
                     <QRCode 
                       value={usageDetails.accessCode} 
-                      size={200}
+                      size={isMobile ? 150 : 200} // Mobile'da daha küçük
                       level="H"
                     />
                   </div>

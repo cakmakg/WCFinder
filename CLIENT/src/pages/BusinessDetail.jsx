@@ -10,7 +10,9 @@ import {
   Chip,
   IconButton,
   CircularProgress,
-  Alert
+  Alert,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -34,6 +36,8 @@ L.Icon.Default.mergeOptions({
 });
 
 const BusinessDetail = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { id } = useParams();
   const navigate = useNavigate();
   const { axiosWithToken } = useAxios();
@@ -189,7 +193,7 @@ const BusinessDetail = () => {
               <MapContainer 
                 center={position} 
                 zoom={15} 
-                style={{ height: '300px', width: '100%' }}
+                style={{ height: isMobile ? '250px' : '300px', width: '100%' }}
                 scrollWheelZoom={false}
               >
                 <TileLayer
@@ -224,7 +228,10 @@ const BusinessDetail = () => {
 
           {/* Right Column - Booking Panel */}
           <Grid item xs={12} md={5}>
-            <Box sx={{ position: 'sticky', top: 24 }}>
+            <Box sx={{ 
+              position: { xs: 'static', md: 'sticky' }, // Mobile'da sticky kaldır
+              top: { md: 24 } 
+            }}>
               {toilets.length > 0 ? (
                 <BookingPanel business={business} toilets={toilets} />
               ) : (

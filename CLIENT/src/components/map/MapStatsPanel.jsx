@@ -8,15 +8,17 @@ export const MapStatsPanel = ({ toilet, isMobile, theme }) => {
     <Fade in timeout={500}>
       <Paper sx={{ 
         position: 'absolute', 
-        top: 16, 
-        left: 16, 
+        top: { xs: 8, sm: 16 }, 
+        left: { xs: 8, sm: 16 },
+        right: { xs: 8, sm: 'auto' }, // Mobile'da sağdan da padding
         zIndex: 1000,
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         borderRadius: 2,
         boxShadow: theme.shadows[4],
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
-        minWidth: isMobile ? 200 : 250
+        minWidth: { xs: 180, sm: 200, md: 250 },
+        maxWidth: { xs: 'calc(100% - 16px)', sm: 'none' } // Mobile'da taşmasın
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <WcIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
