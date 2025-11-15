@@ -1,6 +1,7 @@
 // components/business/BookingPanel.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Paper,
   Box,
@@ -20,6 +21,7 @@ import WcIcon from '@mui/icons-material/Wc';
 import usageService from '../../services/usageService';
 
 export const BookingPanel = ({ business, toilets }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   const [userGender, setUserGender] = useState('');
@@ -47,7 +49,7 @@ export const BookingPanel = ({ business, toilets }) => {
             }
           }}
         >
-          Keine Toiletten verfügbar
+          {t('bookingPanel.noToilets')}
         </Alert>
       </Paper>
     );
@@ -59,12 +61,12 @@ export const BookingPanel = ({ business, toilets }) => {
 
   const handleReservation = async () => {
     if (!userGender || !date) {
-      setError('Bitte wählen Sie Geschlecht und Datum aus');
+      setError(t('bookingPanel.genderDateRequired'));
       return;
     }
 
     if (!business?._id) {
-      setError('Business-Informationen fehlen');
+      setError(t('bookingPanel.businessInfoMissing'));
       return;
     }
 
@@ -107,7 +109,7 @@ export const BookingPanel = ({ business, toilets }) => {
 
     } catch (error) {
       console.error('❌ Reservation error:', error);
-      setError(error.response?.data?.message || error.message || 'Fehler bei der Reservierung');
+      setError(error.response?.data?.message || error.message || t('bookingPanel.reservationError'));
     } finally {
       setLoading(false);
     }
@@ -133,10 +135,10 @@ export const BookingPanel = ({ business, toilets }) => {
             color: '#1e293b'
           }}
         >
-          Buchung
+          {t('bookingPanel.title')}
         </Typography>
         <Typography variant="body2" sx={{ color: '#64748b' }}>
-          Wählen Sie Ihre Präferenzen
+          {t('bookingPanel.subtitle')}
         </Typography>
       </Box>
 
@@ -161,7 +163,7 @@ export const BookingPanel = ({ business, toilets }) => {
       <TextField
         select
         fullWidth
-        label="Geschlecht"
+        label={t('bookingPanel.gender')}
         value={userGender}
         onChange={(e) => setUserGender(e.target.value)}
         disabled={loading}
@@ -181,13 +183,13 @@ export const BookingPanel = ({ business, toilets }) => {
         <MenuItem value="male">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WcIcon sx={{ fontSize: '1.2rem', color: '#0891b2' }} />
-            <span>Männer</span>
+            <span>{t('bookingPanel.male')}</span>
           </Box>
         </MenuItem>
         <MenuItem value="female">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WcIcon sx={{ fontSize: '1.2rem', color: '#0891b2' }} />
-            <span>Frauen</span>
+            <span>{t('bookingPanel.female')}</span>
           </Box>
         </MenuItem>
       </TextField>
@@ -196,7 +198,7 @@ export const BookingPanel = ({ business, toilets }) => {
       <TextField
         fullWidth
         type="date"
-        label="Datum"
+        label={t('bookingPanel.date')}
         value={date}
         onChange={(e) => setDate(e.target.value)}
         disabled={loading}
@@ -222,7 +224,7 @@ export const BookingPanel = ({ business, toilets }) => {
       <TextField
         fullWidth
         select
-        label="Anzahl Personen"
+        label={t('bookingPanel.personCount')}
         value={personCount}
         onChange={(e) => setPersonCount(e.target.value)}
         disabled={loading}
@@ -243,7 +245,7 @@ export const BookingPanel = ({ business, toilets }) => {
           <MenuItem key={num} value={num}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PeopleIcon sx={{ fontSize: '1.2rem', color: '#0891b2' }} />
-              <span>{num} {num === 1 ? 'Person' : 'Personen'}</span>
+              <span>{num} {num === 1 ? t('common.person') : t('common.persons')}</span>
             </Box>
           </MenuItem>
         ))}
@@ -268,7 +270,7 @@ export const BookingPanel = ({ business, toilets }) => {
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
           <Typography variant="body2" sx={{ color: '#64748b' }}>
-            Servicegebühr
+            {t('bookingPanel.serviceFee')}
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             € {serviceFee.toFixed(2)}
@@ -279,7 +281,7 @@ export const BookingPanel = ({ business, toilets }) => {
         
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b' }}>
-            Gesamt
+            {t('bookingPanel.total')}
           </Typography>
           <Typography variant="h5" sx={{ fontWeight: 700, color: '#0891b2' }}>
             € {total.toFixed(2)}
@@ -317,10 +319,10 @@ export const BookingPanel = ({ business, toilets }) => {
         {loading ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <CircularProgress size={20} sx={{ color: 'white' }} />
-            Wird verarbeitet...
+            {t('bookingPanel.processing')}
           </Box>
         ) : (
-          'Weiter zur Zahlung'
+          t('bookingPanel.continueToPayment')
         )}
       </Button>
 
@@ -339,7 +341,7 @@ export const BookingPanel = ({ business, toilets }) => {
       >
         <LockIcon sx={{ fontSize: '1rem', color: '#0891b2' }} />
         <Typography variant="caption" sx={{ color: '#0891b2', fontWeight: 600 }}>
-          Sichere & verschlüsselte Zahlung
+          {t('bookingPanel.securePayment')}
         </Typography>
       </Box>
     </Paper>

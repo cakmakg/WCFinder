@@ -12,6 +12,7 @@ export const AppBarComponent = ({
   onUserMenuOpen,
   onUserMenuClose,
   onMyBookingsClick,
+  onAdminPanelClick,
   onLogoutClick,
   theme,
   onTitleClick
@@ -83,7 +84,9 @@ export const AppBarComponent = ({
           open={Boolean(anchorElUser)}
           onClose={onUserMenuClose}
           onMyBookingsClick={onMyBookingsClick}
+          onAdminPanelClick={onAdminPanelClick}
           onLogoutClick={onLogoutClick}
+          currentUser={currentUser}
           theme={theme}
         />
       </Toolbar>

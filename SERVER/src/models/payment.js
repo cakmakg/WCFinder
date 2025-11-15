@@ -15,9 +15,51 @@ const PaymentSchema = new mongoose.Schema({
         index: true,
     },
 
+    // ✅ YENİ: İşletme referansı (komisyon dağıtımı için)
+    businessId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Business',
+        required: true,
+        index: true,
+    },
+
     amount: {
         type: Number,
         required: true,
+    },
+
+    // ✅ YENİ: Platform komisyonu (örn: 0.50€)
+    platformFee: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+
+    // ✅ YENİ: İşletme payı (örn: 1.00€)
+    businessFee: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+
+    // ✅ YENİ: Ödeme işletmeye dağıtıldı mı?
+    payoutStatus: {
+        type: String,
+        enum: ['pending', 'processing', 'paid', 'failed'],
+        default: 'pending',
+        index: true,
+    },
+
+    // ✅ YENİ: Ödeme ne zaman dağıtıldı?
+    paidOutAt: {
+        type: Date,
+    },
+
+    // ✅ YENİ: Ödeme dağıtım ID'si (payout batch için)
+    payoutId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Payout',
+        index: true,
     },
 
     currency: {
@@ -100,7 +142,10 @@ const PaymentSchema = new mongoose.Schema({
 });
 
 // ✅ YENİ: Index'ler - Performans için
-PaymentSchema.index({ user: 1, createdAt: -1 });
+PaymentSchema.index({ userId: 1, createdAt: -1 });
+PaymentSchema.index({ businessId: 1, createdAt: -1 });
 PaymentSchema.index({ status: 1, createdAt: -1 });
+PaymentSchema.index({ payoutStatus: 1, createdAt: -1 });
+PaymentSchema.index({ businessId: 1, payoutStatus: 1 });
 
 module.exports = mongoose.model("Payment", PaymentSchema);

@@ -4,6 +4,7 @@ import { Provider } from "react-redux";
 import store from "./api/store";
 import { ToastContainer } from "react-toastify";
 import ErrorBoundary from "./components/ErrorBoundary";
+import "./i18n/config"; // i18n konfigürasyonunu yükle
 //import { PersistGate } from "redux-persist/integration/react";
 
 function App() {

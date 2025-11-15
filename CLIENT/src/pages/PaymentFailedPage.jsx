@@ -1,6 +1,7 @@
 // pages/PaymentFailedPage.jsx
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -12,6 +13,7 @@ import {
 import ErrorIcon from '@mui/icons-material/Error';
 
 const PaymentFailedPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -23,12 +25,11 @@ const PaymentFailedPage = () => {
           />
           
           <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
-            Zahlung fehlgeschlagen
+            {t('paymentFailed.title')}
           </Typography>
           
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Ihre Zahlung konnte nicht verarbeitet werden. 
-            Bitte versuchen Sie es erneut.
+            {t('paymentFailed.subtitle')}
           </Typography>
 
           <Button
@@ -38,7 +39,7 @@ const PaymentFailedPage = () => {
             onClick={() => navigate(-1)}
             sx={{ mb: 1 }}
           >
-            Erneut versuchen
+            {t('paymentFailed.retry')}
           </Button>
 
           <Button
@@ -47,7 +48,7 @@ const PaymentFailedPage = () => {
             size="large"
             onClick={() => navigate('/')}
           >
-            Zur Startseite
+            {t('paymentFailed.backToHome')}
           </Button>
         </Paper>
       </Container>

@@ -1,5 +1,6 @@
 // components/AuthModal.jsx
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -22,51 +23,49 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import useAuthCall from "../hook/useAuthCall";
 
-// Validation schemas
-const loginSchema = Yup.object({
-  email: Yup.string()
-    .email("Bitte geben Sie eine gültige E-Mail ein")
-    .required("E-Mail ist erforderlich"),
-  password: Yup.string().required("Passwort ist erforderlich"),
-});
-
-const registerSchema = Yup.object({
-  username: Yup.string()
-    .required("Benutzername ist erforderlich")
-    .min(3, "Benutzername muss mindestens 3 Zeichen lang sein"),
-  firstName: Yup.string()
-    .min(2, "Vorname muss mindestens 2 Zeichen lang sein")
-    .max(50, "Vorname darf maximal 50 Zeichen lang sein")
-    .required("Vorname ist erforderlich"),
-  lastName: Yup.string()
-    .min(2, "Nachname muss mindestens 2 Zeichen lang sein")
-    .max(50, "Nachname darf maximal 50 Zeichen lang sein")
-    .required("Nachname ist erforderlich"),
-  email: Yup.string()
-    .email("Bitte geben Sie eine gültige E-Mail ein")
-    .required("E-Mail ist erforderlich"),
-  password: Yup.string()
-    .required("Passwort ist erforderlich")
-    .min(8, "Passwort muss mindestens 8 Zeichen lang sein")
-    .matches(/\d+/, "Passwort muss mindestens eine Zahl enthalten")
-    .matches(/[a-z]/, "Passwort muss mindestens einen Kleinbuchstaben enthalten")
-    .matches(/[A-Z]/, "Passwort muss mindestens einen Großbuchstaben enthalten")
-    .matches(
-      /[@$?!%&*]+/,
-      "Passwort muss mindestens ein Sonderzeichen enthalten (@$?!%&*)"
-    ),
-});
-
 const AuthModal = ({ 
   open, 
   onClose, 
   redirectAfterLogin = '/home',  // Login sonrası nereye gidileceği
   businessName = null  // İşletme adı (opsiyonel bilgilendirme için)
 }) => {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const { login, register } = useAuthCall();
   const { loading } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+
+  // Validation schemas
+  const loginSchema = Yup.object({
+    email: Yup.string()
+      .email(t('auth.validation.emailInvalid'))
+      .required(t('auth.validation.emailRequired')),
+    password: Yup.string().required(t('auth.validation.passwordRequired')),
+  });
+
+  const registerSchema = Yup.object({
+    username: Yup.string()
+      .required(t('auth.validation.usernameRequired'))
+      .min(3, t('auth.validation.usernameMin')),
+    firstName: Yup.string()
+      .min(2, t('auth.validation.firstNameMin'))
+      .max(50, t('auth.validation.firstNameMax'))
+      .required(t('auth.validation.firstNameRequired')),
+    lastName: Yup.string()
+      .min(2, t('auth.validation.lastNameMin'))
+      .max(50, t('auth.validation.lastNameMax'))
+      .required(t('auth.validation.lastNameRequired')),
+    email: Yup.string()
+      .email(t('auth.validation.emailInvalid'))
+      .required(t('auth.validation.emailRequired')),
+    password: Yup.string()
+      .required(t('auth.validation.passwordRequired'))
+      .min(8, t('auth.validation.passwordMin'))
+      .matches(/\d+/, t('auth.validation.passwordNumber'))
+      .matches(/[a-z]/, t('auth.validation.passwordLowercase'))
+      .matches(/[A-Z]/, t('auth.validation.passwordUppercase'))
+      .matches(/[@$?!%&*]+/, t('auth.validation.passwordSpecial')),
+  });
 
   const handleSocialLogin = (provider) => {
     alert(`${provider} Login wird implementiert...`);
@@ -125,15 +124,15 @@ const AuthModal = ({
           align="center"
           sx={{ mb: 3, fontWeight: 600, color: "#333" }}
         >
-          {isLogin ? "Anmelden" : "Registrieren"}
+          {isLogin ? t('auth.login') : t('auth.register')}
         </Typography>
 
         {/* İşletme bilgilendirme mesajı */}
         {businessName && (
           <Alert severity="info" sx={{ mb: 2 }}>
             {isLogin 
-              ? `Bitte melden Sie sich an, um ${businessName} zu buchen`
-              : `Registrieren Sie sich, um ${businessName} zu buchen`
+              ? t('auth.loginToBook', { businessName })
+              : t('auth.registerToBook', { businessName })
             }
           </Alert>
         )}
@@ -157,7 +156,7 @@ const AuthModal = ({
               },
             }}
           >
-            Mit Facebook anmelden
+            {t('auth.socialLogin.facebook')}
           </Button>
 
           <Button
@@ -177,7 +176,7 @@ const AuthModal = ({
               },
             }}
           >
-            Mit Google anmelden
+            {t('auth.socialLogin.google')}
           </Button>
 
           <Button
@@ -197,14 +196,14 @@ const AuthModal = ({
               },
             }}
           >
-            Mit Apple anmelden
+            {t('auth.socialLogin.apple')}
           </Button>
         </Box>
 
         {/* Divider */}
         <Divider sx={{ my: 3 }}>
           <Typography variant="body2" color="text.secondary">
-            oder
+            {t('common.or')}
           </Typography>
         </Divider>
 
@@ -225,7 +224,7 @@ const AuthModal = ({
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <TextField
                     fullWidth
-                    label="E-Mail-Adresse"
+                    label={t('auth.email')}
                     name="email"
                     type="email"
                     value={values.email}
@@ -233,12 +232,12 @@ const AuthModal = ({
                     onBlur={handleBlur}
                     error={touched.email && Boolean(errors.email)}
                     helperText={touched.email && errors.email}
-                    placeholder="ihre@email.de"
+                    placeholder={t('auth.emailPlaceholder')}
                   />
 
                   <TextField
                     fullWidth
-                    label="Kennwort"
+                    label={t('auth.password')}
                     name="password"
                     type="password"
                     value={values.password}
@@ -246,7 +245,7 @@ const AuthModal = ({
                     onBlur={handleBlur}
                     error={touched.password && Boolean(errors.password)}
                     helperText={touched.password && errors.password}
-                    placeholder="••••••••"
+                    placeholder={t('auth.passwordPlaceholder')}
                   />
 
                   <Typography
@@ -258,7 +257,7 @@ const AuthModal = ({
                       "&:hover": { textDecoration: "underline" },
                     }}
                   >
-                    Passwort vergessen
+                    {t('auth.forgotPassword')}
                   </Typography>
 
                   <Button
@@ -277,7 +276,7 @@ const AuthModal = ({
                       },
                     }}
                   >
-                    {loading ? <CircularProgress size={24} /> : "EINLOGGEN"}
+                    {loading ? <CircularProgress size={24} /> : t('auth.loginButton')}
                   </Button>
                 </Box>
               </Form>
@@ -306,7 +305,7 @@ const AuthModal = ({
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <TextField
                     fullWidth
-                    label="Benutzername"
+                    label={t('auth.username')}
                     name="username"
                     value={values.username}
                     onChange={handleChange}
@@ -318,7 +317,7 @@ const AuthModal = ({
                   <Box sx={{ display: "flex", gap: 2 }}>
                     <TextField
                       fullWidth
-                      label="Vorname"
+                      label={t('auth.firstName')}
                       name="firstName"
                       value={values.firstName}
                       onChange={handleChange}
@@ -329,7 +328,7 @@ const AuthModal = ({
 
                     <TextField
                       fullWidth
-                      label="Nachname"
+                      label={t('auth.lastName')}
                       name="lastName"
                       value={values.lastName}
                       onChange={handleChange}
@@ -341,7 +340,7 @@ const AuthModal = ({
 
                   <TextField
                     fullWidth
-                    label="E-Mail-Adresse"
+                    label={t('auth.email')}
                     name="email"
                     type="email"
                     value={values.email}
@@ -353,7 +352,7 @@ const AuthModal = ({
 
                   <TextField
                     fullWidth
-                    label="Kennwort"
+                    label={t('auth.password')}
                     name="password"
                     type="password"
                     value={values.password}
@@ -379,7 +378,7 @@ const AuthModal = ({
                       },
                     }}
                   >
-                    {loading ? <CircularProgress size={24} /> : "REGISTRIEREN"}
+                    {loading ? <CircularProgress size={24} /> : t('auth.registerButton')}
                   </Button>
                 </Box>
               </Form>
@@ -390,7 +389,7 @@ const AuthModal = ({
         {/* Toggle Between Login/Register */}
         <Box sx={{ textAlign: "center", mt: 3 }}>
           <Typography variant="body2" color="text.secondary">
-            {isLogin ? "Du hast noch kein Konto?" : "Bereits ein Konto?"}
+            {isLogin ? t('auth.noAccount') : t('auth.hasAccount')}
           </Typography>
           <Typography
             variant="body2"
@@ -402,7 +401,7 @@ const AuthModal = ({
               "&:hover": { textDecoration: "underline" },
             }}
           >
-            {isLogin ? "Konto erstellen" : "Anmelden"}
+            {isLogin ? t('auth.createAccount') : t('auth.loginHere')}
           </Typography>
         </Box>
       </DialogContent>

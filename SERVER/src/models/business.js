@@ -55,7 +55,54 @@ const BusinessSchema = new mongoose.Schema(
             type: String,
             enum: ['pending', 'approved', 'rejected'],
             default: 'pending',
-        }
+        },
+
+        // ✅ YENİ: Finansal Bilgiler
+        // Bekleyen ödeme (henüz dağıtılmamış)
+        pendingBalance: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        // ✅ YENİ: Toplam kazanç (tüm zamanlar)
+        totalEarnings: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        // ✅ YENİ: Toplam dağıtılan ödeme
+        totalPaidOut: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        // ✅ YENİ: Banka hesap bilgileri (opsiyonel - manuel ödeme için)
+        bankAccount: {
+            accountHolder: String,
+            iban: String,
+            bankName: String,
+            bic: String,
+        },
+
+        // ✅ YENİ: Stripe Connect hesap ID (otomatik ödeme için - gelecekte)
+        stripeAccountId: {
+            type: String,
+            index: true,
+            sparse: true,
+        },
+
+        // ✅ YENİ: Fatura için gerekli bilgiler
+        phone: {
+            type: String,
+            trim: true,
+        },
+        ustIdNr: {
+            type: String,
+            trim: true,
+        }, // USt-IdNr (Umsatzsteuer-Identifikationsnummer)
 
     },
     {

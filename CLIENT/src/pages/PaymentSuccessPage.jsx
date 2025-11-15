@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import {
   Container,
   Box,
@@ -23,6 +24,7 @@ import QRCode from 'react-qr-code';
 import usageService from '../services/usageService';
 
 const PaymentSuccessPage = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const location = useLocation();
@@ -49,7 +51,7 @@ const PaymentSuccessPage = () => {
       setUsageDetails(response.result || response.data || response);
     } catch (err) {
       console.error('Error fetching usage details:', err);
-      setError('Fehler beim Laden der Buchungsdetails');
+      setError(t('paymentSuccess.loadingError'));
     } finally {
       setLoading(false);
     }
@@ -80,13 +82,13 @@ const PaymentSuccessPage = () => {
   const getPaymentMethodLabel = () => {
     // Stripe success passes paymentIntent object
     if (paymentResult?.object === 'payment_intent' || paymentResult?.payment_method_types) {
-      return 'Kredit-/Debitkarte (Stripe)';
+      return t('paymentSuccess.creditCard');
     }
     // PayPal success returns Payment model from backend with paymentMethod
     if (paymentResult?.paymentMethod === 'paypal' || paymentResult?.paymentProvider === 'paypal') {
-      return 'PayPal';
+      return t('paymentSuccess.paypal');
     }
-    return bookingData?.paymentMethod === 'paypal' ? 'PayPal' : 'Kredit-/Debitkarte';
+    return bookingData?.paymentMethod === 'paypal' ? t('paymentSuccess.paypal') : t('paymentSuccess.creditCard');
   };
 
   const handleOpenMaps = () => {
@@ -110,10 +112,10 @@ const PaymentSuccessPage = () => {
     return (
       <Container sx={{ py: 4 }}>
         <Alert severity="error">
-          Keine Buchungsinformationen gefunden
+          {t('paymentSuccess.noBookingInfo')}
         </Alert>
         <Button onClick={() => navigate('/')} sx={{ mt: 2 }}>
-          Zur Startseite
+          {t('paymentSuccess.backToHome')}
         </Button>
       </Container>
     );
@@ -123,7 +125,7 @@ const PaymentSuccessPage = () => {
     return (
       <Container sx={{ py: 4, textAlign: 'center' }}>
         <CircularProgress />
-        <Typography sx={{ mt: 2 }}>Buchungsdetails werden geladen...</Typography>
+        <Typography sx={{ mt: 2 }}>{t('paymentSuccess.loadingDetails')}</Typography>
       </Container>
     );
   }
@@ -138,11 +140,11 @@ const PaymentSuccessPage = () => {
           />
           
           <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
-            Zahlung erfolgreich!
+            {t('paymentSuccess.title')}
           </Typography>
           
           <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Ihre Buchung wurde bestätigt
+            {t('paymentSuccess.subtitle')}
           </Typography>
 
           <Divider sx={{ my: 3 }} />
@@ -150,35 +152,35 @@ const PaymentSuccessPage = () => {
           {/* Booking Details */}
           <Box sx={{ textAlign: 'left', mb: 3 }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Name des Kunden
+              {t('paymentSuccess.customerName')}
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {currentUser?.username || currentUser?.email || '—'}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Transaktions-ID
+              {t('paymentSuccess.transactionId')}
             </Typography>
             <Typography variant="body1" sx={{ fontFamily: 'monospace', mb: 2 }}>
               {transactionId}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Zahlungsart
+              {t('paymentSuccess.paymentMethod')}
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {getPaymentMethodLabel()}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Geschäft
+              {t('paymentSuccess.business')}
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {bookingData.business.name}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Adresse
+              {t('paymentSuccess.address')}
             </Typography>
             <Typography 
               variant="body1" 
@@ -189,21 +191,21 @@ const PaymentSuccessPage = () => {
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Datum
+              {t('paymentSuccess.date')}
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {new Date(bookingData.date).toLocaleDateString('de-DE')}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Personen
+              {t('paymentSuccess.persons')}
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {bookingData.personCount}
             </Typography>
 
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Gesamtbetrag
+              {t('paymentSuccess.totalAmount')}
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
               € {bookingData.pricing.total.toFixed(2)}
@@ -223,7 +225,7 @@ const PaymentSuccessPage = () => {
             <Card sx={{ mb: 3, bgcolor: 'grey.50' }}>
               <CardContent>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Ihr QR-Code für den Zugang
+                  {t('paymentSuccess.qrCodeTitle')}
                 </Typography>
 
                 <Box
@@ -258,7 +260,7 @@ const PaymentSuccessPage = () => {
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Zeigen Sie diesen QR-Code am Eingang vor
+                  {t('paymentSuccess.qrCodeDescription')}
                 </Typography>
 
                 <Button
@@ -267,13 +269,13 @@ const PaymentSuccessPage = () => {
                   onClick={downloadQRCode}
                   fullWidth
                 >
-                  QR-Code herunterladen
+                  {t('paymentSuccess.downloadQR')}
                 </Button>
               </CardContent>
             </Card>
           ) : (
             <Alert severity="info" sx={{ mb: 3 }}>
-              QR-Code wird generiert...
+              {t('paymentSuccess.qrGenerating')}
             </Alert>
           )}
 
@@ -287,7 +289,7 @@ const PaymentSuccessPage = () => {
             onClick={() => navigate('/my-bookings')}
             sx={{ mb: 1 }}
           >
-            Meine Buchungen ansehen
+            {t('paymentSuccess.viewBookings')}
           </Button>
 
           <Button
@@ -296,7 +298,7 @@ const PaymentSuccessPage = () => {
             size="large"
             onClick={() => navigate('/')}
           >
-            Zur Startseite
+            {t('paymentSuccess.backToHome')}
           </Button>
         </Paper>
       </Container>

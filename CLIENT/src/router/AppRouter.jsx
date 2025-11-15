@@ -13,6 +13,7 @@ import PaymentPage from '../pages/PaymentPage';
 import PaymentSuccessPage from '../pages/PaymentSuccessPage';
 import PaymentFailedPage from '../pages/PaymentFailedPage';
 import MyBookingsPage from '../pages/MyBookingsPage';
+import AdminPanel from '../pages/AdminPanel';
 import StartPage from '../pages/StartPage';
 
 // Stripe key kontrolü
@@ -59,11 +60,12 @@ const AppRouter = () => {
         
         <Route element={<PrivateRouter />}>
           <Route element={<AppLayout />}>
-            <Route path="/business/:id" element={<BusinessDetail />} />
-            <Route path="/payment" element={<PaymentPage />} />
-            <Route path="/payment/success" element={<PaymentSuccessPage />} />
-            <Route path="/payment/failed" element={<PaymentFailedPage />} />
-            <Route path="/my-bookings" element={<MyBookingsPage />} />
+          <Route path="/business/:id" element={<BusinessDetail />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/failed" element={<PaymentFailedPage />} />
+          <Route path="/my-bookings" element={<MyBookingsPage />} />
+          <Route path="/admin" element={<AdminPanel />} />
           </Route>
         </Route>
       </Routes>

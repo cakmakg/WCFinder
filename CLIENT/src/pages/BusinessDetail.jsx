@@ -1,5 +1,6 @@
 // pages/BusinessDetail.jsx
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -20,11 +21,12 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BusinessIcon from '@mui/icons-material/Business';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import WcIcon from '@mui/icons-material/Wc';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { BookingPanel } from '../components/business/BookingPanel';
 import { ToiletList } from '../components/business/ToiletList';
+import { MapTileLayer } from '../components/map/MapTileLayer';
 import useAxios from '../hook/useAxios';
 
 // Leaflet icon fix
@@ -36,6 +38,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const BusinessDetail = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { id } = useParams();
@@ -80,7 +83,7 @@ const BusinessDetail = () => {
         
       } catch (err) {
         console.error('❌ Error fetching business:', err);
-        setError(err.response?.data?.message || 'İşletme bilgileri yüklenemedi');
+        setError(err.response?.data?.message || t('businessDetail.businessLoadError'));
       } finally {
         setLoading(false);
       }
@@ -108,11 +111,11 @@ const BusinessDetail = () => {
     return (
       <Container sx={{ py: 4 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
-          {error || 'İşletme bulunamadı'}
+          {error || t('businessDetail.businessNotFound')}
         </Alert>
         <IconButton onClick={() => navigate('/')}>
           <ArrowBackIcon />
-          <Typography sx={{ ml: 1 }}>Ana Sayfaya Dön</Typography>
+          <Typography sx={{ ml: 1 }}>{t('common.backToHome')}</Typography>
         </IconButton>
       </Container>
     );
@@ -151,7 +154,7 @@ const BusinessDetail = () => {
                     color="primary"
                   />
                   <Chip 
-                    label={business.approvalStatus === 'approved' ? 'Verifiziert' : 'Ausstehend'} 
+                    label={business.approvalStatus === 'approved' ? t('businessDetail.verified') : t('businessDetail.pending')} 
                     size="small" 
                     color={business.approvalStatus === 'approved' ? 'success' : 'warning'}
                   />
@@ -161,14 +164,14 @@ const BusinessDetail = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <AccessTimeIcon fontSize="small" />
                     <Typography variant="body2">
-                      {business.openingHours || 'Heute, 00:30 — 23:30'}
+                      {business.openingHours || t('businessDetail.today')}
                     </Typography>
                   </Box>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <WcIcon fontSize="small" />
                     <Typography variant="body2">
-                      {toilets.length} {toilets.length === 1 ? 'Toilette' : 'Toiletten'}
+                      {toilets.length} {toilets.length === 1 ? t('businessDetail.toilet') : t('businessDetail.toilets')}
                     </Typography>
                   </Box>
                 </Box>
@@ -196,10 +199,8 @@ const BusinessDetail = () => {
                 style={{ height: isMobile ? '250px' : '300px', width: '100%' }}
                 scrollWheelZoom={false}
               >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
-                />
+                {/* Modern CartoDB Positron harita teması */}
+                <MapTileLayer mapStyle="positron" />
                 <Marker position={position} />
               </MapContainer>
             </Paper>
@@ -207,10 +208,10 @@ const BusinessDetail = () => {
             {/* Standort Info */}
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                Standort
+                {t('businessDetail.location')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Nach der Buchung wird die Adresse veröffentlicht
+                {t('businessDetail.locationDescription')}
               </Typography>
             </Paper>
 
@@ -220,7 +221,7 @@ const BusinessDetail = () => {
             ) : (
               <Paper sx={{ p: 3 }}>
                 <Alert severity="info">
-                  Keine Toiletten verfügbar für dieses Geschäft
+                  {t('businessDetail.noToilets')}
                 </Alert>
               </Paper>
             )}
@@ -237,7 +238,7 @@ const BusinessDetail = () => {
               ) : (
                 <Paper sx={{ p: 3 }}>
                   <Alert severity="warning">
-                    Reservierung derzeit nicht möglich - keine Toiletten verfügbar
+                    {t('businessDetail.reservationNotPossible')}
                   </Alert>
                 </Paper>
               )}

@@ -3,6 +3,7 @@ import React from 'react';
 import { AppBar, Toolbar, IconButton, Avatar, Box, useMediaQuery, useTheme } from '@mui/material';
 import { Logo } from '../Logo';
 import { UserMenu } from './UserMenu';
+import { LanguageSelector } from './LanguageSelector';
 import LoginIcon from '@mui/icons-material/Login';
 import MenuIcon from '@mui/icons-material/Menu';
 
@@ -12,6 +13,7 @@ export const HomeAppBar = ({
   onUserMenuOpen,
   onUserMenuClose,
   onMyBookingsClick,
+  onAdminPanelClick,
   onLogoutClick,
   onLoginClick,
   onLogoClick,
@@ -43,6 +45,11 @@ export const HomeAppBar = ({
         
         <Logo onClick={onLogoClick} />
 
+        <Box sx={{ flexGrow: 1 }} />
+
+        {/* Language Selector */}
+        <LanguageSelector />
+
         {/* User Menu or Login Button */}
         {currentUser ? (
           <Box>
@@ -63,6 +70,7 @@ export const HomeAppBar = ({
               open={Boolean(anchorElUser)}
               onClose={onUserMenuClose}
               onMyBookingsClick={onMyBookingsClick}
+              onAdminPanelClick={onAdminPanelClick}
               onLogoutClick={onLogoutClick}
               currentUser={currentUser}
               theme={theme}

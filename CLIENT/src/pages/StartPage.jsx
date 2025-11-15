@@ -1,4 +1,6 @@
+// pages/StartPage.jsx - COMPACT VERSION
 import React, { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -28,10 +30,17 @@ import StarIcon from "@mui/icons-material/Star";
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import LockIcon from "@mui/icons-material/Lock";
 import ClearIcon from "@mui/icons-material/Clear";
+import WcIcon from "@mui/icons-material/Wc";
+import FacebookIcon from "@mui/icons-material/Facebook";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import TwitterIcon from "@mui/icons-material/Twitter";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import AppleIcon from "@mui/icons-material/Apple";
+import AndroidIcon from "@mui/icons-material/Android";
 import AuthModal from "../components/AuthModal";
-import { Logo } from "../components/layout/Logo";
 
 const StartPage = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,43 +50,34 @@ const StartPage = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
-  // BusinessCard'dan yönlendirme ile gelindi mi kontrol et
   useEffect(() => {
     if (location.state?.openLoginModal) {
       setAuthModalOpen(true);
     }
   }, [location.state]);
 
-  // Handle search and navigate to Dashboard
   const handleSearch = async () => {
     if (searchLocation.trim()) {
       setIsSearching(true);
-      
-      // Simulate search delay
       setTimeout(() => {
         setIsSearching(false);
-        // Navigate to Home (Dashboard) with search query
         navigate(`/home?search=${encodeURIComponent(searchLocation.trim())}`);
       }, 500);
     } else {
-      // If empty, just navigate to Home
       navigate('/home');
     }
   };
 
-  // Handle Enter key press
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       handleSearch();
     }
   };
 
-  // Clear search and reset
   const handleClearSearch = () => {
     setSearchLocation("");
   };
 
-  // Get user's current location
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       setIsSearching(true);
@@ -86,13 +86,11 @@ const StartPage = () => {
           const { latitude, longitude } = position.coords;
           
           try {
-            // Use reverse geocoding to get city name from coordinates
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
             );
             const data = await response.json();
             
-            // Extract city name
             const city = data.address.city || 
                         data.address.town || 
                         data.address.village || 
@@ -102,7 +100,6 @@ const StartPage = () => {
             setSearchLocation(city);
             setIsSearching(false);
             
-            // Automatically navigate to Home with the location
             setTimeout(() => {
               navigate(`/home?search=${encodeURIComponent(city)}`);
             }, 300);
@@ -114,7 +111,7 @@ const StartPage = () => {
         },
         (error) => {
           console.error("Geolocation error:", error);
-          alert("Standort konnte nicht ermittelt werden. Bitte Standort manuell eingeben.");
+          alert(t('startPage.locationError'));
           setIsSearching(false);
         },
         {
@@ -124,7 +121,7 @@ const StartPage = () => {
         }
       );
     } else {
-      alert("Geolocation wird von deinem Browser nicht unterstützt.");
+      alert(t('startPage.locationNotSupported'));
     }
   };
 
@@ -133,58 +130,58 @@ const StartPage = () => {
       name: "Michael K.",
       time: "vor einem Tag",
       rating: 5,
-      text: "Bequemer Ort, um meine Tasche für ein paar Stunden aufzubewahren. Der Besitzer war sehr freundlich und hilfsbereit.",
+      text: "Sehr saubere Einrichtung. Absolut empfehlenswert!",
     },
     {
-      name: "Sara K. J. K.",
+      name: "Sara K.",
       time: "vor einem Tag",
       rating: 5,
-      text: "Der gesamte Ablauf war sehr einfach. Saubere und sichere Einrichtung. Würde auf jeden Fall wieder nutzen!",
+      text: "Einfacher Ablauf und sichere Umgebung.",
     },
     {
-      name: "Bhranswan N. L.",
+      name: "Bhranswan N.",
       time: "vor 2 Tagen",
       rating: 5,
-      text: "Ein Mitarbeiter des Ladens ist sehr freundlich und zuverlässig. Die Toilette war sehr sauber. Sehr empfehlenswert!",
+      text: "Freundlicher Service. Sehr zu empfehlen!",
     },
     {
       name: "Byron S.",
       time: "vor 2 Tagen",
       rating: 5,
-      text: "Nette und einfache Gegend. Toilette war perfekt zugänglich und in ausgezeichnetem Zustand. Sehr zu empfehlen.",
+      text: "Perfekt zugänglich und sehr sauber.",
     },
   ];
 
   const features = [
     {
-      icon: <MapIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />,
-      title: "Interaktive Karte",
-      description: "Finde Toiletten in Echtzeit auf unserer benutzerfreundlichen Karte",
+      icon: <MapIcon sx={{ fontSize: 40, color: '#0891b2' }} />,
+      title: t('startPage.features.interactiveMap.title'),
+      description: t('startPage.features.interactiveMap.description'),
     },
     {
-      icon: <CalendarTodayIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />,
-      title: "Einfache Reservierung",
-      description: "Buche im Voraus und spare Zeit - keine Wartezeiten mehr",
+      icon: <CalendarTodayIcon sx={{ fontSize: 40, color: '#0891b2' }} />,
+      title: t('startPage.features.easyBooking.title'),
+      description: t('startPage.features.easyBooking.description'),
     },
     {
-      icon: <PaymentIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />,
-      title: "Sichere Zahlung",
-      description: "Stripe und PayPal Integration für sichere Transaktionen",
+      icon: <PaymentIcon sx={{ fontSize: 40, color: '#0891b2' }} />,
+      title: t('startPage.features.securePayment.title'),
+      description: t('startPage.features.securePayment.description'),
     },
     {
-      icon: <StarIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />,
-      title: "Bewertungen",
-      description: "Lies echte Bewertungen von anderen Nutzern",
+      icon: <StarIcon sx={{ fontSize: 40, color: '#0891b2' }} />,
+      title: t('startPage.features.reviews.title'),
+      description: t('startPage.features.reviews.description'),
     },
     {
-      icon: <QrCodeIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />,
-      title: "QR-Code Zugang",
-      description: "Schneller und kontaktloser Zugang mit QR-Code",
+      icon: <QrCodeIcon sx={{ fontSize: 40, color: '#0891b2' }} />,
+      title: t('startPage.features.qrCode.title'),
+      description: t('startPage.features.qrCode.description'),
     },
     {
-      icon: <LockIcon sx={{ fontSize: 48, color: theme.palette.primary.main }} />,
-      title: "Sicher & Sauber",
-      description: "Alle Toiletten werden regelmäßig gereinigt und überprüft",
+      icon: <LockIcon sx={{ fontSize: 40, color: '#0891b2' }} />,
+      title: t('startPage.features.safeClean.title'),
+      description: t('startPage.features.safeClean.description'),
     },
   ];
 
@@ -196,51 +193,75 @@ const StartPage = () => {
         backgroundColor: "#f5f5f5",
       }}
     >
-      {/* Header */}
+      {/* Compact Header */}
       <AppBar
         position="fixed"
         sx={{
           backgroundColor: "white",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}
       >
-        <Toolbar>
-          <Logo onClick={() => navigate('/')} />
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexGrow: 1,
+              cursor: "pointer",
+            }}
+            onClick={() => navigate('/')}
+          >
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
+                borderRadius: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <WcIcon sx={{ color: "white", fontSize: 24 }} />
+            </Box>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                color: "#0891b2",
+                display: { xs: "none", sm: "block" },
+              }}
+            >
+              WCFinder
+            </Typography>
+          </Box>
 
           {!isMobile && (
-            <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
               <Typography
                 sx={{
-                  color: "#333",
+                  color: "#64748b",
+                  fontSize: '0.9rem',
                   fontWeight: 500,
                   cursor: "pointer",
                   "&:hover": { color: "#0891b2" },
                 }}
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Features
+                {t('startPage.featuresNav')}
               </Typography>
               <Typography
                 sx={{
-                  color: "#333",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  "&:hover": { color: "#0891b2" },
-                }}
-                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                So funktioniert's
-              </Typography>
-              <Typography
-                sx={{
-                  color: "#333",
+                  color: "#64748b",
+                  fontSize: '0.9rem',
                   fontWeight: 500,
                   cursor: "pointer",
                   "&:hover": { color: "#0891b2" },
                 }}
                 onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Bewertungen
+                {t('startPage.reviews')}
               </Typography>
               <Button
                 variant="outlined"
@@ -249,17 +270,19 @@ const StartPage = () => {
                   borderColor: "#0891b2",
                   color: "#0891b2",
                   fontWeight: 600,
-                  borderWidth: 2,
+                  borderWidth: 1.5,
                   borderRadius: 2,
-                  px: 3,
+                  px: 2.5,
+                  py: 0.75,
+                  fontSize: '0.875rem',
                   "&:hover": {
                     backgroundColor: "#0891b2",
                     color: "white",
-                    borderWidth: 2,
+                    borderWidth: 1.5,
                   },
                 }}
               >
-                Einloggen
+                {t('startPage.loginButton')}
               </Button>
             </Box>
           )}
@@ -273,22 +296,22 @@ const StartPage = () => {
                 borderColor: "#0891b2",
                 color: "#0891b2",
                 fontWeight: 600,
-                borderWidth: 2,
+                borderWidth: 1.5,
                 borderRadius: 2,
+                fontSize: '0.8rem',
                 "&:hover": {
                   backgroundColor: "#0891b2",
                   color: "white",
-                  borderWidth: 2,
+                  borderWidth: 1.5,
                 },
               }}
             >
-              Login
+              {t('startPage.loginButtonMobile')}
             </Button>
           )}
         </Toolbar>
       </AppBar>
 
-      {/* Auth Modal */}
       <AuthModal 
         open={authModalOpen} 
         onClose={() => setAuthModalOpen(false)}
@@ -296,25 +319,23 @@ const StartPage = () => {
         businessName={location.state?.businessName}
       />
 
-      {/* Hero Section */}
+      {/* Compact Hero Section */}
       <Box
         component={motion.div}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.6 }}
         sx={{
           position: "relative",
-          height: { xs: "auto", sm: 500, md: 600 }, // Tablet için orta boy
-          minHeight: { xs: 400, sm: 500 }, // Mobile'da minimum yükseklik
-          mt: 8,
+          height: { xs: "auto", md: 500 },
+          mt: { xs: 7, sm: 8 },
           background: "linear-gradient(135deg, rgba(8,145,178,0.9) 0%, rgba(6,182,212,0.7) 100%)",
           display: "flex",
           alignItems: "center",
           overflow: "hidden",
-          py: { xs: 4, sm: 6, md: 0 },
+          py: { xs: 3, md: 0 },
         }}
       >
-        {/* Background Pattern */}
         <Box
           sx={{
             position: "absolute",
@@ -328,80 +349,77 @@ const StartPage = () => {
         />
 
         <Container maxWidth="lg">
-          <Grid container spacing={4} alignItems="center">
-            {/* Hero Text */}
+          <Grid container spacing={3} alignItems="center">
             <Grid item xs={12} md={6}>
               <motion.div
-                initial={{ x: -50, opacity: 0 }}
+                initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
               >
                 <Typography
-                  variant={isMobile ? "h3" : "h2"}
+                  variant={isMobile ? "h4" : "h3"}
                   sx={{
                     fontWeight: "bold",
                     color: "white",
-                    mb: 2,
+                    mb: 1.5,
                     lineHeight: 1.2,
                   }}
                 >
-                  Finde saubere Toiletten
+                  {t('startPage.title')}
                   <br />
-                  in deiner Nähe
+                  {t('startPage.subtitle')}
                 </Typography>
                 <Typography
-                  variant="h6"
+                  variant="body1"
                   sx={{
                     color: "white",
-                    mb: 3,
+                    mb: 2,
                     opacity: 0.95,
                   }}
                 >
-                  Schnell, einfach und zuverlässig - Deine Toilette ist nur einen Klick
-                  entfernt
+                  {t('startPage.description')}
                 </Typography>
               </motion.div>
             </Grid>
 
-            {/* Search Card - Similar to BusinessSearchBar */}
             <Grid item xs={12} md={6}>
               <motion.div
-                initial={{ x: 50, opacity: 0 }}
+                initial={{ x: 30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
               >
                 <Card
                   sx={{
-                    p: 3,
-                    borderRadius: 4,
-                    boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                    p: 2.5,
+                    borderRadius: 3,
+                    boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
                   }}
                 >
-                  <CardContent>
-                    <Typography variant="h4" sx={{ fontWeight: "bold", mb: 1 }}>
-                      Toilettensuche
+                  <CardContent sx={{ p: 0 }}>
+                    <Typography variant="h5" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                      {t('startPage.searchTitle')}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      Buche ab € 1,60 pro Tag
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {t('startPage.searchSubtitle')}
                     </Typography>
 
-                    {/* Search Input - BusinessSearchBar Style */}
                     <TextField
                       fullWidth
                       variant="outlined"
-                      placeholder="Search by city or location..."
+                      placeholder={t('startPage.searchPlaceholder')}
                       value={searchLocation}
                       onChange={(e) => setSearchLocation(e.target.value)}
                       onKeyPress={handleKeyPress}
                       disabled={isSearching}
-                      sx={{ mb: 2 }}
+                      size="small"
+                      sx={{ mb: 1.5 }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
                             {isSearching ? (
-                              <CircularProgress size={20} />
+                              <CircularProgress size={18} />
                             ) : (
-                              <SearchIcon sx={{ color: "#999" }} />
+                              <SearchIcon sx={{ color: "#999", fontSize: '1.2rem' }} />
                             )}
                           </InputAdornment>
                         ),
@@ -410,18 +428,13 @@ const StartPage = () => {
                             <IconButton
                               size="small"
                               onClick={handleClearSearch}
-                              title="Clear search"
-                              sx={{
-                                mr: 1,
-                                "&:hover": { backgroundColor: "#e5e7eb" },
-                              }}
+                              sx={{ "&:hover": { backgroundColor: "#f3f4f6" } }}
                             >
                               <ClearIcon fontSize="small" />
                             </IconButton>
                             <IconButton
                               size="small"
                               onClick={handleGetLocation}
-                              title="Use my location"
                               disabled={isSearching}
                               sx={{
                                 backgroundColor: "#f3f4f6",
@@ -435,53 +448,51 @@ const StartPage = () => {
                         sx: {
                           borderRadius: 2,
                           '& .MuiOutlinedInput-notchedOutline': {
-                            borderColor: theme.palette.grey[300],
+                            borderColor: '#e2e8f0',
                           }
                         }
                       }}
                     />
 
-                    {/* Search Button */}
                     <Button
                       fullWidth
                       variant="contained"
-                      size="large"
                       onClick={() => navigate('/home')}
                       disabled={isSearching}
                       sx={{
-                        background:
-                          "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
-                        py: 1.5,
-                        fontSize: "1.1rem",
+                        background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
+                        py: 1.25,
+                        fontSize: "0.95rem",
                         fontWeight: 600,
                         borderRadius: 2,
+                        textTransform: 'none',
                         "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 10px 30px rgba(8,145,178,0.3)",
+                          transform: "translateY(-1px)",
+                          boxShadow: "0 6px 20px rgba(8,145,178,0.3)",
                         },
                         "&:disabled": {
-                          background: "#d1d5db",
+                          background: "#cbd5e1",
                         }
                       }}
                     >
                       {isSearching ? (
-                        <CircularProgress size={24} sx={{ color: "white" }} />
+                        <CircularProgress size={20} sx={{ color: "white" }} />
                       ) : (
-                        "Suche"
+                        t('startPage.searchButton')
                       )}
                     </Button>
 
-                    {/* Help Text */}
                     <Typography 
                       variant="caption" 
                       sx={{ 
                         display: "block", 
-                        mt: 2, 
+                        mt: 1.5, 
                         textAlign: "center",
-                        color: "text.secondary" 
+                        color: "text.secondary",
+                        fontSize: '0.75rem'
                       }}
                     >
-                      Tipp: Versuche "Bonn", "Köln" oder nutze deinen Standort
+                      {t('startPage.searchHint')}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -491,71 +502,63 @@ const StartPage = () => {
         </Container>
       </Box>
 
-      {/* Trust Section */}
-      <Box sx={{ py: 8, backgroundColor: "white" }} id="reviews">
+      {/* Compact Reviews */}
+      <Box sx={{ py: 5, backgroundColor: "white" }} id="reviews">
         <Container maxWidth="lg">
           <motion.div
-            initial={{ y: 30, opacity: 0 }}
+            initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
-            <Box sx={{ textAlign: "center", mb: 6 }}>
-              <Typography variant="h5" sx={{ mb: 1 }}>
-                Uns wurde von <strong style={{ color: "#0891b2" }}>327.000+</strong>{" "}
-                Personen mit einer Bewertung von{" "}
-                <strong style={{ color: "#0891b2" }}>4.8</strong> vertraut
+            <Box sx={{ textAlign: "center", mb: 4 }}>
+              <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 600 }}>
+                <strong style={{ color: "#0891b2" }}>327.000+</strong> {t('startPage.trustTitle').replace('327.000+ ', '')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Automatisch übersetzt
+                {t('startPage.trustSubtitle')}
               </Typography>
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               {reviews.map((review, index) => (
                 <Grid item xs={12} sm={6} md={3} key={index}>
-                  <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1, duration: 0.6 }}
+                  <Card
+                    sx={{
+                      height: "100%",
+                      backgroundColor: "#f9fafb",
+                      borderRadius: 2,
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        transform: "translateY(-3px)",
+                        boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+                      },
+                    }}
                   >
-                    <Card
-                      sx={{
-                        height: "100%",
-                        backgroundColor: "#f9fafb",
-                        transition: "all 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                          boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            mb: 2,
-                          }}
-                        >
-                          <Box>
-                            <Typography variant="subtitle1" fontWeight="bold">
-                              {review.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {review.time}
-                            </Typography>
-                          </Box>
-                          <Rating value={review.rating} readOnly size="small" />
+                    <CardContent sx={{ p: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          mb: 1,
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {review.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {review.time}
+                          </Typography>
                         </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {review.text}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
+                        <Rating value={review.rating} readOnly size="small" sx={{ fontSize: '1rem' }} />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                        {review.text}
+                      </Typography>
+                    </CardContent>
+                  </Card>
                 </Grid>
               ))}
             </Grid>
@@ -563,106 +566,393 @@ const StartPage = () => {
         </Container>
       </Box>
 
-      {/* Features Section */}
+      {/* Compact Features */}
       <Box
         sx={{
-          py: 8,
+          py: 5,
           background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
         }}
         id="features"
       >
         <Container maxWidth="lg">
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <Box sx={{ textAlign: "center", mb: 6 }}>
-              <Typography
-                variant={isMobile ? "h3" : "h2"}
-                sx={{ fontWeight: "bold", mb: 2 }}
-              >
-                Warum WCFinder?
-              </Typography>
-              <Typography variant="h6" color="text.secondary">
-                Die beste Lösung für deine Toilettenbedürfnisse
-              </Typography>
-            </Box>
+          <Box sx={{ textAlign: "center", mb: 4 }}>
+            <Typography variant="h4" sx={{ fontWeight: "bold", mb: 1 }}>
+              {t('startPage.whyTitle')}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {t('startPage.whySubtitle')}
+            </Typography>
+          </Box>
 
-            <Grid container spacing={3}>
-              {features.map((feature, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                  <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    whileInView={{ y: 0, opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1, duration: 0.6 }}
-                  >
-                    <Card
-                      sx={{
-                        height: "100%",
-                        textAlign: "center",
-                        p: 3,
-                        transition: "transform 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-5px)",
-                        },
-                      }}
-                    >
-                      <CardContent>
-                        <Box sx={{ mb: 2 }}>{feature.icon}</Box>
-                        <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
-                          {feature.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {feature.description}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
-          </motion.div>
+          <Grid container spacing={2}>
+            {features.map((feature, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    textAlign: "center",
+                    p: 2,
+                    borderRadius: 2,
+                    transition: "transform 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                    },
+                  }}
+                >
+                  <CardContent sx={{ p: 1.5 }}>
+                    <Box sx={{ mb: 1.5 }}>{feature.icon}</Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 0.5 }}>
+                      {feature.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem' }}>
+                      {feature.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
         </Container>
       </Box>
 
-      {/* Footer CTA */}
+      {/* Compact Footer CTA */}
       <Box
         sx={{
-          py: 6,
+          py: 4,
           backgroundColor: "white",
           textAlign: "center",
         }}
-        id="how-it-works"
       >
         <Container maxWidth="md">
-          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
-            Bereit loszulegen?
+          <Typography variant="h5" sx={{ fontWeight: "bold", mb: 1 }}>
+            {t('startPage.readyTitle')}
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-            Finde jetzt die nächste saubere Toilette in deiner Nähe
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2.5 }}>
+            {t('startPage.readySubtitle')}
           </Typography>
           <Button
             variant="contained"
             size="large"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/home')}
             sx={{
               background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
-              px: 6,
-              py: 1.5,
-              fontSize: "1.1rem",
+              px: 5,
+              py: 1.25,
+              fontSize: "1rem",
               fontWeight: 600,
               borderRadius: 2,
+              textTransform: 'none',
               "&:hover": {
                 transform: "translateY(-2px)",
-                boxShadow: "0 10px 30px rgba(8,145,178,0.3)",
+                boxShadow: "0 8px 20px rgba(8,145,178,0.3)",
               },
             }}
           >
-            Jetzt starten
+            {t('startPage.readyButton')}
           </Button>
+        </Container>
+      </Box>
+
+      {/* Footer */}
+      <Box
+        sx={{
+          backgroundColor: "#1e293b",
+          color: "white",
+          pt: 5,
+          pb: 3,
+        }}
+      >
+        <Container maxWidth="lg">
+          <Grid container spacing={4}>
+            {/* Links Section */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  color: "white",
+                  fontSize: '1rem'
+                }}
+              >
+                {t('startPage.footer.kontakt')}
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography
+                  component="a"
+                  href="mailto:info@wcfinder.com"
+                  sx={{
+                    color: "#cbd5e1",
+                    textDecoration: "none",
+                    fontSize: '0.875rem',
+                    "&:hover": { color: "#0891b2" },
+                  }}
+                >
+                  info@wcfinder.com
+                </Typography>
+                <Typography
+                  sx={{
+                    color: "#cbd5e1",
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  +49 (0) 123 456 789
+                </Typography>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  color: "white",
+                  fontSize: '1rem'
+                }}
+              >
+                {t('startPage.footer.uberUns')}
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography
+                  component="a"
+                  href="#"
+                  sx={{
+                    color: "#cbd5e1",
+                    textDecoration: "none",
+                    fontSize: '0.875rem',
+                    "&:hover": { color: "#0891b2" },
+                  }}
+                >
+                  {t('startPage.footer.uberUns')}
+                </Typography>
+                <Typography
+                  component="a"
+                  href="#"
+                  sx={{
+                    color: "#cbd5e1",
+                    textDecoration: "none",
+                    fontSize: '0.875rem',
+                    "&:hover": { color: "#0891b2" },
+                  }}
+                >
+                  {t('startPage.footer.partnerWerden')}
+                </Typography>
+                <Typography
+                  component="a"
+                  href="#"
+                  sx={{
+                    color: "#cbd5e1",
+                    textDecoration: "none",
+                    fontSize: '0.875rem',
+                    "&:hover": { color: "#0891b2" },
+                  }}
+                >
+                  {t('startPage.footer.wieFunktioniertDas')}
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Social Media & App Store */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  color: "white",
+                  fontSize: '1rem'
+                }}
+              >
+                {t('startPage.footer.followUs')}
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1.5, mb: 3 }}>
+                <IconButton
+                  component="a"
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: "#cbd5e1",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      backgroundColor: "#0891b2",
+                      color: "white",
+                    },
+                  }}
+                >
+                  <FacebookIcon />
+                </IconButton>
+                <IconButton
+                  component="a"
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: "#cbd5e1",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      backgroundColor: "#0891b2",
+                      color: "white",
+                    },
+                  }}
+                >
+                  <InstagramIcon />
+                </IconButton>
+                <IconButton
+                  component="a"
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: "#cbd5e1",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      backgroundColor: "#0891b2",
+                      color: "white",
+                    },
+                  }}
+                >
+                  <TwitterIcon />
+                </IconButton>
+                <IconButton
+                  component="a"
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    color: "#cbd5e1",
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      backgroundColor: "#0891b2",
+                      color: "white",
+                    },
+                  }}
+                >
+                  <LinkedInIcon />
+                </IconButton>
+              </Box>
+            </Grid>
+
+            {/* App Store Links */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  mb: 2,
+                  color: "white",
+                  fontSize: '1rem'
+                }}
+              >
+                {t('startPage.footer.downloadApp')}
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Button
+                  component="a"
+                  href="https://apps.apple.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outlined"
+                  startIcon={<AppleIcon />}
+                  sx={{
+                    borderColor: "#475569",
+                    color: "white",
+                    textTransform: 'none',
+                    justifyContent: "flex-start",
+                    "&:hover": {
+                      borderColor: "#0891b2",
+                      backgroundColor: "rgba(8,145,178,0.1)",
+                    },
+                  }}
+                >
+                  {t('startPage.footer.appStore')}
+                </Button>
+                <Button
+                  component="a"
+                  href="https://play.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="outlined"
+                  startIcon={<AndroidIcon />}
+                  sx={{
+                    borderColor: "#475569",
+                    color: "white",
+                    textTransform: 'none',
+                    justifyContent: "flex-start",
+                    "&:hover": {
+                      borderColor: "#0891b2",
+                      backgroundColor: "rgba(8,145,178,0.1)",
+                    },
+                  }}
+                >
+                  {t('startPage.footer.googlePlay')}
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Bottom Section */}
+          <Box
+            sx={{
+              mt: 4,
+              pt: 3,
+              borderTop: "1px solid #334155",
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#94a3b8",
+                fontSize: '0.875rem',
+              }}
+            >
+              {t('startPage.footer.copyright')}
+            </Typography>
+            <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+              <Typography
+                component="a"
+                href="#"
+                sx={{
+                  color: "#94a3b8",
+                  textDecoration: "none",
+                  fontSize: '0.875rem',
+                  "&:hover": { color: "#0891b2" },
+                }}
+              >
+                {t('startPage.footer.privacy')}
+              </Typography>
+              <Typography
+                component="a"
+                href="#"
+                sx={{
+                  color: "#94a3b8",
+                  textDecoration: "none",
+                  fontSize: '0.875rem',
+                  "&:hover": { color: "#0891b2" },
+                }}
+              >
+                {t('startPage.footer.terms')}
+              </Typography>
+              <Typography
+                component="a"
+                href="#"
+                sx={{
+                  color: "#94a3b8",
+                  textDecoration: "none",
+                  fontSize: '0.875rem',
+                  "&:hover": { color: "#0891b2" },
+                }}
+              >
+                {t('startPage.footer.imprint')}
+              </Typography>
+            </Box>
+          </Box>
         </Container>
       </Box>
     </Box>

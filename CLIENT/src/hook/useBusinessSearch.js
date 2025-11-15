@@ -6,6 +6,12 @@ export const useBusinessSearch = (onLocationFound) => {
   const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef(null);
+  const onLocationFoundRef = useRef(onLocationFound);
+
+  // onLocationFound callback'ini ref'te tut ki dependency array'de olmasın
+  useEffect(() => {
+    onLocationFoundRef.current = onLocationFound;
+  }, [onLocationFound]);
 
   useEffect(() => {
     if (searchTimeout.current) {
@@ -17,11 +23,16 @@ export const useBusinessSearch = (onLocationFound) => {
         setIsSearching(true);
         const location = await searchLocation(search);
         
-        if (location && onLocationFound) {
-          onLocationFound(location);
+        if (location && onLocationFoundRef.current) {
+          onLocationFoundRef.current(location);
         }
         setIsSearching(false);
       }, 1000);
+    } else {
+      // Arama temizlendiğinde location'ı da temizle
+      if (onLocationFoundRef.current) {
+        onLocationFoundRef.current(null);
+      }
     }
 
     return () => {
@@ -29,12 +40,12 @@ export const useBusinessSearch = (onLocationFound) => {
         clearTimeout(searchTimeout.current);
       }
     };
-  }, [search, onLocationFound]);
+  }, [search]); // onLocationFound'ı dependency'den çıkardık
 
   const clearSearch = () => {
     setSearch("");
-    if (onLocationFound) {
-      onLocationFound(null);
+    if (onLocationFoundRef.current) {
+      onLocationFoundRef.current(null);
     }
   };
 

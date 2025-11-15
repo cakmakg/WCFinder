@@ -1,12 +1,13 @@
 // components/BusinessCard.jsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
   Card, 
   CardContent, 
   Typography, 
-  CardActionArea, 
+  CardActionArea,
   Box,
   Rating,
   Chip,
@@ -17,6 +18,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const BusinessCard = ({ business, isSelected }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
   
@@ -27,7 +29,7 @@ const BusinessCard = ({ business, isSelected }) => {
   const rating = 4.2;
   const reviewCount = 156;
 
-  const handleClick = (e) => {
+  const handleDoubleClick = (e) => {
     e.stopPropagation();
     
     // Business detail sayfası private route, login kontrolü PrivateRouter'da yapılıyor
@@ -60,16 +62,20 @@ const BusinessCard = ({ business, isSelected }) => {
           boxShadow: '0 6px 20px rgba(8,145,178,0.15)',
           transform: 'translateY(-2px)',
           borderColor: '#0891b2',
-        },
-        '&:hover .arrow-icon': {
-          transform: 'translateX(3px)',
         }
       }}
     >
       <CardActionArea 
-        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        onClick={(e) => {
+          // Tek tıklamada event'i propagate et ki BusinessList'teki onClick çalışsın
+          // CardActionArea event'i engellemesin
+        }}
         sx={{ 
           height: '100%',
+          '&:hover .arrow-icon': {
+            transform: 'translateX(3px)',
+          }
         }}
       >
         <CardContent sx={{ p: 1.5 }}>
@@ -236,7 +242,7 @@ const BusinessCard = ({ business, isSelected }) => {
                   fontSize: '0.65rem' 
                 }}
               >
-                ab
+                {t('businessCard.from')}
               </Typography>
               <Typography 
                 variant="h6" 
@@ -256,7 +262,7 @@ const BusinessCard = ({ business, isSelected }) => {
                   fontSize: '0.65rem' 
                 }}
               >
-                /Tag
+                {t('common.perDay')}
               </Typography>
             </Box>
             

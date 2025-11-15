@@ -12,32 +12,34 @@ export const DrawerContent = ({
   theme 
 }) => {
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ 
-        p: 2, 
-        background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-        color: 'white',
-        position: 'relative'
-      }}>
-        {isMobile && (
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      backgroundColor: '#f8f9fa'
+    }}>
+      {/* Turkuaz şerit kaldırıldı */}
+      {isMobile && (
+        <Box sx={{ position: 'relative', p: 1 }}>
           <IconButton
             onClick={onClose}
             sx={{ 
               position: 'absolute',
               top: 8,
               right: 8,
-              color: 'white'
+              color: '#64748b',
+              zIndex: 1
             }}
           >
             <CloseIcon />
           </IconButton>
-        )}
-      </Box>
+        </Box>
+      )}
 
       <NavigationMenu onNavigate={onNavigate} theme={theme} />
       <Divider sx={{ mx: 2 }} />
       
-      <Box sx={{ flex: 1, overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {businessListComponent}
       </Box>
     </Box>

@@ -1,4 +1,5 @@
 // src/components/map/MapMarker.jsx
+import { useEffect, useRef } from 'react';
 import { Marker } from 'react-leaflet';
 import { MarkerPopup } from './MarkerPopup';
 import { createCustomIcon } from '../../utils/markerUtils';
@@ -8,6 +9,8 @@ export const MapMarker = ({
   selectedBusiness, 
   theme 
 }) => {
+  const markerRef = useRef(null);
+
   if (!toiletItem.business?.location?.coordinates) return null;
 
   const coordinates = toiletItem.business.location.coordinates;
@@ -26,8 +29,23 @@ export const MapMarker = ({
     markerColor = theme.palette.info.main;
   }
 
+  // selectedBusiness değiştiğinde popup'ı aç
+  useEffect(() => {
+    if (isSelected && markerRef.current) {
+      // MapController zoom yaptıktan sonra popup'ı aç (1.5 saniye sonra)
+      const timer = setTimeout(() => {
+        if (markerRef.current) {
+          markerRef.current.openPopup();
+        }
+      }, 1600); // MapController'daki flyTo duration (1.5s) + 100ms buffer
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isSelected, selectedBusiness]);
+
   return (
     <Marker 
+      ref={markerRef}
       position={position}
       icon={createCustomIcon(markerColor)}
     >

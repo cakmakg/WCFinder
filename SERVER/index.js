@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoose = require('mongoose');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -33,6 +34,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
+
+// ✅ Static files (PDF'ler için)
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 app.use(require('./src/middleware/authentication'));
 

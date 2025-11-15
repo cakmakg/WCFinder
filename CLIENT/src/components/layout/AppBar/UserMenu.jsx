@@ -1,18 +1,22 @@
 // src/components/layout/AppBar/UserMenu.jsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, MenuItem, Divider, Typography, Box, ListItemIcon } from '@mui/material';
 import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 export const UserMenu = ({ 
   anchorEl, 
   open, 
   onClose, 
   onMyBookingsClick, 
+  onAdminPanelClick,
   onLogoutClick,
   currentUser,
   theme 
 }) => {
+  const { t } = useTranslation();
   return (
     <Menu
       anchorEl={anchorEl}
@@ -49,8 +53,21 @@ export const UserMenu = ({
         <ListItemIcon>
           <BookmarksIcon fontSize="small" sx={{ color: '#0891b2' }} />
         </ListItemIcon>
-        <Typography>Meine Buchungen</Typography>
+        <Typography>{t('userMenu.myBookings')}</Typography>
       </MenuItem>
+
+      {/* Admin Panel - Sadece admin için */}
+      {currentUser?.role === 'admin' && (
+        <>
+          <Divider />
+          <MenuItem onClick={onAdminPanelClick}>
+            <ListItemIcon>
+              <AdminPanelSettingsIcon fontSize="small" sx={{ color: '#7c3aed' }} />
+            </ListItemIcon>
+            <Typography>{t('userMenu.adminPanel')}</Typography>
+          </MenuItem>
+        </>
+      )}
 
       <Divider />
 
@@ -59,7 +76,7 @@ export const UserMenu = ({
         <ListItemIcon>
           <LogoutIcon fontSize="small" sx={{ color: '#ef4444' }} />
         </ListItemIcon>
-        <Typography color="error">Abmelden</Typography>
+        <Typography color="error">{t('userMenu.logout')}</Typography>
       </MenuItem>
     </Menu>
   );

@@ -1,5 +1,6 @@
 // pages/BusinessList.jsx
 import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import useCrudCall from '../../hook/useCrudCall';
 import BusinessCard from '../BusinessCard';
@@ -20,6 +21,7 @@ const BusinessList = ({
   onLocationSearch,
   initialSearch = '' // StartPage'den gelen search parametresi
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   
   const { getCrudData } = useCrudCall();
@@ -57,9 +59,11 @@ const BusinessList = ({
   return (
     <Box sx={{ 
       p: 2,
-      maxHeight: '100vh',
+      pb: 3, // Alt padding ekle ki son card tamamen görünsün
+      height: '100%',
       overflowY: 'auto',
-      backgroundColor: 'white'
+      backgroundColor: '#f8f9fa',
+      boxSizing: 'border-box'
     }}>
       <BusinessSearchBar
         search={search}
@@ -71,7 +75,7 @@ const BusinessList = ({
 
       {business && business.length > 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {filteredBusinesses?.length || 0} Locations found
+          {filteredBusinesses?.length || 0} {t('businessList.locationsFound')}
         </Typography>
       )}
 
@@ -83,7 +87,7 @@ const BusinessList = ({
       
       {error && (
         <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
-          Failed to load locations.
+          {t('businessList.loadError')}
         </Alert>
       )}
 
@@ -101,7 +105,10 @@ const BusinessList = ({
                 flexShrink: 0,
                 cursor: 'pointer'
               }}
-              onClick={() => onBusinessClick(businessItem)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onBusinessClick(businessItem);
+              }}
             >
               <BusinessCard 
                 business={businessItem}
@@ -115,8 +122,8 @@ const BusinessList = ({
           <Box sx={{ textAlign: 'center', p: 3 }}>
             <Typography variant="body2" color="text.secondary">
               {search 
-                ? `No results found for "${search}"` 
-                : "No locations available"
+                ? t('businessList.noResults', { search })
+                : t('businessList.noLocations')
               }
             </Typography>
           </Box>

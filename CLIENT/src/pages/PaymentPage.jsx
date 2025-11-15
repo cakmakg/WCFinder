@@ -1,6 +1,7 @@
 // pages/PaymentPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Container,
   Box,
@@ -30,6 +31,7 @@ import { PayPalButton } from '../components/payment/PayPalButton';
 import paymentService from '../services/paymentService';
 
 const PaymentPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const bookingData = location.state;
@@ -51,7 +53,7 @@ const PaymentPage = () => {
               boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
             }}
           >
-            Keine Buchungsinformationen gefunden
+            {t('payment.noBookingInfo')}
           </Alert>
           <Button 
             onClick={() => navigate('/')} 
@@ -61,7 +63,7 @@ const PaymentPage = () => {
               '&:hover': { backgroundColor: 'rgba(8,145,178,0.08)' }
             }}
           >
-            Zurück zur Startseite
+            {t('common.backToHome')}
           </Button>
         </Container>
       </Box>
@@ -89,7 +91,7 @@ const PaymentPage = () => {
       setUsageId(response.result.paymentId);
     } catch (err) {
       console.error('Stripe error:', err);
-      setError(err.response?.data?.message || 'Fehler beim Initialisieren der Zahlung');
+      setError(err.response?.data?.message || t('payment.paymentInitError'));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ const PaymentPage = () => {
 
   const handlePaymentError = (error) => {
     console.error('Payment error:', error);
-    setError('Zahlung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+    setError(t('payment.paymentFailed'));
   };
 
   return (
@@ -138,10 +140,10 @@ const PaymentPage = () => {
               color: '#1e293b'
             }}
           >
-            Zahlung
+            {t('payment.title')}
           </Typography>
           <Typography variant="body1" sx={{ color: '#64748b' }}>
-            Wählen Sie Ihre bevorzugte Zahlungsmethode
+            {t('payment.subtitle')}
           </Typography>
         </Box>
 
@@ -183,7 +185,7 @@ const PaymentPage = () => {
                   color: '#1e293b'
                 }}
               >
-                Zahlungsmethode
+                {t('payment.paymentMethod')}
               </Typography>
 
               <FormControl component="fieldset" fullWidth>
@@ -213,10 +215,10 @@ const PaymentPage = () => {
                         <CreditCardIcon sx={{ fontSize: '2rem', color: '#0891b2', mx: 2 }} />
                         <Box sx={{ flex: 1 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            Kredit- oder Debitkarte
+                            {t('payment.creditCard')}
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#64748b' }}>
-                            Visa, Mastercard, American Express
+                            {t('payment.creditCardDescription')}
                           </Typography>
                         </Box>
                         {paymentMethod === 'card' && (
@@ -260,10 +262,10 @@ const PaymentPage = () => {
                         </Box>
                         <Box sx={{ flex: 1 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            PayPal
+                            {t('payment.paypal')}
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#64748b' }}>
-                            Zahlen Sie sicher mit PayPal
+                            {t('payment.paypalDescription')}
                           </Typography>
                         </Box>
                         {paymentMethod === 'paypal' && (
@@ -320,10 +322,10 @@ const PaymentPage = () => {
                 <LockIcon sx={{ color: '#0891b2', fontSize: '1.5rem' }} />
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#0891b2' }}>
-                    Sichere Zahlung
+                    {t('payment.securePayment')}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#0369a1' }}>
-                    Ihre Zahlung ist durch SSL-Verschlüsselung geschützt
+                    {t('payment.securePaymentDescription')}
                   </Typography>
                 </Box>
               </Box>

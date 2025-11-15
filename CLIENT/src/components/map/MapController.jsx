@@ -2,12 +2,18 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 
-export const MapController = ({ selectedBusiness, searchedLocation }) => {
+export const MapController = ({ selectedBusiness, searchedLocation, userLocation }) => {
   const map = useMap();
   
   useEffect(() => {
+    // searchedLocation'a öncelik ver (kullanıcı arama yaptığında)
     if (searchedLocation) {
       map.flyTo([searchedLocation.lat, searchedLocation.lng], 13, {
+        duration: 1.5
+      });
+    } else if (userLocation) {
+      // Kullanıcı konumuna zoom yap
+      map.flyTo([userLocation.lat, userLocation.lng], 15, {
         duration: 1.5
       });
     } else if (selectedBusiness?.location?.coordinates) {
@@ -16,7 +22,7 @@ export const MapController = ({ selectedBusiness, searchedLocation }) => {
         duration: 1.5
       });
     }
-  }, [selectedBusiness, searchedLocation, map]);
+  }, [selectedBusiness, searchedLocation, userLocation, map]);
   
   return null;
 };

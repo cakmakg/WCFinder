@@ -23,6 +23,8 @@ router.use('/documents', require('./document'));
 
 router.use('/usages', require('./usage'));
 router.use('/payments', require('./payment'));
+router.use('/business-payouts', require('./businessPayout'));
+router.use('/rechnungen', require('./rechnung'));
 
 
 // review:

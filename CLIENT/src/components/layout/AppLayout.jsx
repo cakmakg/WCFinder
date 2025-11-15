@@ -22,6 +22,11 @@ const AppLayout = () => {
     handleUserMenuClose();
   };
 
+  const handleAdminPanelClick = () => {
+    navigate('/admin');
+    handleUserMenuClose();
+  };
+
   const handleLogoutClick = async () => {
     try {
       await logout();
@@ -36,17 +41,18 @@ const AppLayout = () => {
 
             {/* AppBar */}
             <HomeAppBar
-              currentUser={currentUser}
-              anchorElUser={anchorElUser}
-              onUserMenuOpen={handleUserMenuOpen}
-              onUserMenuClose={handleUserMenuClose}
-              onMyBookingsClick={handleMyBookingsClick}
-              onLogoutClick={handleLogoutClick}
+        currentUser={currentUser}
+        anchorElUser={anchorElUser}
+        onUserMenuOpen={handleUserMenuOpen}
+        onUserMenuClose={handleUserMenuClose}
+        onMyBookingsClick={handleMyBookingsClick}
+        onAdminPanelClick={handleAdminPanelClick}
+        onLogoutClick={handleLogoutClick}
               onLoginClick={() => navigate('/')}
               onLogoClick={() => navigate('/home')}
               onMenuClick={undefined} // AppLayout'ta drawer yok, menu button gösterme
-              theme={theme}
-            />
+        theme={theme}
+      />
 
       {/* Main Content */}
       <Box

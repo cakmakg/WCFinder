@@ -59,6 +59,11 @@ export default function Home() {
     handleUserMenuClose();
   };
 
+  const handleAdminPanelClick = () => {
+    navigate('/admin');
+    handleUserMenuClose();
+  };
+
   const handleLogoutClick = async () => {
     try {
       await logout();
@@ -78,6 +83,7 @@ export default function Home() {
         onUserMenuOpen={handleUserMenuOpen}
         onUserMenuClose={handleUserMenuClose}
         onMyBookingsClick={handleMyBookingsClick}
+        onAdminPanelClick={handleAdminPanelClick}
         onLogoutClick={handleLogoutClick}
         onLoginClick={() => navigate('/')}
         onLogoClick={() => navigate('/home')}
@@ -105,7 +111,7 @@ export default function Home() {
               boxSizing: 'border-box',
               width: { xs: DRAWER_WIDTH_MOBILE, sm: DRAWER_WIDTH },
               maxWidth: '90vw', // Mobile'da ekran genişliğini aşmasın
-              backgroundColor: 'white',
+              backgroundColor: '#f8f9fa',
               border: 'none',
               mt: 8,
             },
@@ -135,7 +141,7 @@ export default function Home() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
-              backgroundColor: 'white',
+              backgroundColor: '#f8f9fa',
               borderRight: `1px solid ${theme.palette.divider}`,
               mt: 8,
               height: 'calc(100% - 64px)',

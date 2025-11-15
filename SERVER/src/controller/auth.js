@@ -73,6 +73,10 @@ module.exports = {
         // ✅ CRITICAL FIX: Şifreyi MANUEL hash'le
         const userData = { ...req.body };
         userData.password = passwordEncrypt(password);
+        
+        // ✅ GÜVENLİK: Register sırasında sadece 'user' role'ü ile kayıt olabilsin
+        // Owner ve admin rolleri sadece admin tarafından atanabilir
+        userData.role = 'user';
 
         const user = await User.create(userData);
 
