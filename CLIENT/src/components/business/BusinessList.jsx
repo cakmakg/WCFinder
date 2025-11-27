@@ -28,6 +28,16 @@ const BusinessList = ({
   const { business, loading, error } = useSelector((state) => state.crud);
   
   const hasFetched = useRef(false);
+
+  // Debug: Business verilerini logla
+  useEffect(() => {
+    console.log("📊 BusinessList - Current business data:", {
+      count: business?.length || 0,
+      businesses: business,
+      loading,
+      error
+    });
+  }, [business, loading, error]);
   
   const { 
     search, 
@@ -38,6 +48,16 @@ const BusinessList = ({
   
   const filteredBusinesses = useBusinessFilter(business, search);
 
+  // Debug: Filtered businesses
+  useEffect(() => {
+    console.log("🔍 BusinessList - Filtered businesses:", {
+      total: business?.length || 0,
+      filtered: filteredBusinesses?.length || 0,
+      searchTerm: search,
+      filteredList: filteredBusinesses
+    });
+  }, [business, filteredBusinesses, search]);
+
   // URL'den gelen initialSearch'ü uygula
   useEffect(() => {
     if (initialSearch && initialSearch.trim()) {
@@ -47,10 +67,57 @@ const BusinessList = ({
 
   // Business verilerini yükle - auth gerekmeden
   useEffect(() => {
-    if (hasFetched.current) return;
-    getCrudData('business', false); // ✅ Public endpoint
+    console.log("🔄 BusinessList - Loading business data...");
+    getCrudData('business', false, 1000); // ✅ Public endpoint, limit: 1000 (tüm business'ları getir)
     hasFetched.current = true;
   }, []);
+
+  // Sayfa görünür olduğunda veya focus olduğunda veriyi yenile (yeni business oluşturulduktan sonra)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && hasFetched.current) {
+        // Sayfa tekrar görünür olduğunda veriyi yenile
+        console.log("🔄 Refreshing business list (visibility change)");
+        getCrudData('business', false, 1000);
+      }
+    };
+
+    const handleFocus = () => {
+      if (hasFetched.current) {
+        // Window focus olduğunda veriyi yenile
+        console.log("🔄 Refreshing business list (window focus)");
+        getCrudData('business', false, 1000);
+      }
+    };
+
+    // Storage event listener - başka tab'da değişiklik olduğunda
+    const handleStorageChange = (e) => {
+      if (e.key === 'business_updated' && hasFetched.current) {
+        console.log("🔄 Refreshing business list (storage event)");
+        getCrudData('business', false, 1000);
+      }
+    };
+
+    // Custom event listener - aynı tab'da değişiklik olduğunda
+    const handleBusinessUpdate = () => {
+      if (hasFetched.current) {
+        console.log("🔄 Refreshing business list (custom event)");
+        getCrudData('business', false, 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('businessUpdated', handleBusinessUpdate);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('businessUpdated', handleBusinessUpdate);
+    };
+  }, [getCrudData]);
 
   const handleClearSearch = () => {
     clearSearch();

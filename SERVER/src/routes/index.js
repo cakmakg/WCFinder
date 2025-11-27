@@ -31,7 +31,7 @@ router.use('/rechnungen', require('./rechnung'));
 router.use('/review', require('./review'));
 
 // toilet:
-router.use('/toilet', require('./toilet'));
+router.use('/toilets', require('./toilet'));
 
 /* ------------------------------------------------------- */
 module.exports = router;

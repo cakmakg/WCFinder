@@ -9,9 +9,12 @@ import useApiCall from "./useApiCall";
 const useCrudCall = () => {
   const apiCall = useApiCall();
 
-  const getCrudData = async (url, requiresAuth = false) => {
+  const getCrudData = async (url, requiresAuth = false, limit = null) => {
+    // Limit parametresi ekle (business listesi için tüm kayıtları getirmek için)
+    const urlWithParams = limit ? `/${url}?limit=${limit}` : `/${url}`;
+    
     await apiCall({
-      url: `/${url}`,
+      url: urlWithParams,
       method: "get",
       startAction: fetchStart,
       successAction: (data) => getSuccess({ url, data }),

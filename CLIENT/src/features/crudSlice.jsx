@@ -58,14 +58,19 @@ const crudSlice = createSlice({
 const getStateFieldFromUrl = (url) => {
   const cleanUrl = url.replace(/^\/+|\/+$/g, '');
   
+  console.log('🔍 getStateFieldFromUrl - Input:', { url, cleanUrl });
+  
   // Backend route'larınıza göre mapping - DÜZELTME!
   const urlMapping = {
     'business': 'business',  // businesses DEĞİL, business!
-    'toilet': 'toilet', 
+    'toilets': 'toilet',     // URL: /toilets, State: toilet
+    'toilet': 'toilet',      // Eski kullanım için backward compatibility
     'users': 'users',
   };
   
-  return urlMapping[cleanUrl] || cleanUrl;
+  const mappedField = urlMapping[cleanUrl] || cleanUrl;
+  console.log('🔍 getStateFieldFromUrl - Output:', mappedField);
+  return mappedField;
 };
 
 export const { fetchStart, getSuccess, fetchFail } = crudSlice.actions;

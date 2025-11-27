@@ -1,41 +1,68 @@
 "use strict"
-/* -------------------------------------------------------
-    | FULLSTACK TEAM | NODEJS / EXPRESS |
-------------------------------------------------------- */
-// node i nodemailer
-// sendMail(to:string, subject:string, message:string):
+/**
+ * Email Service Helper
+ * 
+ * Nodemailer ile email gönderme servisi.
+ * Environment variables kullanarak güvenli credential yönetimi.
+ * 
+ * Clean Code Principles:
+ * - Security: Credentials environment variables'da
+ * - DRY: Email logic tek bir yerde
+ * - Error Handling: Proper error handling
+ */
 
-const nodemailer = require('nodemailer')
+const nodemailer = require('nodemailer');
+const logger = require('../utils/logger');
 
-module.exports = function (to, subject, message) {
-
-    // Set Passive:
-    return true
-
-    //? GoogleMail (gmail):
-    // Google -> AccountHome -> Security -> Two-Step-Verify -> App-Passwords
-    const mailSettings = {
-        service: 'Gmail',
-        user: 'username@gmail.com',
-        pass: 'password'
+/**
+ * Email gönder
+ * 
+ * @param {String} to - Alıcı email adresi
+ * @param {String} subject - Email konusu
+ * @param {String} message - Email içeriği (HTML veya text)
+ * @returns {Promise<Boolean>} Gönderim başarılı mı?
+ */
+module.exports = async function (to, subject, message) {
+    // Environment variables kontrolü
+    if (!process.env.EMAIL_SERVICE || !process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        logger.warn('Email configuration missing, skipping email send', { to, subject });
+        return false;
     }
 
-    // Connect to mailServer:
-    const transporter = nodemailer.createTransport({
-        service: mailSettings.service,
-        auth: {
-            user: mailSettings.user,
-            pass: mailSettings.pass,
-        }
-    })
-    // SendMail:
-    transporter.sendMail({
-        from: mailSettings.user,
-        to: to,
-        subject: subject,
-        text: message,
-        html: message,
-    }, (error, info) => {
-        error ? console.log(error) : console.log(info)
-    })
+    // Email validation
+    if (!to || !subject || !message) {
+        logger.warn('Invalid email parameters', { to, subject, hasMessage: !!message });
+        return false;
+    }
+
+    try {
+        // Email transporter oluştur
+        const transporter = nodemailer.createTransport({
+            service: process.env.EMAIL_SERVICE || 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD,
+            }
+        });
+
+        // Email gönder
+        const info = await transporter.sendMail({
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            to: to,
+            subject: subject,
+            text: message,
+            html: message,
+        });
+
+        logger.info('Email sent successfully', { 
+            to, 
+            subject, 
+            messageId: info.messageId 
+        });
+
+        return true;
+    } catch (error) {
+        logger.error('Email send failed', error, { to, subject });
+        return false;
+    }
 }

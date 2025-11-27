@@ -229,6 +229,27 @@ Admin kullanıcısı oluşturulduktan sonra:
 
 ---
 
+## 📋 Admin Panel Özellikleri
+
+Admin panel'e giriş yaptıktan sonra aşağıdaki özelliklere erişebilirsiniz:
+
+### Business Management ⭐ YENİ
+
+Admin panel içinde **Business Management** bölümü ile MongoDB Compass veya Postman kullanmadan doğrudan:
+- ✅ Owner (işletme sahibi) kaydı oluşturma
+- ✅ Business (işletme) kaydı oluşturma
+- ✅ Toilet (tuvalet) kaydı oluşturma
+
+**Özellikler:**
+- 3 adımlı form sistemi (Owner → Business → Toilet)
+- Otomatik koordinat bulma (adres bilgisinden)
+- Input validation
+- Otomatik onay sistemi
+
+**Detaylı kullanım için:** [Admin Panel Kılavuzu](ADMIN_PANEL_GUIDE.md) dosyasına bakın.
+
+---
+
 ## 🚀 Hızlı Başlangıç
 
 **En hızlı yöntem:**

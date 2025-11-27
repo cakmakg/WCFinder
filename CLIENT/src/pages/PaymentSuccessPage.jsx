@@ -37,21 +37,35 @@ const PaymentSuccessPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (bookingData?.usageId) {
-      fetchUsageDetails();
+    // ✅ Ödeme başarılı olduktan sonra usage oluşturulmuş olmalı
+    // Payment result'tan usageId'yi al veya bookingData'dan
+    const usageId = bookingData?.usageId || paymentResult?.usageId || paymentResult?.metadata?.usageId;
+    
+    if (usageId) {
+      fetchUsageDetails(usageId);
     } else {
-      setLoading(false);
+      // Usage henüz oluşturulmamış olabilir, biraz bekle ve tekrar dene
+      const timer = setTimeout(() => {
+        const retryUsageId = bookingData?.usageId || paymentResult?.usageId || paymentResult?.metadata?.usageId;
+        if (retryUsageId) {
+          fetchUsageDetails(retryUsageId);
+        } else {
+          setLoading(false);
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  }, [bookingData]);
+  }, [bookingData, paymentResult]);
 
-  const fetchUsageDetails = async () => {
+  const fetchUsageDetails = async (usageId) => {
     try {
       setLoading(true);
-      const response = await usageService.getUsage(bookingData.usageId);
+      const response = await usageService.getUsage(usageId);
       setUsageDetails(response.result || response.data || response);
     } catch (err) {
       console.error('Error fetching usage details:', err);
-      setError(t('paymentSuccess.loadingError'));
+      // Usage henüz oluşturulmamış olabilir, hata gösterme
+      setError(null);
     } finally {
       setLoading(false);
     }

@@ -1,287 +1,264 @@
-// pages/AdminPanel.jsx - REFACTORED
-// Admin panel - Ödeme dağıtımı ve işletme yönetimi
+// pages/AdminPanel.jsx
+// Admin Panel with Dashboard, Charts, Table and Activities
 
-import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
-  Container,
   Box,
-  Typography,
+  Grid,
   Paper,
-  Tabs,
-  Tab,
+  Typography,
   CircularProgress,
   Alert,
+  Card,
+  CardContent,
+  styled,
 } from "@mui/material";
-import PaymentIcon from "@mui/icons-material/Payment";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import ReceiptIcon from "@mui/icons-material/Receipt";
-import AdminSummaryCards from "../features/admin/components/AdminSummaryCards";
-import PendingPaymentsTab from "../features/admin/components/PendingPaymentsTab";
-import MonthlySummaryTab from "../features/admin/components/MonthlySummaryTab";
-import RechnungenTab from "../features/admin/components/RechnungenTab";
-import PayoutDialog from "../features/admin/components/PayoutDialog";
+import {
+  AccountBalanceWallet,
+  People,
+  Business,
+  Payment,
+} from "@mui/icons-material";
+import AdminLayout from "../features/admin/components/AdminLayout";
+import StatCard from "../features/admin/components/dashboard/StatCard";
+import RevenueChart from "../features/admin/components/dashboard/RevenueChart";
+import ChannelDistributionChart from "../features/admin/components/dashboard/ChannelDistributionChart";
+import BusinessTable from "../features/admin/components/dashboard/BusinessTable";
+import RecentActivities from "../features/admin/components/dashboard/RecentActivities";
+import BusinessesTab from "../features/admin/components/BusinessesTab";
+import BusinessManagementForm from "../features/admin/components/BusinessManagementForm";
 import { adminService } from "../features/admin/services/adminService";
-import { showSuccessMessage, handleApiError } from "../shared/utils/errorHandler";
+import {
+  calculateBusinessSales,
+  generateMonthlyTrend,
+  generateRecentActivity,
+  generatePieChartData,
+} from "../features/admin/utils/dashboardUtils";
+
+// Styled Card Component
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 16,
+  boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
+  border: '1px solid #e5e7eb',
+  backgroundColor: 'white',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+  },
+}));
 
 const AdminPanel = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
-
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Pending Payments State
-  const [pendingPayments, setPendingPayments] = useState(null);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
-  const [payoutDialogOpen, setPayoutDialogOpen] = useState(false);
-  const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState("bank_transfer");
-  const [payoutNotes, setPayoutNotes] = useState("");
+  // Data states
+  const [users, setUsers] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
+  const [usages, setUsages] = useState([]);
 
-  // Monthly Summary State
-  const [monthlySummary, setMonthlySummary] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(
-    new Date().getMonth() + 1
-  );
-
-  // Rechnungen State
-  const [businessesWithPayouts, setBusinessesWithPayouts] = useState([]);
-  const [creatingRechnung, setCreatingRechnung] = useState(null);
-
-  // Admin check
   useEffect(() => {
     if (!currentUser || currentUser.role !== "admin") {
       navigate("/home");
+      return;
     }
+    fetchData();
   }, [currentUser, navigate]);
-
-  useEffect(() => {
-    if (currentUser?.role === "admin") {
-      fetchData();
-    }
-  }, [activeTab, selectedYear, selectedMonth]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      if (activeTab === 0) {
-        // Pending Payments
-        const data = await adminService.getAllPendingPayments();
-        setPendingPayments(data?.result);
-      } else if (activeTab === 1) {
-        // Monthly Summary
-        const data = await adminService.getMonthlySummary(
-          selectedYear,
-          selectedMonth
-        );
-        setMonthlySummary(data?.result);
-      } else if (activeTab === 2) {
-        // Businesses with Payouts (Rechnungen)
-        const data = await adminService.getBusinessesWithPayouts();
-        setBusinessesWithPayouts(data?.result || []);
-      }
+      const [usersData, businessesData, usagesData] = await Promise.all([
+        adminService.getAllUsers().catch(() => ({ result: [] })),
+        adminService.getAllBusinesses().catch(() => ({ result: [] })),
+        adminService.getAllUsages().catch(() => ({ result: [] })),
+      ]);
+
+      setUsers(usersData?.result || []);
+      setBusinesses(businessesData?.result || []);
+      setUsages(usagesData?.result || []);
     } catch (err) {
       console.error("Error fetching admin data:", err);
-      const errorMessage = handleApiError(err, t("adminPanel.loadError"));
-      setError(errorMessage);
+      setError("Fehler beim Laden der Daten.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreatePayout = async () => {
-    if (!selectedBusiness || !payoutAmount) {
-      handleApiError(new Error(t("adminPanel.amountRequired")));
-      return;
-    }
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const paidUsages = usages.filter(
+      (u) => u.paymentStatus === "paid" || u.status === "completed"
+    );
+    const totalRevenue = paidUsages.reduce(
+      (sum, u) => sum + (Number(u.totalFee) || 0),
+      0
+    );
 
-    try {
-      const startDate = new Date(selectedYear, selectedMonth - 1, 1);
-      const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59);
+    return {
+      totalUsers: users.length,
+      totalBusinesses: businesses.length,
+      totalUsages: usages.length,
+      totalRevenue,
+    };
+  }, [users, businesses, usages]);
 
-      await adminService.createPayout({
-        businessId: selectedBusiness.businessId,
-        amount: parseFloat(payoutAmount),
-        paymentMethod: payoutMethod,
-        notes: payoutNotes,
-        periodStart: startDate.toISOString(),
-        periodEnd: endDate.toISOString(),
-      });
+  // Generate chart data
+  const lineChartData = useMemo(() => {
+    return generateMonthlyTrend(usages, users, businesses);
+  }, [usages, users, businesses]);
 
-      showSuccessMessage(t("adminPanel.payoutCreated"));
-      setPayoutDialogOpen(false);
-      setSelectedBusiness(null);
-      setPayoutAmount("");
-      setPayoutNotes("");
-      fetchData();
-    } catch (err) {
-      handleApiError(err, t("adminPanel.payoutError"));
-    }
-  };
+  const pieChartData = useMemo(() => {
+    return generatePieChartData(businesses);
+  }, [businesses]);
 
-  const handleCompletePayout = async (payoutId) => {
-    if (!window.confirm(t("adminPanel.confirmComplete"))) {
-      return;
-    }
+  // Generate table data
+  const tableData = useMemo(() => {
+    return businesses.map((business) => calculateBusinessSales(business, usages));
+  }, [businesses, usages]);
 
-    try {
-      await adminService.completePayout(payoutId, `TRX-${Date.now()}`);
-      showSuccessMessage(t("adminPanel.payoutCompleted"));
-      fetchData();
-    } catch (err) {
-      handleApiError(err, t("adminPanel.completeError"));
-    }
-  };
-
-  const handleCreateRechnung = async (payoutId) => {
-    if (!window.confirm(t("adminPanel.confirmCreateRechnung"))) {
-      return;
-    }
-
-    try {
-      setCreatingRechnung(payoutId);
-      await adminService.createRechnung(payoutId);
-      showSuccessMessage(t("adminPanel.rechnungCreated"));
-      fetchData();
-    } catch (err) {
-      handleApiError(err, t("adminPanel.rechnungError"));
-    } finally {
-      setCreatingRechnung(null);
-    }
-  };
-
-  const handleDownloadRechnung = async (rechnungId) => {
-    try {
-      await adminService.downloadRechnung(rechnungId);
-      showSuccessMessage(t("adminPanel.downloadSuccess"));
-    } catch (err) {
-      handleApiError(err, t("adminPanel.downloadError"));
-    }
-  };
-
-  const handlePayoutDialogOpen = (business) => {
-    setSelectedBusiness(business);
-    setPayoutAmount(business.totalPending.toFixed(2));
-    setPayoutDialogOpen(true);
-  };
+  // Generate recent activities
+  const recentActivities = useMemo(() => {
+    return generateRecentActivity(usages, businesses);
+  }, [usages, businesses]);
 
   if (!currentUser || currentUser.role !== "admin") {
     return null;
   }
 
-  if (loading && !pendingPayments && !monthlySummary) {
+  if (loading) {
     return (
-      <Container sx={{ py: 4, textAlign: "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         <CircularProgress />
-        <Typography sx={{ mt: 2 }}>{t("adminPanel.loading")}</Typography>
-      </Container>
+      </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", py: 4 }}>
-      <Container maxWidth="xl">
-        <Typography variant="h4" sx={{ mb: 3, fontWeight: 600 }}>
-          {t("adminPanel.title")}
-        </Typography>
+    <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+      {activeTab === 0 && (
+        <Box sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 2.5, width: "100%", maxWidth: "100%", p: 0 }}>
+          {/* Stats Grid */}
+          <Grid container spacing={2} sx={{ width: "100%", maxWidth: "100%", m: 0 }}>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Gesamtumsatz"
+                value={`€${stats.totalRevenue.toLocaleString("de-DE", {
+                  maximumFractionDigits: 2,
+                  minimumFractionDigits: 2,
+                })}`}
+                icon={AccountBalanceWallet}
+                color="#0891b2"
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Neue Kunden"
+                value={stats.totalUsers.toLocaleString("de-DE")}
+                icon={People}
+                color="#16a34a"
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Aktive Kampagnen"
+                value={stats.totalBusinesses.toLocaleString("de-DE")}
+                icon={Business}
+                color="#f59e0b"
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Abgeschlossene Reservierungen"
+                value={usages.filter((u) => u.status === "completed").length.toLocaleString("de-DE")}
+                icon={Payment}
+                color="#dc2626"
+              />
+            </Grid>
+          </Grid>
 
-        {/* Summary Cards */}
-        <AdminSummaryCards
-          pendingPayments={pendingPayments}
-          monthlySummary={monthlySummary}
-        />
-
-        {/* Tabs */}
-        <Paper
-          sx={{
-            p: 3,
-            borderRadius: 3,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-          }}
-        >
-          <Tabs
-            value={activeTab}
-            onChange={(e, newValue) => setActiveTab(newValue)}
-            sx={{ mb: 3, borderBottom: "1px solid #e2e8f0" }}
+          {/* Charts Row - CSS Grid */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', lg: '2.5fr 1fr' },
+              gap: 3,
+              width: '100%',
+            }}
           >
-            <Tab
-              icon={<PaymentIcon />}
-              iconPosition="start"
-              label={t("adminPanel.pendingPayments")}
-              sx={{ textTransform: "none", fontWeight: 600 }}
-            />
-            <Tab
-              icon={<TrendingUpIcon />}
-              iconPosition="start"
-              label={t("adminPanel.monthlySummary")}
-              sx={{ textTransform: "none", fontWeight: 600 }}
-            />
-            <Tab
-              icon={<ReceiptIcon />}
-              iconPosition="start"
-              label={t("adminPanel.rechnungen")}
-              sx={{ textTransform: "none", fontWeight: 600 }}
-            />
-          </Tabs>
+            <StyledCard>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+                    Umsatzkurve
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                    Letzte 12 Monate
+                  </Typography>
+                </Box>
+                <RevenueChart data={lineChartData} loading={loading} />
+              </CardContent>
+            </StyledCard>
 
-          {/* Tab Content */}
-          {activeTab === 0 && (
-            <PendingPaymentsTab
-              pendingPayments={pendingPayments}
-              onCreatePayout={handlePayoutDialogOpen}
-            />
-          )}
+            <StyledCard sx={{ height: '100%' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+                    Kanalverteilung
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                    Dieses Quartal
+                  </Typography>
+                </Box>
+                <ChannelDistributionChart data={pieChartData} loading={loading} />
+              </CardContent>
+            </StyledCard>
+          </Box>
 
-          {activeTab === 1 && (
-            <MonthlySummaryTab
-              monthlySummary={monthlySummary}
-              selectedYear={selectedYear}
-              selectedMonth={selectedMonth}
-              onYearChange={setSelectedYear}
-              onMonthChange={setSelectedMonth}
-              onLoad={fetchData}
-            />
-          )}
+          {/* Table and Activities Row */}
+          <Grid container spacing={2.5} sx={{ flex: 1, minHeight: 0 }}>
+            <Grid item xs={12} lg={8}>
+              <BusinessTable data={tableData} loading={loading} />
+            </Grid>
+            <Grid item xs={12} lg={4}>
+              <RecentActivities activities={recentActivities} />
+            </Grid>
+          </Grid>
+        </Box>
+      )}
 
-          {activeTab === 2 && (
-            <RechnungenTab
-              businessesWithPayouts={businessesWithPayouts}
-              creatingRechnung={creatingRechnung}
-              onCreateRechnung={handleCreateRechnung}
-              onDownloadRechnung={handleDownloadRechnung}
-            />
-          )}
+      {activeTab === 1 && (
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6">Benutzer</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Gesamt: {users.length} Benutzer
+          </Typography>
         </Paper>
+      )}
 
-        {/* Payout Dialog */}
-        <PayoutDialog
-          open={payoutDialogOpen}
-          onClose={() => setPayoutDialogOpen(false)}
-          selectedBusiness={selectedBusiness}
-          payoutAmount={payoutAmount}
-          payoutMethod={payoutMethod}
-          payoutNotes={payoutNotes}
-          onAmountChange={setPayoutAmount}
-          onMethodChange={setPayoutMethod}
-          onNotesChange={setPayoutNotes}
-          onCreate={handleCreatePayout}
-        />
-      </Container>
-    </Box>
+      {activeTab === 2 && <BusinessesTab />}
+
+      {activeTab === 3 && <BusinessManagementForm />}
+    </AdminLayout>
   );
 };
 

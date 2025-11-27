@@ -109,27 +109,65 @@ export const OwnerFinancialPanel = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#fef3c7',
-              border: '1px solid #fde047',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <AccountBalanceWalletIcon sx={{ color: '#d97706', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#d97706' }}>
-                  € {business.pendingBalance?.toFixed(2) || '0.00'}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#f59e0b",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#fef3c7",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <AccountBalanceWalletIcon sx={{ color: "#f59e0b", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#f59e0b",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    €{business.pendingBalance?.toFixed(2) || '0.00'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    {t('myBookings.pendingBalance')}
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.pendingBalance')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -137,27 +175,65 @@ export const OwnerFinancialPanel = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#dcfce7',
-              border: '1px solid #86efac',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <TrendingUpIcon sx={{ color: '#16a34a', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#16a34a' }}>
-                  € {business.totalEarnings?.toFixed(2) || '0.00'}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#16a34a",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#dcfce7",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <TrendingUpIcon sx={{ color: "#16a34a", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#16a34a",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    €{business.totalEarnings?.toFixed(2) || '0.00'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    {t('myBookings.totalEarnings')}
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.totalEarnings')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -165,27 +241,65 @@ export const OwnerFinancialPanel = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#dbeafe',
-              border: '1px solid #93c5fd',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <PaymentIcon sx={{ color: '#2563eb', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#2563eb' }}>
-                  € {business.totalPaidOut?.toFixed(2) || '0.00'}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#0891b2",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#cffafe",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <PaymentIcon sx={{ color: "#0891b2", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#0891b2",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    €{business.totalPaidOut?.toFixed(2) || '0.00'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    {t('myBookings.totalPaidOut')}
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.totalPaidOut')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -193,34 +307,81 @@ export const OwnerFinancialPanel = () => {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              bgcolor: '#f3e8ff',
-              border: '1px solid #c4b5fd',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <EuroIcon sx={{ color: '#7c3aed', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#7c3aed' }}>
-                  {summary.paymentCount || 0}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#7c3aed",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#f3e8ff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <EuroIcon sx={{ color: "#7c3aed", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#7c3aed",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {summary.paymentCount || 0}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    {t('myBookings.totalPayments')}
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.totalPayments')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
       {/* Tabs: Bekleyen Ödemeler ve Ödeme Geçmişi */}
-      <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
+      <Paper sx={{ 
+        p: 3, 
+        borderRadius: 3, 
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        border: 'none',
+        "&:hover": {
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        },
+        transition: "all 0.3s ease",
+      }}>
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
@@ -260,20 +421,42 @@ export const OwnerFinancialPanel = () => {
                   </TableHead>
                   <TableBody>
                     {pendingPayments.map((payment) => (
-                      <TableRow key={payment._id} sx={{ '&:hover': { bgcolor: '#f8fafc' } }}>
+                      <TableRow 
+                        key={payment._id} 
+                        sx={{ 
+                          '&:hover': { 
+                            bgcolor: '#f8fafc',
+                            transform: 'scale(1.01)',
+                          },
+                          transition: "all 0.2s ease",
+                        }}
+                      >
                         <TableCell>
-                          {new Date(payment.createdAt).toLocaleDateString()}
+                          <Typography variant="body2">
+                            {new Date(payment.createdAt).toLocaleDateString()}
+                          </Typography>
                         </TableCell>
                         <TableCell>
-                          {payment.userId?.username || payment.userId?.email || '-'}
+                          <Typography variant="body2" fontWeight={500}>
+                            {payment.userId?.username || payment.userId?.email || '-'}
+                          </Typography>
                         </TableCell>
-                        <TableCell>€ {payment.amount?.toFixed(2)}</TableCell>
-                        <TableCell>€ {payment.businessFee?.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600} color="#0891b2">
+                            €{payment.amount?.toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600} color="#16a34a">
+                            €{payment.businessFee?.toFixed(2)}
+                          </Typography>
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={t(`myBookings.paymentStatusLabels.${payment.payoutStatus}`)}
                             color="warning"
                             size="small"
+                            sx={{ fontWeight: 500 }}
                           />
                         </TableCell>
                       </TableRow>
@@ -309,12 +492,31 @@ export const OwnerFinancialPanel = () => {
                   </TableHead>
                   <TableBody>
                     {payoutHistory.map((payout) => (
-                      <TableRow key={payout._id} sx={{ '&:hover': { bgcolor: '#f8fafc' } }}>
+                      <TableRow 
+                        key={payout._id} 
+                        sx={{ 
+                          '&:hover': { 
+                            bgcolor: '#f8fafc',
+                            transform: 'scale(1.01)',
+                          },
+                          transition: "all 0.2s ease",
+                        }}
+                      >
                         <TableCell>
-                          {new Date(payout.createdAt).toLocaleDateString()}
+                          <Typography variant="body2">
+                            {new Date(payout.createdAt).toLocaleDateString()}
+                          </Typography>
                         </TableCell>
-                        <TableCell>€ {payout.amount?.toFixed(2)}</TableCell>
-                        <TableCell>{payout.paymentMethod || '-'}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600} color="#0891b2">
+                            €{payout.amount?.toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {payout.paymentMethod || '-'}
+                          </Typography>
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={t(`myBookings.payoutStatusLabels.${payout.status}`)}
@@ -324,12 +526,15 @@ export const OwnerFinancialPanel = () => {
                               payout.status === 'failed' ? 'error' : 'default'
                             }
                             size="small"
+                            sx={{ fontWeight: 500 }}
                           />
                         </TableCell>
                         <TableCell>
-                          {payout.period?.startDate && payout.period?.endDate
-                            ? `${new Date(payout.period.startDate).toLocaleDateString()} - ${new Date(payout.period.endDate).toLocaleDateString()}`
-                            : '-'}
+                          <Typography variant="body2" color="text.secondary">
+                            {payout.period?.startDate && payout.period?.endDate
+                              ? `${new Date(payout.period.startDate).toLocaleDateString()} - ${new Date(payout.period.endDate).toLocaleDateString()}`
+                              : '-'}
+                          </Typography>
                         </TableCell>
                       </TableRow>
                     ))}

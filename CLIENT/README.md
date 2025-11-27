@@ -1,12 +1,88 @@
-# React + Vite
+# WCFinder Client - React Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern React uygulaması - Tuvalet bulma ve rezervasyon platformu için frontend.
 
-Currently, two official plugins are available:
+## 🚀 Hızlı Başlangıç
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Kurulum
 
-## Expanding the ESLint configuration
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Development
+
+```bash
+npm run dev
+```
+
+Uygulama `http://localhost:5173` adresinde çalışacaktır.
+
+### Build
+
+```bash
+npm run build
+```
+
+Build çıktısı `dist/` klasöründe oluşturulur.
+
+### Preview
+
+```bash
+npm run preview
+```
+
+Production build'i preview eder.
+
+## 📁 Proje Yapısı
+
+```
+src/
+├── components/       # Reusable React components
+│   ├── business/    # İşletme ile ilgili component'ler
+│   ├── bookings/    # Rezervasyon component'leri
+│   ├── layout/      # Layout component'leri (AppBar, SideBar)
+│   ├── map/         # Harita component'leri
+│   ├── owner/       # İşletme sahibi panel component'leri
+│   └── payment/     # Ödeme component'leri
+├── pages/           # Sayfa component'leri
+├── services/        # API servisleri
+├── features/        # Redux slices
+├── hooks/           # Custom React hooks
+├── router/          # Routing configuration
+└── utils/           # Yardımcı fonksiyonlar
+```
+
+## 🛠️ Teknoloji Stack
+
+- **React** 19.1.1
+- **Material-UI** 7.3.1
+- **Redux Toolkit** 2.8.2
+- **React Router** 7.8.2
+- **Leaflet** 1.9.4 - Harita
+- **Axios** 1.12.2 - HTTP client
+- **Formik** 2.4.6 - Form yönetimi
+- **Vite** 7.1.2 - Build tool
+
+## ⚙️ Ortam Değişkenleri
+
+`.env.local` dosyası oluşturun:
+
+```env
+VITE_BASE_URL=http://localhost:8000
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+VITE_PAYPAL_CLIENT_ID=your_paypal_client_id
+```
+
+## 📝 Scripts
+
+- `npm run dev` - Development server
+- `npm run build` - Production build
+- `npm run preview` - Preview production build
+- `npm run lint` - ESLint kontrolü
+
+## 🔗 İlgili Dokümantasyon
+
+- Ana dokümantasyon için root `README.md` dosyasına bakın
+- Mimari için `docs/ARCHITECTURE.md` dosyasına bakın
+- Deployment için `docs/DEPLOYMENT.md` dosyasına bakın

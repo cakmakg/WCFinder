@@ -12,7 +12,6 @@ import {
   Divider,
   Radio,
   RadioGroup,
-  FormControlLabel,
   FormControl,
   IconButton,
   Alert,
@@ -24,45 +23,44 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import LockIcon from '@mui/icons-material/Lock';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { PaymentMethodCard } from '../components/payment/PaymentMethodCard';
 import { OrderSummary } from '../components/payment/OrderSummary';
 import { StripeCardForm } from '../components/payment/StripeCardForm';
 import { PayPalButton } from '../components/payment/PayPalButton';
-import paymentService from '../services/paymentService';
+import { useSelector } from 'react-redux';
 
 const PaymentPage = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const bookingData = location.state;
+  const { token, currentUser } = useSelector((state) => state.auth);
 
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
-  const [usageId, setUsageId] = useState(null);
+  const [paypalOrderId, setPaypalOrderId] = useState(null);
+  const [paymentId, setPaymentId] = useState(null); // ✅ Payment ID'yi sakla
+
+  // Authentication kontrolü
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (!token && !storedToken) {
+      navigate('/login', { 
+        state: { from: location.pathname },
+        replace: true 
+      });
+    }
+  }, [token, navigate, location.pathname]);
 
   if (!bookingData) {
     return (
       <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
         <Container>
-          <Alert 
-            severity="error"
-            sx={{ 
-              borderRadius: 2,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
-            }}
-          >
+          <Alert severity="error" sx={{ borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
             {t('payment.noBookingInfo')}
           </Alert>
-          <Button 
-            onClick={() => navigate('/')} 
-            sx={{ 
-              mt: 2,
-              color: '#0891b2',
-              '&:hover': { backgroundColor: 'rgba(8,145,178,0.08)' }
-            }}
-          >
+          <Button onClick={() => navigate('/')} sx={{ mt: 2, color: '#0891b2' }}>
             {t('common.backToHome')}
           </Button>
         </Container>
@@ -70,46 +68,270 @@ const PaymentPage = () => {
     );
   }
 
-  useEffect(() => {
-    if (paymentMethod === 'card' && bookingData?.usageId) {
-      createStripePaymentIntent();
-    }
-  }, [paymentMethod, bookingData]);
-
+  // ✅ Booking bilgilerinden Stripe payment intent oluştur (usageId olmadan)
   const createStripePaymentIntent = async () => {
+    // ✅ Çift tıklamayı engelle
+    if (loading || clientSecret) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Creating Stripe payment for usageId:', bookingData.usageId);
+      const bookingDataForPayment = {
+        businessId: bookingData.business.id,
+        toiletId: bookingData.toilet.id,
+        personCount: bookingData.personCount,
+        startTime: new Date(bookingData.date).toISOString(),
+        genderPreference: bookingData.userGender,
+        totalAmount: bookingData.pricing.total,
+      };
 
-      const response = await paymentService.createStripePayment(bookingData.usageId);
+      console.log('📤 Creating Stripe payment from booking:', bookingDataForPayment);
+
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
+      const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`${baseURL}/payments/stripe/create`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingData: bookingDataForPayment }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        let errorMessage = errorData.message || errorData.error || "Payment intent creation failed";
+        
+        // 409 (Conflict - Duplicate) hatası için: Mevcut payment'i sorgula ve clientSecret'ı al
+        if (response.status === 409) {
+          console.log('⚠️ Duplicate payment detected, fetching existing payment...');
+          try {
+            const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
+            const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+            const token = localStorage.getItem("token");
+            
+            // Kullanıcının pending payment'lerini sorgula
+            const paymentsResponse = await fetch(`${baseURL}/payments/my-payments`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            
+            if (paymentsResponse.ok) {
+              const paymentsData = await paymentsResponse.json();
+              const pendingPayments = paymentsData.result?.filter(p => 
+                p.status === 'pending' && 
+                p.paymentProvider === 'stripe' &&
+                p.paymentIntentId
+              );
+              
+              if (pendingPayments && pendingPayments.length > 0) {
+                // En son oluşturulan payment'i al
+                const latestPayment = pendingPayments.sort((a, b) => 
+                  new Date(b.createdAt) - new Date(a.createdAt)
+                )[0];
+                
+                console.log('✅ Found existing payment:', latestPayment._id);
+                
+                // Mevcut payment'i kullan - backend duplicate kontrolü çalışmalı
+                // Şimdilik: Backend'de duplicate kontrolünü düzeltmeliyiz
+                // Geçici çözüm: Mevcut payment'i sil ve yeniden oluştur
+                console.log('⚠️ Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
+                errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
+              }
+            }
+            
+            // Eğer mevcut payment bulunamazsa, kullanıcıya bilgi ver
+            errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
+          } catch (fetchErr) {
+            console.error('❌ Error fetching existing payment:', fetchErr);
+            errorMessage = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
+          }
+        }
+        
+        // 429 (Too Many Requests) hatası için özel mesaj
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          if (retryAfter) {
+            errorMessage = `Zu viele Anfragen. Bitte versuchen Sie es in ${Math.ceil(parseInt(retryAfter) / 60)} Minuten erneut.`;
+          } else {
+            errorMessage = 'Zu viele Anfragen. Bitte versuchen Sie es in ein paar Minuten erneut.';
+          }
+        }
+        
+        console.error('❌ Payment creation error:', errorData);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('✅ Stripe response:', data);
+      console.log('✅ ClientSecret:', data.result?.clientSecret);
+      console.log('✅ PaymentId:', data.result?.paymentId);
       
-      console.log('Stripe response:', response);
+      // ✅ Response formatını kontrol et
+      if (!data.result || !data.result.clientSecret) {
+        console.error('❌ Invalid response format:', data);
+        throw new Error('Ungültige Antwort vom Server. Bitte versuchen Sie es erneut.');
+      }
       
-      setClientSecret(response.result.clientSecret);
-      setUsageId(response.result.paymentId);
+      setClientSecret(data.result.clientSecret);
+      setPaymentId(data.result.paymentId); // ✅ Payment ID'yi sakla
+      console.log('✅ ClientSecret set edildi:', data.result.clientSecret);
     } catch (err) {
-      console.error('Stripe error:', err);
-      setError(err.response?.data?.message || t('payment.paymentInitError'));
+      console.error('❌ Stripe error:', err);
+      const errorMessage = err.message || err.response?.data?.message || t('payment.paymentInitError');
+      setError(errorMessage);
+      // Hata durumunda clientSecret'ı sıfırla ki kullanıcı tekrar deneyebilsin
+      setClientSecret(null);
+      setPaymentId(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePaymentSuccess = (paymentResult) => {
-    navigate('/payment/success', {
-      state: {
-        bookingData,
-        paymentResult,
-        transactionId: paymentResult.id,
-      },
-    });
+  // ✅ Booking bilgilerinden PayPal order oluştur (usageId olmadan)
+  const createPayPalOrder = async () => {
+    // ✅ Çift tıklamayı engelle
+    if (loading || paypalOrderId) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const bookingDataForPayment = {
+        businessId: bookingData.business.id,
+        toiletId: bookingData.toilet.id,
+        personCount: bookingData.personCount,
+        startTime: new Date(bookingData.date).toISOString(),
+        genderPreference: bookingData.userGender,
+        totalAmount: bookingData.pricing.total,
+      };
+
+      console.log('📤 Creating PayPal order from booking:', bookingDataForPayment);
+
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
+      const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`${baseURL}/payments/paypal/create`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingData: bookingDataForPayment }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        let errorMessage = errorData.message || errorData.error || "PayPal order creation failed";
+        
+        // 429 (Too Many Requests) hatası için özel mesaj
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          if (retryAfter) {
+            errorMessage = `Zu viele Anfragen. Bitte versuchen Sie es in ${Math.ceil(parseInt(retryAfter) / 60)} Minuten erneut.`;
+          } else {
+            errorMessage = 'Zu viele Anfragen. Bitte versuchen Sie es in ein paar Minuten erneut.';
+          }
+        }
+        
+        // PayPal credentials hatası için özel mesaj
+        if (errorMessage.includes('PayPal credentials') || errorMessage.includes('placeholder') || errorMessage.includes('Invalid PayPal')) {
+          errorMessage = 'PayPal ist derzeit nicht konfiguriert. Bitte kontaktieren Sie den Administrator oder verwenden Sie die Kreditkartenzahlung.';
+        }
+        
+        console.error('❌ PayPal creation error:', errorData);
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('✅ PayPal response:', data);
+      
+      setPaypalOrderId(data.result.orderId);
+      setPaymentId(data.result.paymentId); // ✅ Payment ID'yi sakla
+      return data.result.orderId;
+    } catch (err) {
+      console.error('❌ PayPal error:', err);
+      const errorMessage = err.message || err.response?.data?.message || t('payment.paymentInitError');
+      setError(errorMessage);
+      // Hata durumunda paypalOrderId'yi sıfırla ki kullanıcı tekrar deneyebilsin
+      setPaypalOrderId(null);
+      setPaymentId(null);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentResult) => {
+    try {
+      // ✅ Ödeme başarılı oldu, backend'de usage oluştur
+      const paymentIntentId = paymentResult.id; // Stripe payment intent ID
+      
+      if (!paymentIntentId) {
+        throw new Error('Payment intent ID not found');
+      }
+
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
+      const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+      const token = localStorage.getItem("token");
+
+      // ✅ Backend'den payment'i confirm et ve usage oluştur
+      console.log('📤 Confirming payment and creating usage...');
+      const confirmResponse = await fetch(`${baseURL}/payments/stripe/confirm`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ paymentIntentId }),
+      });
+
+      if (!confirmResponse.ok) {
+        const errorData = await confirmResponse.json();
+        throw new Error(errorData.message || 'Failed to confirm payment');
+      }
+
+      const confirmData = await confirmResponse.json();
+      const usageId = confirmData.result?.usageId;
+      const confirmedPaymentId = confirmData.result?.paymentId;
+
+      console.log('✅ Payment confirmed, usage created:', usageId);
+
+      // ✅ Success sayfasına yönlendir
+      navigate('/payment/success', {
+        state: {
+          bookingData: {
+            ...bookingData,
+            usageId, // Backend'den gelen usage ID
+          },
+          paymentResult: {
+            ...paymentResult,
+            paymentId: confirmedPaymentId,
+          },
+          transactionId: paymentIntentId,
+        },
+      });
+    } catch (err) {
+      console.error('❌ Error in handlePaymentSuccess:', err);
+      setError('Fehler beim Erstellen der Reservierung. Bitte kontaktieren Sie den Support.');
+    }
   };
 
   const handlePaymentError = (error) => {
     console.error('Payment error:', error);
     setError(t('payment.paymentFailed'));
+    // State'i sıfırla
+    setClientSecret(null);
+    setPaypalOrderId(null);
   };
 
   return (
@@ -167,7 +389,7 @@ const PaymentPage = () => {
 
         <Grid container spacing={3}>
           {/* Left Column - Payment Methods */}
-          <Grid item xs={12} md={7}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Paper 
               sx={{ 
                 p: 3, 
@@ -191,7 +413,12 @@ const PaymentPage = () => {
               <FormControl component="fieldset" fullWidth>
                 <RadioGroup
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  onChange={(e) => {
+                    setPaymentMethod(e.target.value);
+                    // Payment method değiştiğinde state'i sıfırla
+                    setClientSecret(null);
+                    setPaypalOrderId(null);
+                  }}
                 >
                   {/* Credit Card */}
                   <Card
@@ -287,23 +514,82 @@ const PaymentPage = () => {
               ) : (
                 <>
                   {/* Stripe Card Form */}
-                  {paymentMethod === 'card' && clientSecret && (
-                    <StripeCardForm
-                      clientSecret={clientSecret}
-                      amount={bookingData.pricing.total}
-                      onSuccess={handlePaymentSuccess}
-                      onError={handlePaymentError}
-                    />
+                  {paymentMethod === 'card' && (
+                    <Box>
+                      {(() => {
+                        console.log('🔍 Payment Form Debug:', {
+                          clientSecret: clientSecret ? 'SET' : 'NULL',
+                          paymentMethod,
+                          loading,
+                        });
+                        return null;
+                      })()}
+                      {!clientSecret ? (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="large"
+                          onClick={createStripePaymentIntent}
+                          disabled={loading}
+                          sx={{
+                            py: 1.5,
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {loading ? (
+                            <CircularProgress size={24} color="inherit" />
+                          ) : (
+                            `€ ${bookingData.pricing.total.toFixed(2)} Zahlung starten`
+                          )}
+                        </Button>
+                      ) : (
+                        <>
+                          {console.log('✅ Rendering StripeCardForm with clientSecret:', clientSecret)}
+                          <StripeCardForm
+                            clientSecret={clientSecret}
+                            amount={bookingData.pricing.total}
+                            onSuccess={handlePaymentSuccess}
+                            onError={handlePaymentError}
+                          />
+                        </>
+                      )}
+                    </Box>
                   )}
 
                   {/* PayPal Button */}
-                  {paymentMethod === 'paypal' && bookingData.usageId && (
-                    <PayPalButton
-                      usageId={bookingData.usageId}
-                      amount={bookingData.pricing.total}
-                      onSuccess={handlePaymentSuccess}
-                      onError={handlePaymentError}
-                    />
+                  {paymentMethod === 'paypal' && (
+                    <Box>
+                      {!paypalOrderId ? (
+                        <Button
+                          fullWidth
+                          variant="contained"
+                          size="large"
+                          onClick={createPayPalOrder}
+                          disabled={loading}
+                          sx={{
+                            py: 1.5,
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {loading ? (
+                            <CircularProgress size={24} color="inherit" />
+                          ) : (
+                            `€ ${bookingData.pricing.total.toFixed(2)} PayPal-Zahlung starten`
+                          )}
+                        </Button>
+                      ) : (
+                        <PayPalButton
+                          usageId={paypalOrderId}
+                          amount={bookingData.pricing.total}
+                          onSuccess={handlePaymentSuccess}
+                          onError={handlePaymentError}
+                        />
+                      )}
+                    </Box>
                   )}
                 </>
               )}
@@ -333,9 +619,9 @@ const PaymentPage = () => {
           </Grid>
 
           {/* Right Column - Order Summary */}
-          <Grid item xs={12} md={5}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <Box sx={{ 
-              position: { xs: 'static', md: 'sticky' }, // Mobile'da sticky kaldır
+              position: { xs: 'static', md: 'sticky' },
               top: { md: 24 } 
             }}>
               <OrderSummary bookingData={bookingData} />

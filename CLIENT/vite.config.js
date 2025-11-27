@@ -13,13 +13,13 @@ export default defineConfig({
     open: true, // Browser'ı otomatik aç
     
     // ✅ API Proxy (Opsiyonel ama önerilir)
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
+    // Not: Frontend direkt http://localhost:8000/api kullanıyor, proxy gerekmiyor
+    // proxy: {
+    //   '/api': {
+    //     target: 'http://localhost:8000',
+    //     changeOrigin: true,
+    //   },
+    // },
   },
   
   // ✅ Build ayarları

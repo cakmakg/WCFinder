@@ -4,10 +4,11 @@
 
 const paymentService = require("../services/paymentService");
 const paymentRepository = require("../repositories/paymentRepository");
-const stripe = require("../config/stripe");
+const getStripe = require("../config/stripe");
+const logger = require("../utils/logger");
 
 module.exports = {
-  // ✅ Stripe ile ödeme başlatma
+  // ✅ Stripe ile ödeme başlatma (usageId ile - mevcut kullanım)
   createStripePayment: async (req, res) => {
     /*
             #swagger.tags = ["Payments"]
@@ -15,17 +16,25 @@ module.exports = {
         */
 
     try {
-      const { usageId } = req.body;
+      const { usageId, bookingData } = req.body;
 
-      if (!usageId) {
+      let result;
+      if (usageId) {
+        // Mevcut usage için payment oluştur
+        result = await paymentService.createStripePayment(
+          usageId,
+          req.user._id
+        );
+      } else if (bookingData) {
+        // ✅ YENİ: Booking bilgilerinden payment oluştur (ödeme sonrası usage oluşturulacak)
+        result = await paymentService.createStripePaymentFromBooking(
+          bookingData,
+          req.user._id
+        );
+      } else {
         res.errorStatusCode = 400;
-        throw new Error("usageId is required");
+        throw new Error("usageId or bookingData is required");
       }
-
-      const result = await paymentService.createStripePayment(
-        usageId,
-        req.user._id
-      );
 
       // IP ve User Agent bilgilerini ekle
       await paymentRepository.findByIdAndUpdate(result.paymentId, {
@@ -42,7 +51,7 @@ module.exports = {
     }
   },
 
-  // ✅ PayPal ile ödeme başlatma
+  // ✅ PayPal ile ödeme başlatma (usageId ile - mevcut kullanım)
   createPayPalOrder: async (req, res) => {
     /*
             #swagger.tags = ["Payments"]
@@ -50,17 +59,25 @@ module.exports = {
         */
 
     try {
-      const { usageId } = req.body;
+      const { usageId, bookingData } = req.body;
 
-      if (!usageId) {
+      let result;
+      if (usageId) {
+        // Mevcut usage için payment oluştur
+        result = await paymentService.createPayPalOrder(
+          usageId,
+          req.user._id
+        );
+      } else if (bookingData) {
+        // ✅ YENİ: Booking bilgilerinden payment oluştur (ödeme sonrası usage oluşturulacak)
+        result = await paymentService.createPayPalOrderFromBooking(
+          bookingData,
+          req.user._id
+        );
+      } else {
         res.errorStatusCode = 400;
-        throw new Error("usageId is required");
+        throw new Error("usageId or bookingData is required");
       }
-
-      const result = await paymentService.createPayPalOrder(
-        usageId,
-        req.user._id
-      );
 
       // IP ve User Agent bilgilerini ekle
       await paymentRepository.findByIdAndUpdate(result.paymentId, {
@@ -103,12 +120,45 @@ module.exports = {
     }
   },
 
+  // ✅ YENİ: Stripe payment'i confirm et ve usage oluştur (frontend'den çağrılır)
+  confirmStripePayment: async (req, res) => {
+    /*
+            #swagger.tags = ["Payments"]
+            #swagger.summary = "Confirm Stripe Payment and Create Usage"
+        */
+
+    try {
+      const { paymentIntentId } = req.body;
+
+      if (!paymentIntentId) {
+        res.errorStatusCode = 400;
+        throw new Error("paymentIntentId is required");
+      }
+
+      const result = await paymentService.confirmStripePayment(
+        paymentIntentId,
+        req.user._id
+      );
+
+      res.status(200).send({
+        error: false,
+        result: {
+          paymentId: result._id,
+          usageId: result.usageId,
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // ✅ Stripe Webhook Handler
   stripeWebhook: async (req, res) => {
     const sig = req.headers["stripe-signature"];
     let event;
 
     try {
+      const stripe = getStripe();
       event = stripe.webhooks.constructEvent(
         req.body,
         sig,
@@ -122,7 +172,10 @@ module.exports = {
       await paymentService.handleStripeWebhook(event);
       res.json({ received: true });
     } catch (error) {
-      console.error("Webhook processing error:", error);
+      logger.error("Stripe webhook processing failed", error, {
+        eventType: event?.type,
+        eventId: event?.id
+      });
       res.status(500).json({ error: "Webhook processing failed" });
     }
   },

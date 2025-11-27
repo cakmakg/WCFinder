@@ -11,6 +11,7 @@ const {
     createStripePayment,
     createPayPalOrder,
     capturePayPalOrder,
+    confirmStripePayment,
     stripeWebhook,
     refundPayment,
     myPayments
@@ -28,6 +29,7 @@ router.get('/my-payments', isLogin, myPayments);
 
 // ✅ YENİ: Ödeme başlatma endpoint'leri (Rate limited)
 router.post('/stripe/create', isLogin, paymentLimiter, createStripePayment);
+router.post('/stripe/confirm', isLogin, confirmStripePayment); // ✅ YENİ: Payment confirm ve usage oluştur
 router.post('/paypal/create', isLogin, paymentLimiter, createPayPalOrder);
 router.post('/paypal/capture', isLogin, paymentLimiter, capturePayPalOrder);
 

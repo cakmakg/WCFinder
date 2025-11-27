@@ -61,7 +61,7 @@ const BusinessDetail = () => {
         setBusiness(data.result);
 
         // Tüm tuvaletleri çek
-        const toiletsResponse = await axiosWithToken.get(`/toilet`);
+        const toiletsResponse = await axiosWithToken.get(`/toilets`);
         const allToilets = toiletsResponse.data.result;
         
         // Bu business'a ait olanları filtrele ve null business'ları atla

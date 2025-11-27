@@ -1,9 +1,15 @@
 "use strict";
-/* -------------------------------------------------------
-                User model 
-------------------------------------------------------- */
+/**
+ * User Model
+ * 
+ * User schema definition for WCFinder application.
+ * Supports roles: user, owner, admin
+ * 
+ * Clean Code Principles:
+ * - Single Responsibility: Sadece schema definition
+ * - DRY: Password encryption controller'da yapılıyor
+ */
 const { mongoose } = require("../config/dbConnection");
-// passwordEncrypt burada import edilmemeli - controller'da hallediliyor
 
 const UserSchema = new mongoose.Schema({
     username: {
@@ -39,10 +45,7 @@ const UserSchema = new mongoose.Schema({
     timestamps: true,
 });
 
-// ❌ PRE-SAVE MIDDLEWARE SİLİNDİ
-// Register/update işlemleri zaten controller'da passwordEncrypt kullanıyor
-
-// Virtual property - geriye dönük uyumluluk için
+// Virtual properties for role checks (computed properties)
 UserSchema.virtual('isAdmin').get(function() {
     return this.role === 'admin';
 });

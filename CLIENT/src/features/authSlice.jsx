@@ -1,5 +1,15 @@
-// features/authSlice.jsx
+/**
+ * Auth Slice
+ * 
+ * Manages authentication state and user data
+ * 
+ * Security:
+ * - Never stores passwords or sensitive data in localStorage
+ * - Only stores minimal user data (id, username, role)
+ * - Email and other sensitive data must be fetched from backend
+ */
 import { createSlice } from "@reduxjs/toolkit";
+import { getUserData, storeUserData, removeUserData } from "../utils/userStorage";
 
 const getInitialToken = () => {
   try {
@@ -12,13 +22,8 @@ const getInitialToken = () => {
 };
 
 const getInitialUser = () => {
-  try {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  } catch (error) {
-    console.error('Error reading user from localStorage:', error);
-    return null;
-  }
+  // Use secure user storage utility
+  return getUserData();
 };
 
 const initialState = {
@@ -41,31 +46,52 @@ const authSlice = createSlice({
       const userData = payload.user || payload.data?.user;
       const tokenData = payload.bearer?.accessToken || payload.token;
       
-      state.currentUser = userData;
+      // Sanitize user data before storing (remove password, email, etc.)
+      const sanitizedUser = userData ? {
+        _id: userData._id,
+        username: userData.username,
+        role: userData.role,
+        isActive: userData.isActive,
+      } : null;
+      
+      state.currentUser = sanitizedUser;
       state.token = tokenData;
       state.loading = false;
       
       if (tokenData) {
         localStorage.setItem('token', tokenData);
       }
-      if (userData) {
-        localStorage.setItem('user', JSON.stringify(userData));
+      if (sanitizedUser) {
+        // Use secure storage utility
+        storeUserData(sanitizedUser);
       }
     },
 
     loginSuccess: (state, { payload }) => {
-      const userData = payload.user;
-      const tokenData = payload.bearer?.accessToken;
+      // ✅ Fallback: Backend response formatı değişebilir
+      const userData = payload?.user || payload?.data?.user;
+      const tokenData = payload?.bearer?.accessToken || payload?.token;
       
-      state.currentUser = userData;
+      // Security: Sanitize user data - remove sensitive information
+      // Only store: _id, username, role, isActive
+      // Never store: password, email, or other sensitive PII
+      const sanitizedUser = userData ? {
+        _id: userData._id,
+        username: userData.username,
+        role: userData.role,
+        isActive: userData.isActive,
+      } : null;
+      
+      state.currentUser = sanitizedUser;
       state.token = tokenData;
       state.loading = false;
       
       if (tokenData) {
         localStorage.setItem('token', tokenData);
       }
-      if (userData) {
-        localStorage.setItem('user', JSON.stringify(userData));
+      if (sanitizedUser) {
+        // Use secure storage utility (removes password, email, etc.)
+        storeUserData(sanitizedUser);
       }
     },
 
@@ -75,15 +101,27 @@ const authSlice = createSlice({
       state.loading = false;
       
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Use secure removal utility
+      removeUserData();
     },
 
     userUpdateSuccess: (state, { payload }) => {
-      state.currentUser = payload.user || payload.data?.user;
+      const userData = payload.user || payload.data?.user;
+      
+      // Security: Sanitize user data before storing
+      const sanitizedUser = userData ? {
+        _id: userData._id,
+        username: userData.username,
+        role: userData.role,
+        isActive: userData.isActive,
+      } : null;
+      
+      state.currentUser = sanitizedUser;
       state.loading = false;
       
-      if (state.currentUser) {
-        localStorage.setItem('user', JSON.stringify(state.currentUser));
+      if (sanitizedUser) {
+        // Use secure storage utility
+        storeUserData(sanitizedUser);
       }
     },
 
@@ -97,7 +135,8 @@ const authSlice = createSlice({
       state.token = null;
       state.loading = false;
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Use secure removal utility
+      removeUserData();
     }
   },
 });

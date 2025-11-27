@@ -35,18 +35,16 @@ export const UserMenu = ({
     >
       {/* User Info */}
       {currentUser && (
-        <>
-          <Box sx={{ px: 2, py: 1.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              {currentUser.username}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {currentUser.email}
-            </Typography>
-          </Box>
-          <Divider />
-        </>
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            {currentUser.username}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {currentUser.email}
+          </Typography>
+        </Box>
       )}
+      {currentUser && <Divider />}
 
       {/* My Bookings */}
       <MenuItem onClick={onMyBookingsClick}>
@@ -57,16 +55,14 @@ export const UserMenu = ({
       </MenuItem>
 
       {/* Admin Panel - Sadece admin için */}
+      {currentUser?.role === 'admin' && <Divider />}
       {currentUser?.role === 'admin' && (
-        <>
-          <Divider />
-          <MenuItem onClick={onAdminPanelClick}>
-            <ListItemIcon>
-              <AdminPanelSettingsIcon fontSize="small" sx={{ color: '#7c3aed' }} />
-            </ListItemIcon>
-            <Typography>{t('userMenu.adminPanel')}</Typography>
-          </MenuItem>
-        </>
+        <MenuItem onClick={onAdminPanelClick}>
+          <ListItemIcon>
+            <AdminPanelSettingsIcon fontSize="small" sx={{ color: '#7c3aed' }} />
+          </ListItemIcon>
+          <Typography>{t('userMenu.adminPanel')}</Typography>
+        </MenuItem>
       )}
 
       <Divider />

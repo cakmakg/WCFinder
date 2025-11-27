@@ -80,13 +80,20 @@ const Login = () => {
             initialValues={{ email: "", password: "" }}
             validationSchema={loginSchema}
             onSubmit={async (values, actions) => {
-              await login(values);
-              actions.resetForm();
-              actions.setSubmitting(false);
+              try {
+                console.log('🔐 [Login] Form submit with values:', { email: values.email, hasPassword: !!values.password });
+                await login(values);
+                actions.resetForm();
+              } catch (error) {
+                console.error('❌ [Login] Login failed:', error);
+                // Error zaten useApiCall içinde toast ile gösteriliyor
+              } finally {
+                actions.setSubmitting(false);
+              }
             }}
           >
-            {({ values, handleChange, handleBlur, errors, touched, isSubmitting }) => (
-              <Box component="form" onSubmit={(e) => { e.preventDefault(); }}>
+            {({ values, handleChange, handleBlur, errors, touched, isSubmitting, handleSubmit }) => (
+              <Box component="form" onSubmit={handleSubmit}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Box>
                     <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
@@ -133,7 +140,6 @@ const Login = () => {
                     type="submit"
                     variant="contained"
                     disabled={isSubmitting}
-                    onClick={() => login(values)}
                     sx={{
                       background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
                       py: 1.5,
@@ -142,7 +148,7 @@ const Login = () => {
                       textTransform: "uppercase",
                     }}
                   >
-                    EINLOGGEN
+                    {isSubmitting ? 'EINLOGGEN...' : 'EINLOGGEN'}
                   </Button>
                 </Box>
               </Box>

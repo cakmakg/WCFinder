@@ -5,7 +5,8 @@ const router = require('express').Router();
 const { 
     list, 
     myBusiness, 
-    getOwnerStats, 
+    getOwnerStats,
+    getBusinessStats,
     create, 
     read, 
     update, 
@@ -23,6 +24,9 @@ router.get('/my-business', isOwnerOrAdmin, myBusiness);
 
 // ✅ Owner kendi istatistiklerini görebilir (READ-ONLY)
 router.get('/my-stats', isOwnerOrAdmin, getOwnerStats);
+
+// ✅ Admin işletme istatistiklerini görebilir
+router.get('/:id/stats', isAdmin, getBusinessStats);
 
 // ✅ Sadece ADMIN CRUD yapabilir
 router.post('/', isAdmin, create);

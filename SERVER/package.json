@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node swaggerAutogen.js && nodemon index.js",
-    "debug": "DEBUG=* nodemon"
+    "debug": "DEBUG=* nodemon",
+    "fix-indexes": "node scripts/fix-payment-indexes.js"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "pdfkit": "^0.17.2",
+    "recharts": "^3.5.0",
     "stripe": "^19.1.0"
   }
 }

@@ -17,7 +17,9 @@ const useAuthCall = () => {
   const apiCall = useApiCall();
 
   const login = async (userInfo) => {
+    console.log("🔐 [useAuthCall] Login called with:", userInfo);
     try {
+      console.log("🔐 [useAuthCall] Calling apiCall with url: /auth/login");
       const data = await apiCall({
         url: "/auth/login",
         method: "post",

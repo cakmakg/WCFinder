@@ -6,90 +6,152 @@ const Usage = require('../models/usage');
 const Payment = require('../models/payment');
 const Toilet = require('../models/toilet');
 const Business = require('../models/business');
+const { validateObjectId } = require('../middleware/validation');
+const logger = require('../utils/logger');
+const { FEE_CONFIG, VALIDATION_RULES, STATUS, GENDER_PREFERENCES } = require('../constants');
 
 module.exports = {
     
-    // ✅ YENİ: Kullanıcı rezervasyon oluşturur (ÖDEME YAPILMADAN!)
+    /**
+     * Create a new usage/booking
+     * 
+     * Security:
+     * - Validates all input parameters
+     * - Validates ObjectId formats
+     * - Verifies toilet belongs to business
+     * - Ensures user is authenticated
+     * 
+     * Performance:
+     * - Parallel queries for business and toilet
+     * - Single usage creation query
+     * 
+     * @param {object} req - Express request
+     * @param {object} res - Express response
+     */
     create: async (req, res) => {
-    console.log('🔍 REQUEST INFO:');
-    console.log('User:', req.user);
-    console.log('Body:', req.body);
-    
-    if (!req.user) {
-        res.errorStatusCode = 401;
-        throw new Error("User not authenticated - req.user is undefined");
-    }
+        // Authentication check
+        if (!req.user || !req.user._id) {
+            res.errorStatusCode = 401;
+            throw new Error("User not authenticated");
+        }
 
-    const { 
-        businessId, 
-        toiletId, 
-        personCount, 
-        startTime, 
-        genderPreference 
-    } = req.body;
+        // Input validation and extraction
+        const { 
+            businessId, 
+            toiletId, 
+            personCount, 
+            startTime, 
+            genderPreference 
+        } = req.body;
 
-    if (!businessId || !toiletId || !startTime) {
-        res.errorStatusCode = 400;
-        throw new Error("businessId, toiletId, and startTime are required");
-    }
+        // Required fields validation
+        if (!businessId || !toiletId || !startTime) {
+            res.errorStatusCode = 400;
+            throw new Error("businessId, toiletId, and startTime are required");
+        }
 
-    console.log('✅ Validation passed');
+        // ObjectId format validation (security: prevent NoSQL injection)
+        if (!validateObjectId(businessId)) {
+            res.errorStatusCode = 400;
+            throw new Error("Invalid businessId format");
+        }
 
-    const business = await Business.findById(businessId);
-    console.log('Business:', business ? `Found: ${business.businessName}` : 'Not found');
+        if (!validateObjectId(toiletId)) {
+            res.errorStatusCode = 400;
+            throw new Error("Invalid toiletId format");
+        }
 
-    if (!business) {
-        res.errorStatusCode = 404;
-        throw new Error("Business not found");
-    }
+        // Person count validation (using constants)
+        const personCountNum = Number(personCount);
+        const { MIN_PERSON_COUNT, MAX_PERSON_COUNT } = VALIDATION_RULES.BOOKING;
+        if (!Number.isInteger(personCountNum) || personCountNum < MIN_PERSON_COUNT || personCountNum > MAX_PERSON_COUNT) {
+            res.errorStatusCode = 400;
+            throw new Error(`personCount must be between ${MIN_PERSON_COUNT} and ${MAX_PERSON_COUNT}`);
+        }
 
-    const toilet = await Toilet.findById(toiletId);
-    console.log('Toilet:', toilet ? `Found: ${toilet.name}` : 'Not found');
+        // Date validation
+        const startDate = new Date(startTime);
+        if (isNaN(startDate.getTime()) || startDate <= new Date()) {
+            res.errorStatusCode = 400;
+            throw new Error("startTime must be a valid future date");
+        }
 
-    if (!toilet) {
-        res.errorStatusCode = 404;
-        throw new Error("Toilet not found");
-    }
+        // Gender preference validation (optional) - using constants
+        const validGenders = Object.values(GENDER_PREFERENCES);
+        if (genderPreference && !validGenders.includes(genderPreference)) {
+            res.errorStatusCode = 400;
+            throw new Error(`genderPreference must be one of: ${validGenders.join(', ')}`);
+        }
 
-    console.log('Toilet business:', toilet.business);
-    console.log('Requested businessId:', businessId);
+        logger.debug('Creating usage', { 
+            userId: req.user._id, 
+            businessId, 
+            toiletId 
+        });
 
-    if (toilet.business && toilet.business.toString() !== businessId.toString()) {
-        res.errorStatusCode = 400;
-        throw new Error("Toilet does not belong to this business");
-    }
+        // Parallel queries for better performance
+        const [business, toilet] = await Promise.all([
+            Business.findById(businessId),
+            Toilet.findById(toiletId)
+        ]);
 
-    try {
-        console.log('Creating usage...');
-        
-        const basePrice = toilet.fee || 0;
-        const serviceFee = 1.75;
-        const totalFee = (basePrice * (personCount || 1)) + serviceFee;
+        if (!business) {
+            res.errorStatusCode = 404;
+            throw new Error("Business not found");
+        }
 
-        console.log('Fees:', { basePrice, serviceFee, personCount, totalFee });
+        if (!toilet) {
+            res.errorStatusCode = 404;
+            throw new Error("Toilet not found");
+        }
+
+        // Security: Verify toilet belongs to business
+        if (toilet.business && toilet.business.toString() !== businessId.toString()) {
+            res.errorStatusCode = 400;
+            throw new Error("Toilet does not belong to this business");
+        }
+
+        try {
+        // Calculate fees using constants (DRY principle)
+        const basePrice = toilet.fee || FEE_CONFIG.DEFAULT_TOILET_FEE;
+        const serviceFee = FEE_CONFIG.SERVICE_FEE;
+        const finalPersonCount = personCount || 1;
+        const totalFee = (basePrice * finalPersonCount) + serviceFee;
+
+        logger.debug('Calculating fees', { 
+            basePrice, 
+            serviceFee, 
+            personCount: finalPersonCount, 
+            totalFee 
+        });
         
         const newUsage = await Usage.create({
             userId: req.user._id,
             businessId,
             toiletId,
-            personCount: personCount || 1,
+            personCount: finalPersonCount,
             startTime: new Date(startTime),
             genderPreference,
             basePrice,
             serviceFee,
             totalFee,
-            status: 'pending',
-            paymentStatus: 'pending',
+            status: STATUS.USAGE.PENDING,
+            paymentStatus: STATUS.PAYMENT.PENDING,
         });
 
-        console.log('✅ Usage created successfully:', newUsage._id);
+        logger.info('Usage created successfully', { 
+            usageId: newUsage._id,
+            userId: req.user._id,
+            businessId,
+            toiletId
+        });
 
         const populatedUsage = await Usage.findById(newUsage._id)
             .populate('businessId', 'businessName address')
             .populate('toiletId', 'name features fee')
             .populate('userId', 'firstName lastName email');
 
-        console.log('✅ Usage populated successfully');
+        logger.debug('Usage populated successfully', { usageId: newUsage._id });
 
         res.status(201).send({
             error: false,
@@ -98,63 +160,171 @@ module.exports = {
         });
 
     } catch (error) {
-        console.error('❌ ERROR CREATING USAGE:', error);
-        console.error('Error message:', error.message);
+        logger.error('Failed to create usage', error, { 
+            userId: req.user._id,
+            businessId,
+            toiletId
+        });
         throw error;
     }
 },
 
-    // ✅ YENİ: Kullanıcı kendi rezervasyonlarını görür
+    /**
+     * Get user's own usages/reservations
+     * 
+     * N+1 Problem Optimization:
+     * - All populates are done in a single query
+     * - Only necessary fields are selected
+     * - Query is indexed on userId for performance
+     * 
+     * Security:
+     * - User can only see their own usages (userId filter)
+     * - Query parameters are validated
+     * 
+     * @param {object} req - Express request
+     * @param {object} res - Express response
+     */
     myUsages: async (req, res) => {
         /*
             #swagger.tags = ["Usages"]
             #swagger.summary = "Get My Usages/Reservations"
         */
 
-        const { status, paymentStatus } = req.query;
+        const logger = require('../utils/logger');
+        const { validateObjectId } = require('../middleware/validation');
         
-        let filter = { userId: req.user._id };
-        
-        if (status) filter.status = status;
-        if (paymentStatus) filter.paymentStatus = paymentStatus;
+        try {
+            // Validate and sanitize query parameters
+            const { status, paymentStatus } = req.query;
+            
+            // Valid status values (using constants)
+            const validStatuses = Object.values(STATUS.USAGE);
+            const validPaymentStatuses = Object.values(STATUS.PAYMENT);
+            
+            let filter = { userId: req.user._id };
+            
+            // Validate status if provided
+            if (status) {
+                if (!validStatuses.includes(status)) {
+                    res.errorStatusCode = 400;
+                    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+                }
+                filter.status = status;
+            }
+            
+            // Validate paymentStatus if provided
+            if (paymentStatus) {
+                if (!validPaymentStatuses.includes(paymentStatus)) {
+                    res.errorStatusCode = 400;
+                    throw new Error(`Invalid paymentStatus. Must be one of: ${validPaymentStatuses.join(', ')}`);
+                }
+                filter.paymentStatus = paymentStatus;
+            }
 
-        const usages = await Usage.find(filter)
-            .populate('businessId', 'businessName address')
-            .populate('toiletId', 'name features')
-            .populate('paymentId')
-            .sort({ createdAt: -1 });
+            logger.debug('Fetching user usages', { 
+                userId: req.user._id, 
+                filter 
+            });
 
-        res.status(200).send({
-            error: false,
-            count: usages.length,
-            result: usages,
-        });
+            // Optimized query: All populates in single query (no N+1 problem)
+            // Only select necessary fields to reduce data transfer
+            const usages = await Usage.find(filter)
+                .populate('businessId', 'businessName address location')
+                .populate('toiletId', 'name features fee status')
+                .populate('paymentId', 'paymentMethod paymentProvider transactionId status amount')
+                .select('-__v') // Exclude version key
+                .sort({ createdAt: -1 })
+                .lean(); // Use lean() for better performance (returns plain JS objects)
+
+            logger.info('User usages fetched successfully', { 
+                userId: req.user._id, 
+                count: usages.length 
+            });
+
+            res.status(200).send({
+                error: false,
+                count: usages.length,
+                result: usages,
+            });
+        } catch (error) {
+            logger.error('Failed to fetch user usages', error, { 
+                userId: req.user._id 
+            });
+            throw error;
+        }
     },
 
-    // ✅ YENİ: Kullanıcı tek bir rezervasyonunu görür
+    /**
+     * Get single usage detail for current user
+     * 
+     * Security:
+     * - Validates ObjectId format
+     * - User can only access their own usage (userId filter)
+     * - Returns 404 if not found (doesn't reveal if it exists but belongs to another user)
+     * 
+     * Performance:
+     * - Single query with all populates (no N+1 problem)
+     * - Only necessary fields selected
+     * 
+     * @param {object} req - Express request
+     * @param {object} res - Express response
+     */
     myUsageDetail: async (req, res) => {
         /*
             #swagger.tags = ["Usages"]
             #swagger.summary = "Get Single Usage Detail"
         */
 
-        const usage = await Usage.findOne({ 
-            _id: req.params.id,
-            userId: req.user._id // Sadece kendi rezervasyonu
-        })
-        .populate('businessId')
-        .populate('toiletId')
-        .populate('paymentId');
+        const logger = require('../utils/logger');
+        const { validateObjectId } = require('../middleware/validation');
+        
+        try {
+            const { id } = req.params;
+            
+            // Validate ObjectId format (security: prevent NoSQL injection)
+            if (!validateObjectId(id)) {
+                res.errorStatusCode = 400;
+                throw new Error('Invalid usage ID format');
+            }
 
-        if (!usage) {
-            res.errorStatusCode = 404;
-            throw new Error("Usage not found or you don't have permission");
+            logger.debug('Fetching usage detail', { 
+                usageId: id, 
+                userId: req.user._id 
+            });
+
+            // Single optimized query with all populates
+            const usage = await Usage.findOne({ 
+                _id: id,
+                userId: req.user._id // Security: Only user's own usage
+            })
+            .populate('businessId', 'businessName address location businessType')
+            .populate('toiletId', 'name features fee status averageRatings')
+            .populate('paymentId', 'paymentMethod paymentProvider transactionId paymentIntentId paypalOrderId status amount currency createdAt')
+            .select('-__v')
+            .lean();
+
+            if (!usage) {
+                // Don't reveal if usage exists but belongs to another user (security best practice)
+                res.errorStatusCode = 404;
+                throw new Error("Usage not found or you don't have permission");
+            }
+
+            logger.info('Usage detail fetched successfully', { 
+                usageId: id, 
+                userId: req.user._id 
+            });
+
+            res.status(200).send({
+                error: false,
+                result: usage,
+            });
+        } catch (error) {
+            logger.error('Failed to fetch usage detail', error, { 
+                usageId: req.params.id, 
+                userId: req.user._id 
+            });
+            throw error;
         }
-
-        res.status(200).send({
-            error: false,
-            result: usage,
-        });
     },
 
     // ✅ GÜNCELLENMIŞ: Ödeme tamamlandıktan sonra usage'ı güncelle

@@ -61,7 +61,7 @@ const UsageSchema = new mongoose.Schema({
     serviceFee: {
         type: Number,
         required: true,
-        default: 1.75,
+        default: 0.75,
     },
 
     // Toplam ücret

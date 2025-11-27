@@ -73,33 +73,33 @@ const AppRouter = () => {
   );
 
   // Payment providers
-  if (paypalOptions && stripePromise) {
-    return (
-      <PayPalScriptProvider options={paypalOptions}>
-        <Elements stripe={stripePromise}>
-          {content}
-        </Elements>
-      </PayPalScriptProvider>
-    );
-  }
+  // PayPalScriptProvider her zaman render edilmeli (PayPalButtons kullanılıyorsa)
+  // Eğer paypalOptions null ise, geçerli bir sandbox ID kullan
+  const finalPaypalOptions = paypalOptions || {
+    'client-id': 'test', // Test mode - script yüklenir ama gerçek ödeme yapılmaz
+    currency: 'EUR',
+    intent: 'capture',
+  };
 
+  // Her durumda PayPalScriptProvider ile sar (PayPalButtons için gerekli)
+  let wrappedContent = (
+    <PayPalScriptProvider 
+      options={finalPaypalOptions}
+    >
+      {content}
+    </PayPalScriptProvider>
+  );
+
+  // Stripe varsa Elements ile de sar
   if (stripePromise) {
-    return (
+    wrappedContent = (
       <Elements stripe={stripePromise}>
-        {content}
+        {wrappedContent}
       </Elements>
     );
   }
 
-  if (paypalOptions) {
-    return (
-      <PayPalScriptProvider options={paypalOptions}>
-        {content}
-      </PayPalScriptProvider>
-    );
-  }
-
-  return content;
+  return wrappedContent;
 };
 
 export default AppRouter;

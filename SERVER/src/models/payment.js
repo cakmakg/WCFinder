@@ -4,8 +4,9 @@ const PaymentSchema = new mongoose.Schema({
     usageId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usage',
-        required: true,
-        unique: true,
+        required: false, // ✅ Ödeme başarılı olduktan sonra eklenecek
+        index: true, // ✅ Unique kaldırıldı - birden fazla null değer olabilir
+        sparse: true, // null değerlere izin verir
     },
 
     userId: {
@@ -98,6 +99,7 @@ const PaymentSchema = new mongoose.Schema({
     // ✅ YENİ: Stripe için PaymentIntent ID
     paymentIntentId: {
         type: String,
+        unique: true, // ✅ Her payment intent unique olmalı
         index: true,
         sparse: true,
     },
@@ -105,6 +107,7 @@ const PaymentSchema = new mongoose.Schema({
     // ✅ YENİ: PayPal için Order ID
     paypalOrderId: {
         type: String,
+        unique: true, // ✅ Her PayPal order unique olmalı
         index: true,
         sparse: true,
     },
@@ -134,6 +137,11 @@ const PaymentSchema = new mongoose.Schema({
     // ✅ YENİ: User agent (güvenlik için)
     userAgent: {
         type: String,
+    },
+
+    // ✅ YENİ: Metadata - Booking bilgilerini geçici olarak saklamak için
+    metadata: {
+        type: mongoose.Schema.Types.Mixed,
     },
 
 }, {

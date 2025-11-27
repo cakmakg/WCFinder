@@ -9,6 +9,7 @@ const Business = require('../models/business');
 const RechnungService = require('../services/rechnungService');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../utils/logger');
 
 module.exports = {
 
@@ -121,7 +122,10 @@ module.exports = {
             try {
                 await RechnungService.sendeRechnungEmail(rechnung);
             } catch (emailError) {
-                console.error('Email gönderim hatası (devam ediliyor):', emailError);
+                logger.warn('Email gönderim hatası (devam ediliyor)', {
+                    rechnungId: rechnung._id,
+                    error: emailError.message
+                });
                 // Email hatası rechnung oluşturmayı engellemez
             }
             

@@ -25,7 +25,7 @@ const ToiletSchema = new mongoose.Schema(
         fee: { 
             type: Number, 
             required: true,
-            default: 0,
+            default: 1.00,
             min: 0,
         },
 

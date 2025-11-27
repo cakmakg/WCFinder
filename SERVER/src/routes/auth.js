@@ -7,14 +7,28 @@ const router = require('express').Router()
 /* ------------------------------------------------------- */
 
 const { login, refresh, logout, register } = require('../controller/auth');
+const logger = require('../utils/logger');
 
 // URL: /auth
 
-router.post('/login', login);
+// Development'ta route bilgilerini logla
+if (process.env.NODE_ENV === 'development') {
+    logger.debug('Auth routes registered', {
+        routes: ['/login', '/register', '/refresh', '/logout']
+    });
+}
+
+router.post('/login', async (req, res, next) => {
+  try {
+    await login(req, res);
+  } catch (error) {
+    next(error); // Error handler'a gönder
+  }
+});
+
 router.post('/register', register);
 router.post('/refresh', refresh);
 router.get('/logout', logout);
-
 
 /* ------------------------------------------------------- */
 module.exports = router;

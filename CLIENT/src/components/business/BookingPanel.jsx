@@ -55,8 +55,8 @@ export const BookingPanel = ({ business, toilets }) => {
     );
   }
 
-  const basePrice = toilets[0]?.fee || 5;
-  const serviceFee = 1.75;
+  const basePrice = toilets[0]?.fee || 1.00;
+  const serviceFee = 0.75;
   const total = (basePrice * personCount) + serviceFee;
 
   const handleReservation = async () => {
@@ -74,25 +74,19 @@ export const BookingPanel = ({ business, toilets }) => {
       setLoading(true);
       setError(null);
 
-      const usageData = {
-        businessId: business._id,
-        toiletId: toilets[0]._id,
-        personCount: personCount,
-        startTime: new Date(date).toISOString(),
-        genderPreference: userGender,
-      };
-
-      console.log('📤 Creating usage:', usageData);
-      const usageResponse = await usageService.createUsage(usageData);
-      console.log('✅ Usage created:', usageResponse);
-
+      // ✅ Usage oluşturma - sadece booking bilgilerini payment sayfasına gönder
+      // Usage sadece ödeme başarılı olduktan sonra oluşturulacak
       const bookingData = {
-        usageId: usageResponse.result._id,
         business: {
           id: business._id,
           name: business.businessName,
           address: business.address,
           location: business.location
+        },
+        toilet: {
+          id: toilets[0]._id,
+          name: toilets[0].name,
+          fee: toilets[0].fee
         },
         userGender,
         date,
@@ -104,7 +98,7 @@ export const BookingPanel = ({ business, toilets }) => {
         }
       };
 
-      console.log('📦 Navigating with bookingData:', bookingData);
+      console.log('📦 Navigating to payment with bookingData:', bookingData);
       navigate('/payment', { state: bookingData });
 
     } catch (error) {

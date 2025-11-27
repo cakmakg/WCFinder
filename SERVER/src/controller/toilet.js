@@ -1,6 +1,9 @@
 "use strict";
 
 const Toilet = require("../models/toilet");
+const logger = require("../utils/logger");
+const { FEE_CONFIG, STATUS } = require("../constants");
+const { validateToilet } = require("../services/validationService");
 
 module.exports = {
   // GET: Tüm tuvaletleri listeleme
@@ -16,7 +19,7 @@ module.exports = {
       filter.business = req.query['filter[business]'];
     }
     
-    console.log('Toilet filter:', filter);
+    logger.debug('Fetching toilets with filter', { filter });
     
     const data = await res.getModelList(Toilet, filter, "business");
 
@@ -27,7 +30,16 @@ module.exports = {
   });
 },
 
-  // POST: Yeni bir tuvalet oluşturma
+  /**
+   * POST: Create a new toilet
+   * 
+   * Security:
+   * - Input validation using validationService
+   * - Fee always set to DEFAULT_TOILET_FEE (prevents fee manipulation)
+   * 
+   * @param {object} req - Express request
+   * @param {object} res - Express response
+   */
   create: async (req, res) => {
     /*
       #swagger.tags = ["Toilets"]
@@ -44,7 +56,34 @@ module.exports = {
         }
       }
     */
-    const result = await Toilet.create(req.body);
+    
+    // Input validation (security: prevent invalid data)
+    const validation = validateToilet(req.body);
+    if (!validation.isValid) {
+      res.errorStatusCode = 400;
+      throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    }
+    
+    // ✅ Yeni tuvalet kayıtlarında fee her zaman DEFAULT_TOILET_FEE olmalı (DRY principle)
+    // Security: Prevent fee manipulation by always using constant
+    const toiletData = {
+      ...req.body,
+      fee: FEE_CONFIG.DEFAULT_TOILET_FEE  // Always use constant
+    };
+    
+    logger.debug('Creating toilet', { 
+      businessId: toiletData.business,
+      fee: toiletData.fee,
+      name: toiletData.name
+    });
+    
+    const result = await Toilet.create(toiletData);
+    
+    logger.info('Toilet created successfully', {
+      toiletId: result._id,
+      businessId: toiletData.business,
+      name: result.name
+    });
 
     res.status(201).send({
       error: false,

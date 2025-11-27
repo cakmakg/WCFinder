@@ -1,5 +1,5 @@
 // pages/Dashboard.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapContainer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -69,11 +69,41 @@ const Dashboard = ({ selectedBusiness, searchedLocation }) => {
     osm: 'OpenStreetMap'
   };
 
+  const hasFetchedToilets = useRef(false);
+
   useEffect(() => {
     // Toilet verilerini yükle - auth gerekmeden
-    getCrudData('toilet', false);
+    if (!hasFetchedToilets.current) {
+      getCrudData('toilets', false);
+      hasFetchedToilets.current = true;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // getCrudData her render'da değişebilir, sadece mount'ta çalışmalı
+
+  // Sayfa görünür olduğunda veriyi yenile (yeni toilet oluşturulduktan sonra)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && hasFetchedToilets.current) {
+        // Sayfa tekrar görünür olduğunda veriyi yenile
+        getCrudData('toilets', false);
+      }
+    };
+
+    const handleFocus = () => {
+      if (hasFetchedToilets.current) {
+        // Window focus olduğunda veriyi yenile
+        getCrudData('toilets', false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [getCrudData]);
 
   // Kullanıcı konumu değiştiğinde en yakın tuvaleti bul
   useEffect(() => {

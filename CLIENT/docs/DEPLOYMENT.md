@@ -634,4 +634,4 @@ Post-Deployment:
 
 ---
 
-**Son Güncelleme**: Eylül 2025
+**Son Güncelleme**: Aralık 2024

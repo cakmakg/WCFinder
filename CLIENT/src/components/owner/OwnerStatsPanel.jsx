@@ -46,27 +46,65 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
         <Grid item xs={12} sm={6} md={3}>
           <Card 
             sx={{ 
-              bgcolor: '#f0f9ff', 
-              border: '1px solid #bae6fd',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <WcIcon sx={{ color: '#0891b2', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#0891b2' }}>
-                  {ownerStats.toilets?.total || 0}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#0891b2",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#cffafe",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <WcIcon sx={{ color: "#0891b2", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#0891b2",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {ownerStats.toilets?.total || 0}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Gesamt Toiletten
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.totalToilets')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -74,27 +112,65 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
         <Grid item xs={12} sm={6} md={3}>
           <Card 
             sx={{ 
-              bgcolor: '#f0fdf4', 
-              border: '1px solid #86efac',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <TrendingUpIcon sx={{ color: '#16a34a', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#16a34a' }}>
-                  {ownerStats.usage?.total || 0}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#16a34a",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#dcfce7",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <TrendingUpIcon sx={{ color: "#16a34a", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#16a34a",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {ownerStats.usage?.total || 0}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Gesamt Reservierungen
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.totalUsages')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -102,27 +178,65 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
         <Grid item xs={12} sm={6} md={3}>
           <Card 
             sx={{ 
-              bgcolor: '#fef3c7', 
-              border: '1px solid #fde047',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <EuroIcon sx={{ color: '#d97706', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#d97706' }}>
-                  € {ownerStats.revenue?.total?.toFixed(2) || '0.00'}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#f59e0b",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#fef3c7",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <EuroIcon sx={{ color: "#f59e0b", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#f59e0b",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    €{ownerStats.revenue?.total?.toFixed(2) || '0.00'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Gesamtumsatz
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.totalRevenue')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -130,27 +244,65 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
         <Grid item xs={12} sm={6} md={3}>
           <Card 
             sx={{ 
-              bgcolor: '#fce7f3', 
-              border: '1px solid #f9a8d4',
+              position: "relative",
+              overflow: "hidden",
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              transition: 'transform 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-              }
+              border: "none",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              "&:hover": {
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                transform: "translateY(-4px)",
+              },
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <PeopleIcon sx={{ color: '#be185d', fontSize: '2rem' }} />
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#be185d' }}>
-                  {ownerStats.ratings?.average?.toFixed(1) || '0.0'}
-                </Typography>
+            <Box
+              sx={{
+                position: "absolute",
+                top: -20,
+                right: -20,
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                bgcolor: "#16a34a",
+                opacity: 0.1,
+              }}
+            />
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: "#dcfce7",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <PeopleIcon sx={{ color: "#16a34a", fontSize: "2rem" }} />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 700,
+                      color: "#16a34a",
+                      mb: 0.5,
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {ownerStats.ratings?.average?.toFixed(1) || '0.0'}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontWeight: 500 }}
+                  >
+                    Durchschnittliche Bewertung
+                  </Typography>
+                </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                {t('myBookings.averageRating')}
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -161,22 +313,26 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
             sx={{ 
               p: 3, 
               borderRadius: 3,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              border: '1px solid #e2e8f0'
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              border: 'none',
+              "&:hover": {
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              },
+              transition: "all 0.3s ease",
             }}
           >
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: '#1e293b' }}>
-              {t('myBookings.toiletOverview')}
+              Toiletten Übersicht
             </Typography>
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                    <TableCell sx={{ fontWeight: 700 }}><strong>{t('myBookings.name')}</strong></TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}><strong>{t('myBookings.fee')}</strong></TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}><strong>{t('myBookings.status')}</strong></TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}><strong>{t('myBookings.rating')}</strong></TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}><strong>{t('myBookings.reviews')}</strong></TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}><strong>Name</strong></TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}><strong>Gebühr</strong></TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}><strong>Status</strong></TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}><strong>Bewertung</strong></TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}><strong>Bewertungen</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -186,20 +342,26 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
                         key={toilet.id}
                         sx={{ 
                           '&:hover': { 
-                            bgcolor: '#f8fafc' 
-                          } 
+                            bgcolor: '#f8fafc',
+                            transform: 'scale(1.01)',
+                          },
+                          transition: "all 0.2s ease",
                         }}
                       >
                         <TableCell sx={{ fontWeight: 500 }}>{toilet.name}</TableCell>
-                        <TableCell>€ {toilet.fee?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600} color="#0891b2">
+                            €{toilet.fee?.toFixed(2) || '0.00'}
+                          </Typography>
+                        </TableCell>
                         <TableCell>
                           <Chip
                             label={
                               toilet.status === 'available' 
-                                ? t('myBookings.available') 
+                                ? "Verfügbar" 
                                 : toilet.status === 'in_use' 
-                                ? t('myBookings.inUse') 
-                                : t('myBookings.outOfOrder')
+                                ? "In Benutzung" 
+                                : "Außer Betrieb"
                             }
                             color={
                               toilet.status === 'available' 
@@ -214,18 +376,24 @@ export const OwnerStatsPanel = ({ ownerStats }) => {
                         </TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <PeopleIcon fontSize="small" color="action" />
-                            {toilet.averageRating?.toFixed(1) || '0.0'}
+                            <PeopleIcon fontSize="small" color="primary" />
+                            <Typography variant="body2" fontWeight={600}>
+                              {toilet.averageRating?.toFixed(1) || '0.0'}
+                            </Typography>
                           </Box>
                         </TableCell>
-                        <TableCell>{toilet.reviewCount || 0}</TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={500}>
+                            {toilet.reviewCount || 0}
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                         <Typography color="text.secondary">
-                          {t('myBookings.noData')}
+                          Keine Daten verfügbar
                         </Typography>
                       </TableCell>
                     </TableRow>

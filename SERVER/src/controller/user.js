@@ -1,5 +1,6 @@
 "use strict";
 const User = require("../models/user");
+const passwordEncrypt = require("../helper/passwordEncrypt");
 
 module.exports = {
     list: async (req, res) => {
@@ -14,7 +15,12 @@ module.exports = {
 
     create: async (req, res) => {
         // Yeni kullanıcı kaydı herkese açıktır.
-        const data = await User.create(req.body);
+        // ✅ SECURITY: Password'u hash'le
+        const userData = { ...req.body };
+        if (userData.password) {
+            userData.password = passwordEncrypt(userData.password);
+        }
+        const data = await User.create(userData);
         res.status(201).send({
             error: false,
             result: data,
@@ -38,7 +44,13 @@ module.exports = {
             delete req.body.role;    // Rolünü değiştirmesini engelle.
         }
         
-        const data = await User.updateOne({ _id: req.params.id }, req.body, { runValidators: true });
+        // ✅ SECURITY: Password güncelleniyorsa hash'le
+        const updateData = { ...req.body };
+        if (updateData.password) {
+            updateData.password = passwordEncrypt(updateData.password);
+        }
+        
+        const data = await User.updateOne({ _id: req.params.id }, updateData, { runValidators: true });
         res.status(202).send({
             error: false,
             data,
