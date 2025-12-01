@@ -26,7 +26,10 @@ mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/wcfinder?retryWrites=
 
 ---
 
-### 2️⃣ Backend Deployment (Railway - 3 dakika)
+### 2️⃣ Backend Deployment (Railway - 3 dakika) ⭐ ÖNERİLEN
+
+> 💡 **Neden Railway?** Projenizde dosya uploads ve PDF storage var. Railway'da dosyalar kalıcı, Render'da restart'ta silinir. 
+> Detaylı karşılaştırma: [DEPLOYMENT_PLATFORM_COMPARISON.md](DEPLOYMENT_PLATFORM_COMPARISON.md)
 
 1. **Railway'a giriş**: https://railway.app (GitHub ile)
 
@@ -163,7 +166,7 @@ Detaylı kontrol listesi için: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.m
 
 - **Tam Rehber**: [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md)
 - **Checklist**: [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)
-- **Mevcut Rehber**: [CLIENT/docs/DEPLOYMENT.md](CLIENT/docs/DEPLOYMENT.md)
+- **Platform Karşılaştırması**: [DEPLOYMENT_PLATFORM_COMPARISON.md](DEPLOYMENT_PLATFORM_COMPARISON.md)
 
 ---
 

@@ -22,10 +22,30 @@ export default defineConfig({
     // },
   },
   
-  // ✅ Build ayarları
+  // ✅ Build ayarları (SEO & Performance optimizasyonları)
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV === 'development', // Production'da kapalı
+    minify: 'terser', // Daha iyi minification
+    terserOptions: {
+      compress: {
+        drop_console: process.env.NODE_ENV === 'production', // Production'da console.log'ları kaldır
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunk'ları ayır (cache için)
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/icons-material'],
+          redux: ['@reduxjs/toolkit', 'react-redux'],
+          leaflet: ['leaflet', 'react-leaflet'],
+        },
+      },
+    },
+    // Chunk size uyarıları
+    chunkSizeWarningLimit: 1000,
   },
   
   // ✅ Path alias (opsiyonel - import kolaylığı için)

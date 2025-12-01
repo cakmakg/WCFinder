@@ -17,6 +17,7 @@ import DrawerContent from '../components/layout/SideBar/DrawerContent';
 import BusinessList from '../components/business/BusinessList';
 import Dashboard from './Dashboard';
 import { DRAWER_WIDTH, DRAWER_WIDTH_MOBILE } from '../constants/layout';
+import SEOHead from '../components/SEO/SEOHead';
 
 export default function Home() {
   const theme = useTheme();
@@ -74,6 +75,12 @@ export default function Home() {
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#f5f5f5' }}>
+      <SEOHead
+        title="Find Toilets Near You | WCFinder - Toilet Map & Booking"
+        description="Search and find public toilets near you. Browse our map of WC facilities, public restrooms, and toiletten. Book and reserve toilets easily. Tuvalet bulucu, WC finder."
+        keywords="toilet map, wc finder, tuvalet haritası, find toilet near me, public toilet, wc near me, toilet booking, tuvalet rezervasyonu, toilet search"
+        url="/home"
+      />
       <CssBaseline />
 
       {/* AppBar */}

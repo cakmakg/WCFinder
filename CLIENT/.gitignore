@@ -1,36 +1,12 @@
 # ---------------------------------------------
-# ⚛️ React / Vite Client Gitignore
+# ⚛️ CLIENT - Client-specific ignores
 # ---------------------------------------------
+# Note: Root .gitignore covers most common patterns
+# This file only includes CLIENT-specific items
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
+# Vite specific
+.vite/
+vite.config.*.timestamp-*
 
-# Node modules
-node_modules/
-
-# Build outputs
-dist/
-dist-ssr/
-
-# Environment files (client-side)
-.env
-.env.local
-.env.development
-.env.production
-
-# ✅ allow example env
-!.env.example
-
-# IDE / OS
-.vscode/
-.idea/
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Testing
+coverage/

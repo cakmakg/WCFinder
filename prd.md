@@ -236,7 +236,7 @@ WCFinder, şehirde veya seyahat sırasında kamusal tuvalete erişim ihtiyacı d
 
 - **Ana Dokümantasyon:** `README.md` - Proje genel bakış ve kurulum
 - **Teknik Dokümantasyon:** `CLIENT/docs/ARCHITECTURE.md`, `SERVER/src` controller ve model dosyaları
-- **Dağıtım Rehberi:** `CLIENT/docs/DEPLOYMENT.md` - Production deployment rehberi
+- **Dağıtım Rehberi:** `PRODUCTION_DEPLOYMENT.md` - Production deployment rehberi
 - **Komisyon Sistemi:** `COMMISSION_SYSTEM_DOCUMENTATION.md` - Ödeme ve komisyon yapısı
 - **Admin Oluşturma:** `CREATE_ADMIN_USER.md` - İlk admin kullanıcısı oluşturma
 

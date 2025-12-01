@@ -28,6 +28,8 @@ import { BookingPanel } from '../components/business/BookingPanel';
 import { ToiletList } from '../components/business/ToiletList';
 import { MapTileLayer } from '../components/map/MapTileLayer';
 import useAxios from '../hook/useAxios';
+import SEOHead from '../components/SEO/SEOHead';
+import { generateLocalBusinessSchema, generateBreadcrumbSchema, generateTitle, generateDescription, generateKeywords } from '../utils/seoHelpers';
 
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
@@ -125,20 +127,43 @@ const BusinessDetail = () => {
     ? [business.location.coordinates[1], business.location.coordinates[0]]
     : [50.7374, 7.0982];
 
+  // SEO için structured data ve meta tags
+  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || window.location.origin;
+  const businessUrl = `${baseUrl}/business/${id}`;
+  const businessSchema = business ? generateLocalBusinessSchema(business) : null;
+  const breadcrumbSchema = business ? generateBreadcrumbSchema([
+    { name: 'Home', url: baseUrl },
+    { name: 'Businesses', url: `${baseUrl}/home` },
+    { name: business.businessName, url: businessUrl },
+  ]) : null;
+
+  const seoTitle = business ? generateTitle(business) : 'Business Details | WCFinder';
+  const seoDescription = business ? generateDescription(business) : 'Find and book toilets at this business location.';
+  const seoKeywords = business ? generateKeywords(business) : 'toilet, wc, tuvalet, booking';
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
+    <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
+      <SEOHead
+        title={seoTitle}
+        description={seoDescription}
+        keywords={seoKeywords}
+        url={`/business/${id}`}
+        type="website"
+        structuredData={businessSchema ? [businessSchema, breadcrumbSchema].filter(Boolean) : null}
+        canonical={businessUrl}
+      />
       <Container maxWidth="lg">
         {/* Header */}
-        <Box sx={{ mb: 3 }}>
+        <Box component="header" sx={{ mb: 3 }}>
           <IconButton onClick={() => navigate('/')} sx={{ mb: 2 }}>
             <ArrowBackIcon />
           </IconButton>
 
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ p: 3, mb: 3 }} component="article">
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Typography variant="h4" sx={{ fontWeight: 600 }}>
+                  <Typography variant="h1" component="h1" sx={{ fontWeight: 600, fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
                     {business.businessName}
                   </Typography>
                   {business.approvalStatus === 'approved' && (
@@ -188,11 +213,11 @@ const BusinessDetail = () => {
         </Box>
 
         {/* Main Content Grid */}
-        <Grid container spacing={3}>
+        <Grid container spacing={3} component="article">
           {/* Left Column - Details */}
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12} md={7} component="section">
             {/* Map */}
-            <Paper sx={{ mb: 3, overflow: 'hidden', borderRadius: 2 }}>
+            <Paper sx={{ mb: 3, overflow: 'hidden', borderRadius: 2 }} component="section">
               <MapContainer 
                 center={position} 
                 zoom={15} 
@@ -206,8 +231,8 @@ const BusinessDetail = () => {
             </Paper>
 
             {/* Standort Info */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            <Paper sx={{ p: 3, mb: 3 }} component="section">
+              <Typography variant="h2" component="h2" sx={{ mb: 2, fontWeight: 600, fontSize: '1.25rem' }}>
                 {t('businessDetail.location')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -217,9 +242,11 @@ const BusinessDetail = () => {
 
             {/* Available Toilets */}
             {toilets.length > 0 ? (
-              <ToiletList toilets={toilets} />
+              <Box component="section">
+                <ToiletList toilets={toilets} />
+              </Box>
             ) : (
-              <Paper sx={{ p: 3 }}>
+              <Paper sx={{ p: 3 }} component="section">
                 <Alert severity="info">
                   {t('businessDetail.noToilets')}
                 </Alert>
@@ -228,7 +255,7 @@ const BusinessDetail = () => {
           </Grid>
 
           {/* Right Column - Booking Panel */}
-          <Grid item xs={12} md={5}>
+          <Grid item xs={12} md={5} component="aside">
             <Box sx={{ 
               position: { xs: 'static', md: 'sticky' }, // Mobile'da sticky kaldır
               top: { md: 24 } 

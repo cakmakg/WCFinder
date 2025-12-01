@@ -33,5 +33,8 @@ router.use('/review', require('./review'));
 // toilet:
 router.use('/toilets', require('./toilet'));
 
+// SEO:
+router.use('/', require('./seo')); // sitemap.xml, robots.txt
+
 /* ------------------------------------------------------- */
 module.exports = router;

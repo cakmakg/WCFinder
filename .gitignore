@@ -4,13 +4,13 @@
 
 # Node modules (global)
 node_modules/
-client/node_modules/
+CLIENT/node_modules/
 SERVER/node_modules/
 
 # Build outputs
 dist/
 build/
-client/dist/
+CLIENT/dist/
 SERVER/dist/
 out/
 .cache/
@@ -30,10 +30,10 @@ lerna-debug.log*
 .env.development
 .env.production
 .env.test
-client/.env
-client/.env.local
-client/.env.development
-client/.env.production
+CLIENT/.env
+CLIENT/.env.local
+CLIENT/.env.development
+CLIENT/.env.production
 SERVER/.env
 SERVER/.env.local
 SERVER/.env.development
@@ -41,7 +41,7 @@ SERVER/.env.production
 
 # ✅ allow only example env files
 !.env.example
-!client/.env.example
+!CLIENT/.env.example
 !SERVER/.env.example
 
 # Editor / OS
@@ -69,3 +69,7 @@ pm2/
 # Windows reserved names (prevent accidental creation)
 nul
 NUL
+
+# Bare Git repositories (should not be in project root)
+*.git/
+WCFinder-clean.git/

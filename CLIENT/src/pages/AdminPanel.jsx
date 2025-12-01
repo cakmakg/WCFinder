@@ -20,6 +20,8 @@ import {
   People,
   Business,
   Payment,
+  PersonAdd,
+  TrendingUp,
 } from "@mui/icons-material";
 import AdminLayout from "../features/admin/components/AdminLayout";
 import StatCard from "../features/admin/components/dashboard/StatCard";
@@ -27,6 +29,7 @@ import RevenueChart from "../features/admin/components/dashboard/RevenueChart";
 import ChannelDistributionChart from "../features/admin/components/dashboard/ChannelDistributionChart";
 import BusinessTable from "../features/admin/components/dashboard/BusinessTable";
 import RecentActivities from "../features/admin/components/dashboard/RecentActivities";
+import UsersTable from "../features/admin/components/dashboard/UsersTable";
 import BusinessesTab from "../features/admin/components/BusinessesTab";
 import BusinessManagementForm from "../features/admin/components/BusinessManagementForm";
 import { adminService } from "../features/admin/services/adminService";
@@ -60,6 +63,7 @@ const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [usages, setUsages] = useState([]);
+  const [payments, setPayments] = useState([]);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== "admin") {
@@ -74,15 +78,17 @@ const AdminPanel = () => {
       setLoading(true);
       setError(null);
 
-      const [usersData, businessesData, usagesData] = await Promise.all([
+      const [usersData, businessesData, usagesData, paymentsData] = await Promise.all([
         adminService.getAllUsers().catch(() => ({ result: [] })),
         adminService.getAllBusinesses().catch(() => ({ result: [] })),
         adminService.getAllUsages().catch(() => ({ result: [] })),
+        adminService.getAllPayments().catch(() => ({ result: [] })),
       ]);
 
       setUsers(usersData?.result || []);
       setBusinesses(businessesData?.result || []);
       setUsages(usagesData?.result || []);
+      setPayments(paymentsData?.result || []);
     } catch (err) {
       console.error("Error fetching admin data:", err);
       setError("Fehler beim Laden der Daten.");
@@ -247,12 +253,58 @@ const AdminPanel = () => {
       )}
 
       {activeTab === 1 && (
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6">Benutzer</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Gesamt: {users.length} Benutzer
-          </Typography>
-        </Paper>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          {/* User Statistics Cards */}
+          <Grid container spacing={2}>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Toplam Kullanıcılar"
+                value={users.length.toLocaleString("de-DE")}
+                icon={People}
+                color="#0891b2"
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Yeni Kullanıcılar"
+                value={users.filter((u) => {
+                  const userDate = new Date(u.createdAt);
+                  const thirtyDaysAgo = new Date();
+                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                  return userDate >= thirtyDaysAgo;
+                }).length.toLocaleString("de-DE")}
+                icon={PersonAdd}
+                color="#16a34a"
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Aktif Kullanıcılar"
+                value={users.filter((u) => u.isActive !== false).length.toLocaleString("de-DE")}
+                icon={TrendingUp}
+                color="#f59e0b"
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Toplam Ödemeler"
+                value={payments.filter(
+                  (p) => p.status === "succeeded" || p.status === "paid"
+                ).length.toLocaleString("de-DE")}
+                icon={Payment}
+                color="#dc2626"
+              />
+            </Grid>
+          </Grid>
+
+          {/* Users Table */}
+          <UsersTable
+            users={users}
+            usages={usages}
+            payments={payments}
+            loading={loading}
+          />
+        </Box>
       )}
 
       {activeTab === 2 && <BusinessesTab />}

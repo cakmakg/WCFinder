@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /my-bookings
+Disallow: /payment
+Disallow: /login
+Disallow: /register
+
+# Sitemap
+Sitemap: https://yourdomain.com/sitemap.xml
+

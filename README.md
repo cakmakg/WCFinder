@@ -166,7 +166,7 @@ Detaylar için `COMMISSION_SYSTEM_DOCUMENTATION.md` dosyasına bakın.
 
 - **[Product Requirements Document](prd.md)** - Ürün gereksinimleri ve özellikler
 - **[Mimari Dokümantasyon](CLIENT/docs/ARCHITECTURE.md)** - Sistem mimarisi
-- **[Dağıtım Rehberi](CLIENT/docs/DEPLOYMENT.md)** - Production deployment
+- **[Dağıtım Rehberi](PRODUCTION_DEPLOYMENT.md)** - Production deployment
 
 ### Kullanıcı Rehberleri
 
@@ -251,7 +251,7 @@ npm run lint
 1. **[Hızlı Başlangıç (5 Dakika)](DEPLOYMENT_QUICKSTART.md)** ⚡ - En hızlı deployment için
 2. **[Detaylı Production Rehberi](PRODUCTION_DEPLOYMENT.md)** 📖 - Adım adım detaylı talimatlar
 3. **[Deployment Checklist](DEPLOYMENT_CHECKLIST.md)** ✅ - Kontrol listesi
-4. **[Mevcut Dokümantasyon](CLIENT/docs/DEPLOYMENT.md)** 📋 - Genel deployment bilgileri
+4. **[Platform Karşılaştırması](DEPLOYMENT_PLATFORM_COMPARISON.md)** 🔄 - Railway vs Render karşılaştırması
 
 ### Hızlı Deployment
 

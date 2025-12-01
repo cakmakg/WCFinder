@@ -22,6 +22,12 @@ export const adminService = {
     return response.data;
   },
 
+  // Get all payments (admin only)
+  getAllPayments: async () => {
+    const response = await apiClient.get("/payments");
+    return response.data;
+  },
+
   // Update business approval status
   updateBusinessApproval: async (businessId, approvalStatus) => {
     const response = await apiClient.patch(`/business/${businessId}`, {
