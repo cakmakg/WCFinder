@@ -81,8 +81,22 @@ Aşağıdaki environment variable'ları hazırlayın (deployment sırasında kul
 
 Railway dashboard'da Backend service'in "Variables" sekmesine gidin ve ekleyin:
 
+**🔴 KRİTİK: MONGODB Connection String**
+
+1. MongoDB Atlas'tan connection string alın:
+   - MongoDB Atlas → Connect → Connect your application
+   - Connection string'i kopyalayın
+   - Format: `mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority`
+   - `<username>`, `<password>`, `<database>` kısımlarını gerçek değerlerle değiştirin
+
+2. Railway'de "New Variable" tıklayın:
+   - **Name**: `MONGODB`
+   - **Value**: `mongodb+srv://your-username:your-password@cluster0.xxxxx.mongodb.net/wcfinder?retryWrites=true&w=majority`
+   - **ÖNEMLİ**: Tırnak işareti (`"`) kullanmayın!
+
+3. Diğer environment variables:
+
 ```env
-MONGODB=mongodb+srv://username:password@cluster.mongodb.net/wcfinder?retryWrites=true&w=majority
 PORT=8000
 NODE_ENV=production
 HOST=0.0.0.0
@@ -95,6 +109,8 @@ PAYPAL_CLIENT_ID=your-paypal-client-id
 PAYPAL_CLIENT_SECRET=your-paypal-secret
 TRUST_PROXY=true
 ```
+
+**⚠️ MongoDB Connection String Hataları İçin:** `RAILWAY_MONGODB_SETUP.md` dosyasına bakın.
 
 ### Adım 4: Deploy
 
