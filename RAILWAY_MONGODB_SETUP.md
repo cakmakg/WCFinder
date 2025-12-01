@@ -45,16 +45,26 @@ mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/<database>?retryW
 
 6. "Add" butonuna tıklayın
 
-### 3. MongoDB Atlas Network Access Ayarları
+### 3. MongoDB Atlas Network Access Ayarları ⚠️ KRİTİK
+
+**Bu adım olmadan bağlantı çalışmaz!**
 
 Railway'in IP adreslerine erişim izni verin:
 
-1. MongoDB Atlas dashboard'da "Network Access" sekmesine gidin
-2. "Add IP Address" butonuna tıklayın
-3. "Allow Access from Anywhere" seçin (veya `0.0.0.0/0` girin)
-4. "Confirm" butonuna tıklayın
+1. MongoDB Atlas dashboard'da **"Network Access"** sekmesine gidin
+   - Sol menüden: Security → Network Access
+2. **"Add IP Address"** butonuna tıklayın
+3. **"Allow Access from Anywhere"** seçin (veya manuel olarak `0.0.0.0/0` girin)
+4. **"Confirm"** butonuna tıklayın
+5. Status'un **"Active"** olmasını bekleyin (1-2 dakika)
 
-**Not:** Production için daha güvenli olması için Railway'in IP aralığını öğrenip sadece onu ekleyebilirsiniz, ama başlangıç için `0.0.0.0/0` yeterli.
+**⚠️ ÖNEMLİ:**
+- Bu adım olmadan MongoDB bağlantısı **ÇALIŞMAZ**
+- `0.0.0.0/0` tüm IP'lere izin verir (development/testing için uygun)
+- Production için daha spesifik IP aralıkları kullanabilirsiniz
+- Railway'in IP adresleri dinamik olabilir, bu yüzden `0.0.0.0/0` pratik bir çözümdür
+
+**Detaylı rehber için:** `MONGODB_ATLAS_NETWORK_ACCESS.md` dosyasına bakın.
 
 ### 4. Railway Service'i Yeniden Deploy Edin
 

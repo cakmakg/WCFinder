@@ -8,7 +8,7 @@ const mongoose = require('mongoose')
 
 const dbConnection = function () {
     // MongoDB connection string validation
-    const mongoUri = process.env.MONGODB;
+    const mongoUri = process.env.MONGODB ? process.env.MONGODB.trim() : null;
     
     if (!mongoUri) {
         console.error('❌ MongoDB bağlantı hatası: MONGODB environment variable tanımlı değil!');
@@ -17,15 +17,19 @@ const dbConnection = function () {
         process.exit(1);
     }
     
-    if (!mongoUri.startsWith('mongodb://') && !mongoUri.startsWith('mongodb+srv://')) {
+    // Remove any leading/trailing whitespace and check format
+    const trimmedUri = mongoUri.trim();
+    
+    if (!trimmedUri.startsWith('mongodb://') && !trimmedUri.startsWith('mongodb+srv://')) {
         console.error('❌ MongoDB bağlantı hatası: Geçersiz connection string formatı!');
         console.error('💡 Connection string "mongodb://" veya "mongodb+srv://" ile başlamalı.');
-        console.error('💡 Mevcut değer:', mongoUri.substring(0, 20) + '...');
+        console.error('💡 Mevcut değer (ilk 30 karakter):', trimmedUri.substring(0, 30) + '...');
+        console.error('💡 İlk karakter ASCII kodu:', trimmedUri.charCodeAt(0));
         process.exit(1);
     }
     
     // Connect:
-    mongoose.connect(mongoUri, {
+    mongoose.connect(trimmedUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     })

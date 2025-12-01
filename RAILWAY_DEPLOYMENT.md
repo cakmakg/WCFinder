@@ -141,23 +141,25 @@ curl https://your-backend-url.railway.app/documents/swagger
 
 **Railway Settings:**
 - **Root Directory**: `CLIENT`
-- **Build Command**: `npm install && npm run build`
-- **Start Command**: `npx serve -s dist -l $PORT`
+- **Build Command**: `npm install && npm run build` (otomatik algılanır)
+- **Start Command**: `npm start` (güncellenmiş - `CLIENT/package.json`'da start script var)
 
-### Adım 2: Frontend için serve Paketi Ekle
+### Adım 2: Frontend Start Script Kontrolü
 
-`CLIENT/package.json`'a `serve` paketini ekleyin (production dependency olarak):
+`CLIENT/package.json`'da `start` script'i olmalı (zaten eklenmiş):
 
 ```json
 {
+  "scripts": {
+    "start": "serve -s dist -l ${PORT:-3000}"
+  },
   "dependencies": {
-    ...
     "serve": "^14.2.1"
   }
 }
 ```
 
-Veya Railway build sırasında otomatik yüklenir (npx kullanıyoruz).
+✅ Bu dosyalar zaten güncellenmiş durumda.
 
 ### Adım 3: Environment Variables Ekle
 
