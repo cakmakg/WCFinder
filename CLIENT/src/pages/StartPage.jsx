@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Box } from "@mui/material";
-import AuthModal from "../components/AuthModal";
+import AuthModal from "../components/Authmodal";
 import StartPageHeader from "../components/startPage/StartPageHeader";
 import StartPageHero from "../components/startPage/StartPageHero";
 import HowItWorksSection from "../components/startPage/HowItWorksSection";
