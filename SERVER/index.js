@@ -24,7 +24,7 @@ require('dotenv').config();
 const logger = require('./src/utils/logger');
 
 const app = express();
-const HOST = process.env?.HOST || '127.0.0.1';
+//const HOST = process.env?.HOST || '127.0.0.1';
 const PORT = process.env.PORT || 8000;
 
 // ✅ Async error handling (must be first)
@@ -284,16 +284,15 @@ app.use((req, res, next) => {
 app.use(require('./src/middleware/errorHnadler'));
 
 // ✅ Server Start
-app.listen(PORT, HOST, () => {
+app.listen(PORT, () => {
     logger.info('Server started successfully', {
-        host: HOST,
         port: PORT,
         environment: process.env.NODE_ENV || 'development',
         nodeVersion: process.version
     });
-    console.log(`🚀 Server running at http://${HOST}:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`📚 API Documentation: http://${HOST}:${PORT}/documents/swagger`);
+    console.log(`📚 API Documentation: /documents/swagger`);
 });
 
 // Syncronization (must be in commentLine):
