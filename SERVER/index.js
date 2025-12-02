@@ -74,6 +74,12 @@ if (process.env.CORS_ORIGIN) {
 }
 
 // CORS origins'i logla (startup'ta) - detaylı debug için
+console.log('🔧 CORS Configuration:', {
+    corsOrigins, 
+    corsOriginEnv: process.env.CORS_ORIGIN,
+    corsOriginLength: corsOrigins.length,
+    nodeEnv: process.env.NODE_ENV
+});
 logger.info('🔧 CORS Configuration', { 
     corsOrigins, 
     corsOriginEnv: process.env.CORS_ORIGIN,
@@ -82,44 +88,52 @@ logger.info('🔧 CORS Configuration', {
     parsedOrigins: corsOrigins.map((o, i) => `${i}: "${o}"`).join(', ')
 });
 
-// CORS middleware
+// CORS middleware - basitleştirilmiş ve daha güvenilir
 app.use(cors({
     origin: function (origin, callback) {
         // OPTIONS preflight request'lerde origin olmayabilir
         if (!origin) {
             // Development'ta same-origin isteklere izin ver
             if (process.env.NODE_ENV === 'development') {
-                logger.debug('CORS: No origin, allowing (development)');
                 return callback(null, true);
             }
             // Production'da origin olmayan isteklere izin verme
-            logger.warn('CORS: No origin header in production request');
             return callback(null, false);
         }
         
-        // Origin kontrolü
-        const isAllowed = corsOrigins.indexOf(origin) !== -1;
+        // Origin kontrolü - case-insensitive ve exact match
+        const normalizedOrigin = origin.trim();
+        const isAllowed = corsOrigins.some(allowedOrigin => 
+            allowedOrigin.trim() === normalizedOrigin
+        );
         
-        // Detaylı logging
-        logger.info('🔍 CORS check', { 
-            origin, 
+        // Her zaman logging (console.log da ekle - Railway logs'da görünsün)
+        console.log('🔍 CORS check:', {
+            origin: normalizedOrigin,
             allowedOrigins: corsOrigins,
-            isAllowed,
-            originInList: corsOrigins.includes(origin),
-            corsOriginEnv: process.env.CORS_ORIGIN
+            isAllowed
+        });
+        logger.info('🔍 CORS check', { 
+            origin: normalizedOrigin, 
+            allowedOrigins: corsOrigins,
+            isAllowed
         });
         
         if (isAllowed) {
             callback(null, true);
         } else {
             // CORS blocked - detaylı log
-            logger.error('❌ CORS BLOCKED', { 
-                origin, 
+            console.error('❌ CORS BLOCKED:', {
+                origin: normalizedOrigin,
                 allowedOrigins: corsOrigins,
-                corsOriginEnv: process.env.CORS_ORIGIN,
-                suggestion: 'Check if frontend URL is in CORS_ORIGIN environment variable'
+                corsOriginEnv: process.env.CORS_ORIGIN
             });
-            // CORS hatası için false döndür (error throw etme)
+            logger.error('❌ CORS BLOCKED', { 
+                origin: normalizedOrigin, 
+                allowedOrigins: corsOrigins,
+                corsOriginEnv: process.env.CORS_ORIGIN
+            });
+            // CORS hatası için false döndür
             callback(null, false);
         }
     },
