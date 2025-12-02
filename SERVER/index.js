@@ -57,38 +57,70 @@ app.use(helmet({
 }));
 
 // ✅ CORS Configuration (environment-based)
-const corsOrigins = process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-    : process.env.NODE_ENV === 'production'
-        ? [] // Production'da CORS_ORIGIN environment variable'ı zorunlu
-        : [
-            'http://localhost:5173',  // Vite dev server
-            'http://localhost:3000',  // Create React App
-            'http://127.0.0.1:5173',
-        ];
+// CORS_ORIGIN'i parse et - virgülle ayrılmış, boşlukları temizle
+let corsOrigins = [];
+if (process.env.CORS_ORIGIN) {
+    corsOrigins = process.env.CORS_ORIGIN
+        .split(',')
+        .map(origin => origin.trim())
+        .filter(origin => origin.length > 0);
+} else if (process.env.NODE_ENV !== 'production') {
+    // Development default origins
+    corsOrigins = [
+        'http://localhost:5173',  // Vite dev server
+        'http://localhost:3000',  // Create React App
+        'http://127.0.0.1:5173',
+    ];
+}
 
+// CORS origins'i logla (startup'ta) - detaylı debug için
+logger.info('🔧 CORS Configuration', { 
+    corsOrigins, 
+    corsOriginEnv: process.env.CORS_ORIGIN,
+    corsOriginLength: corsOrigins.length,
+    nodeEnv: process.env.NODE_ENV,
+    parsedOrigins: corsOrigins.map((o, i) => `${i}: "${o}"`).join(', ')
+});
+
+// CORS middleware
 app.use(cors({
     origin: function (origin, callback) {
-        // Same-origin istekleri (Postman, curl, vb.) için origin yok
+        // OPTIONS preflight request'lerde origin olmayabilir
         if (!origin) {
             // Development'ta same-origin isteklere izin ver
             if (process.env.NODE_ENV === 'development') {
+                logger.debug('CORS: No origin, allowing (development)');
                 return callback(null, true);
             }
-            // Production'da same-origin isteklere izin verme (güvenlik)
-            return callback(new Error('CORS: Origin header required'));
+            // Production'da origin olmayan isteklere izin verme
+            logger.warn('CORS: No origin header in production request');
+            return callback(null, false);
         }
         
-        // Development'ta detaylı logging
-        if (process.env.NODE_ENV === 'development') {
-            logger.debug('CORS check', { origin, allowedOrigins: corsOrigins });
-        }
+        // Origin kontrolü
+        const isAllowed = corsOrigins.indexOf(origin) !== -1;
         
-        if (corsOrigins.indexOf(origin) !== -1) {
+        // Detaylı logging
+        logger.info('🔍 CORS check', { 
+            origin, 
+            allowedOrigins: corsOrigins,
+            isAllowed,
+            originInList: corsOrigins.includes(origin),
+            corsOriginEnv: process.env.CORS_ORIGIN
+        });
+        
+        if (isAllowed) {
             callback(null, true);
         } else {
-            logger.warn('CORS blocked', { origin, allowedOrigins: corsOrigins, ip: 'req.ip' });
-            callback(new Error('Not allowed by CORS'));
+            // CORS blocked - detaylı log
+            logger.error('❌ CORS BLOCKED', { 
+                origin, 
+                allowedOrigins: corsOrigins,
+                corsOriginEnv: process.env.CORS_ORIGIN,
+                suggestion: 'Check if frontend URL is in CORS_ORIGIN environment variable'
+            });
+            // CORS hatası için false döndür (error throw etme)
+            callback(null, false);
         }
     },
     credentials: true,
@@ -96,6 +128,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['X-Total-Count', 'X-Page', 'X-Per-Page'],
     maxAge: 86400, // 24 saat (preflight cache)
+    optionsSuccessStatus: 200, // OPTIONS request'ler için 200 döndür
 }));
 
 // ✅ Body Parser (JSON)
