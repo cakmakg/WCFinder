@@ -25,15 +25,17 @@ i18n
   .use(initReactI18next) // React için i18n'i başlat
   .init({
     resources,
-    fallbackLng: 'de', // Varsayılan dil: Almanca
+    lng: 'de', // Varsayılan dil: Almanca (tarayıcı dilinden bağımsız)
+    fallbackLng: 'de', // Fallback dil: Almanca
     debug: false, // Production'da false - hata ayıklama için true yapabilirsiniz
     interpolation: {
       escapeValue: false, // React zaten XSS koruması sağlıyor
     },
     detection: {
-      order: ['localStorage', 'navigator'], // Önce localStorage, sonra tarayıcı dili
+      order: ['localStorage', 'querystring', 'htmlTag'], // Önce localStorage, sonra URL query, sonra HTML tag
       caches: ['localStorage'], // Dil tercihini localStorage'da sakla
       lookupLocalStorage: 'i18nextLng', // LocalStorage key
+      // navigator'ı kaldırdık - tarayıcı dilini otomatik algılamasın
     },
     react: {
       useSuspense: false, // Suspense kullanma
