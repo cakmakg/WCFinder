@@ -27,6 +27,10 @@ const app = express();
 //const HOST = process.env?.HOST || '127.0.0.1';
 const PORT = process.env.PORT || 8000;
 
+// ✅ Trust Proxy (Railway ve diğer proxy'ler için)
+// Railway proxy arkasında çalıştığı için X-Forwarded-For header'ını doğru işlemek için gerekli
+app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
+
 // ✅ Async error handling (must be first)
 require('express-async-errors');
 
