@@ -115,7 +115,7 @@ const BusinessDetail = () => {
         <Alert severity="error" sx={{ mb: 2 }}>
           {error || t('businessDetail.businessNotFound')}
         </Alert>
-        <IconButton onClick={() => navigate('/')}>
+        <IconButton onClick={() => navigate('/home')}>
           <ArrowBackIcon />
           <Typography sx={{ ml: 1 }}>{t('common.backToHome')}</Typography>
         </IconButton>
@@ -155,7 +155,7 @@ const BusinessDetail = () => {
       <Container maxWidth="lg">
         {/* Header */}
         <Box component="header" sx={{ mb: 3 }}>
-          <IconButton onClick={() => navigate('/')} sx={{ mb: 2 }}>
+          <IconButton onClick={() => navigate('/home')} sx={{ mb: 2 }}>
             <ArrowBackIcon />
           </IconButton>
 
