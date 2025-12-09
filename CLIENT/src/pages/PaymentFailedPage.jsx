@@ -42,11 +42,12 @@ const PaymentFailedPage = () => {
             {t('paymentFailed.retry')}
           </Button>
 
+          {/* ✅ FIX: "Zur Startseite" butonu home sayfasına yönlendirmeli (StartPage değil) */}
           <Button
             fullWidth
             variant="outlined"
             size="large"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/home')}
           >
             {t('paymentFailed.backToHome')}
           </Button>

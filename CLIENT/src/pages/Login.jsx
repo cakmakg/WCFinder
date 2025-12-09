@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import LockIcon from "@mui/icons-material/Lock";
 import image from "../assets/loginPp.png";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AuthHeader from "../components/AuthHeader";
 import AuthImage from "../components/AuthImage";
 import { Formik } from "formik";
@@ -131,10 +131,6 @@ const Login = () => {
                     )}
                   </Box>
 
-                  <Typography variant="body2" align="center" sx={{ color: "#0891b2", cursor: "pointer" }}>
-                    Passwort vergessen
-                  </Typography>
-
                   <Button
                     fullWidth
                     type="submit"
@@ -155,10 +151,80 @@ const Login = () => {
             )}
           </Formik>
 
+          {/* Passwort vergessen linki form dışında - form submit sorununu önler */}
+          <Box sx={{ textAlign: "center", marginTop: "1rem" }}>
+            <Typography
+              component="span"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Production-safe navigation
+                  if (typeof navigate === 'function') {
+                    navigate('/forgot-password');
+                  } else {
+                    window.location.href = '/forgot-password';
+                  }
+                }
+              }}
+              onClick={(e) => {
+                if (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                // Production-safe navigation
+                // useNavigate hook'u her zaman function olmalı, ama production'da bazen undefined olabilir
+                const navFunction = navigate;
+                if (navFunction && typeof navFunction === 'function') {
+                  try {
+                    navFunction('/forgot-password');
+                  } catch (navError) {
+                    // Fallback: direct navigation
+                    if (typeof window !== 'undefined') {
+                      window.location.href = '/forgot-password';
+                    }
+                  }
+                } else {
+                  // Fallback: direct navigation
+                  if (typeof window !== 'undefined') {
+                    window.location.href = '/forgot-password';
+                  }
+                }
+              }}
+              sx={{
+                color: "#0891b2",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+                userSelect: "none",
+                "&:hover": {
+                  textDecoration: "underline",
+                },
+                "&:focus": {
+                  outline: "2px solid #0891b2",
+                  outlineOffset: "2px",
+                },
+              }}
+            >
+              Passwort vergessen
+            </Typography>
+          </Box>
+
           <Box sx={{ textAlign: "center", mt: 2, color: "secondary.main" }}>
-            <Link to="/register" state={{ from, businessName }}>
+            <Typography
+              component="span"
+              onClick={() => navigate('/register', { state: { from, businessName } })}
+              sx={{
+                color: "secondary.main",
+                cursor: "pointer",
+                "&:hover": {
+                  textDecoration: "underline",
+                },
+              }}
+            >
               Don't have an account? Sign Up
-            </Link>
+            </Typography>
           </Box>
         </Grid>
       </Grid>

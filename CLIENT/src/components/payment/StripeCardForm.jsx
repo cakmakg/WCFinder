@@ -42,6 +42,16 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
   const [cardholderName, setCardholderName] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
 
+  // ✅ SECURITY: Stripe ve Elements kontrolü
+  // Eğer Elements provider yoksa veya Stripe yüklenmediyse, hata göster
+  if (!stripe || !elements) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        Stripe ist derzeit nicht verfügbar. Bitte verwenden Sie PayPal oder kontaktieren Sie den Administrator.
+      </Alert>
+    );
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -80,6 +90,13 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
       }
 
       // Payment Intent'i onayla
+      // ✅ SECURITY: clientSecret loglanmıyor (sensitive data)
+      if (import.meta.env.DEV) {
+        console.log('📤 [StripeCardForm] Confirming payment intent...', {
+          paymentMethodId: paymentMethod.id
+        });
+      }
+
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
@@ -87,14 +104,75 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         }
       );
 
+      // ✅ SECURITY: Sensitive data loglanmıyor, sadece development'ta detaylı log
+      if (import.meta.env.DEV) {
+        console.log('📥 [StripeCardForm] Payment confirmation response:', {
+          error: confirmError ? {
+            type: confirmError.type,
+            code: confirmError.code,
+            message: confirmError.message,
+            decline_code: confirmError.decline_code,
+            param: confirmError.param
+          } : null,
+          paymentIntent: paymentIntent ? {
+            id: paymentIntent.id,
+            status: paymentIntent.status,
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency
+          } : null
+        });
+      }
+
       if (confirmError) {
-        throw new Error(confirmError.message);
+        // Daha detaylı hata mesajları
+        let errorMessage = confirmError.message || 'Zahlung fehlgeschlagen';
+        
+        // ✅ 402 (Payment Required) hatası için özel kontrol
+        // Bu hata genellikle payment intent'in zaten confirm edilmiş olmasından kaynaklanır
+        if (confirmError.code === 'payment_intent_unexpected_state' || 
+            confirmError.message?.includes('402') ||
+            confirmError.message?.toLowerCase().includes('payment required')) {
+          errorMessage = 'Diese Zahlung wurde bereits verarbeitet. Bitte starten Sie eine neue Zahlung.';
+        } else if (confirmError.code === 'card_declined') {
+          errorMessage = 'Ihre Karte wurde abgelehnt. Bitte verwenden Sie eine andere Karte oder kontaktieren Sie Ihre Bank.';
+        } else if (confirmError.code === 'insufficient_funds') {
+          errorMessage = 'Unzureichende Mittel auf Ihrer Karte. Bitte verwenden Sie eine andere Karte.';
+        } else if (confirmError.code === 'expired_card') {
+          errorMessage = 'Ihre Karte ist abgelaufen. Bitte verwenden Sie eine andere Karte.';
+        } else if (confirmError.code === 'incorrect_cvc') {
+          errorMessage = 'Der CVC-Code ist falsch. Bitte überprüfen Sie Ihre Kartendaten.';
+        } else if (confirmError.code === 'processing_error') {
+          errorMessage = 'Ein Fehler ist beim Verarbeiten Ihrer Zahlung aufgetreten. Bitte versuchen Sie es erneut.';
+        } else if (confirmError.type === 'card_error') {
+          errorMessage = `Kartenfehler: ${confirmError.message}`;
+        } else if (confirmError.type === 'validation_error') {
+          errorMessage = `Validierungsfehler: ${confirmError.message}`;
+        }
+        
+        // ✅ SECURITY: Production'da sadece gerekli hata bilgisi loglanıyor
+        if (import.meta.env.DEV) {
+          console.error('❌ [StripeCardForm] Payment confirmation error:', {
+            type: confirmError.type,
+            code: confirmError.code,
+            message: confirmError.message,
+            decline_code: confirmError.decline_code,
+            param: confirmError.param
+          });
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (paymentIntent.status === 'succeeded') {
+        if (import.meta.env.DEV) {
+          console.log('✅ [StripeCardForm] Payment succeeded:', paymentIntent.id);
+        }
         onSuccess(paymentIntent);
       } else {
-        throw new Error('Zahlung fehlgeschlagen');
+        if (import.meta.env.DEV) {
+          console.error('❌ [StripeCardForm] Payment intent status is not succeeded:', paymentIntent.status);
+        }
+        throw new Error(`Zahlung fehlgeschlagen. Status: ${paymentIntent.status}`);
       }
     } catch (err) {
       setError(err.message);

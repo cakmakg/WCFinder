@@ -40,10 +40,28 @@ const HowItWorksSection = ({ onBookNow }) => {
       sx={{
         py: { xs: 6, md: 10 },
         backgroundColor: "white",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <Container maxWidth="lg">
-        <Box sx={{ textAlign: "center", mb: 6 }}>
+      {/* ✅ ASYMMETRIC: Decorative element on the right */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: "-100px",
+          right: "-100px",
+          width: "300px",
+          height: "300px",
+          background: "linear-gradient(135deg, rgba(8,145,178,0.08) 0%, transparent 100%)",
+          borderRadius: "50%",
+          filter: "blur(40px)",
+          zIndex: 0,
+        }}
+      />
+      
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+        {/* ✅ ASYMMETRIC: Title positioned to the left */}
+        <Box sx={{ mb: 6, textAlign: { xs: "center", md: "left" }, maxWidth: { md: "600px" } }}>
           <Typography
             variant="h3"
             sx={{
@@ -59,9 +77,8 @@ const HowItWorksSection = ({ onBookNow }) => {
             variant="body1"
             sx={{
               color: "#64748b",
-              maxWidth: 700,
-              mx: "auto",
               fontSize: { xs: "0.95rem", md: "1.05rem" },
+              lineHeight: 1.7,
             }}
           >
             Mit WCFinder findest du schnell und einfach saubere Toiletten in deiner Nähe. 
@@ -69,6 +86,7 @@ const HowItWorksSection = ({ onBookNow }) => {
           </Typography>
         </Box>
 
+        {/* ✅ ASYMMETRIC: Grid with offset items */}
         <Grid container spacing={4} sx={{ mb: 4 }}>
           {howItWorksSteps.map((step, index) => (
             <Grid item xs={12} sm={6} md={3} key={index}>
@@ -78,7 +96,15 @@ const HowItWorksSection = ({ onBookNow }) => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Box sx={{ textAlign: "center", p: 3 }}>
+                {/* ✅ ASYMMETRIC: Alternate alignment for visual interest */}
+                <Box 
+                  sx={{ 
+                    textAlign: { xs: "center", md: index % 2 === 0 ? "left" : "right" }, 
+                    p: 3,
+                    position: "relative",
+                  }}
+                >
+                  {/* ✅ ASYMMETRIC: Offset icon position */}
                   <Box
                     sx={{
                       width: 100,
@@ -88,8 +114,24 @@ const HowItWorksSection = ({ onBookNow }) => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      mx: "auto",
+                      mx: { xs: "auto", md: index % 2 === 0 ? 0 : "auto" },
+                      ml: { md: index % 2 === 0 ? 0 : "auto" },
+                      mr: { md: index % 2 === 0 ? "auto" : 0 },
                       mb: 2,
+                      position: "relative",
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: index % 2 === 0 ? "-10px" : "auto",
+                        bottom: index % 2 === 0 ? "auto" : "-10px",
+                        left: index % 2 === 0 ? "-10px" : "auto",
+                        right: index % 2 === 0 ? "auto" : "-10px",
+                        width: "120px",
+                        height: "120px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, rgba(8,145,178,0.05) 0%, transparent 100%)",
+                        zIndex: -1,
+                      }
                     }}
                   >
                     {step.icon}

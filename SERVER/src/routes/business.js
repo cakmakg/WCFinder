@@ -10,7 +10,9 @@ const {
     create, 
     read, 
     update, 
-    deletee 
+    deletee,
+    partnerRegistration,
+    approveBusiness
 } = require('../controller/business');
 const { isLogin, isAdmin, isOwnerOrAdmin } = require('../middleware/permissions');
 
@@ -18,6 +20,9 @@ const { isLogin, isAdmin, isOwnerOrAdmin } = require('../middleware/permissions'
 
 // Herkes listeleyebilir (public - login gerektirmez)
 router.get('/', list);
+
+// ✅ Partner registration (public - login gerektirmez)
+router.post('/partner-registration', partnerRegistration);
 
 // ✅ Owner kendi işletmesini görebilir
 router.get('/my-business', isOwnerOrAdmin, myBusiness);
@@ -27,6 +32,9 @@ router.get('/my-stats', isOwnerOrAdmin, getOwnerStats);
 
 // ✅ Admin işletme istatistiklerini görebilir
 router.get('/:id/stats', isAdmin, getBusinessStats);
+
+// ✅ Admin business onayı/reddi
+router.patch('/:id/approve', isAdmin, approveBusiness);
 
 // ✅ Sadece ADMIN CRUD yapabilir
 router.post('/', isAdmin, create);

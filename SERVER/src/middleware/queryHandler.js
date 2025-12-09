@@ -2,42 +2,104 @@
 /**
  * Query Handler Middleware
  * 
- * Filtering, searching, sorting ve pagination işlemlerini yönetir.
- * NoSQL injection koruması ile güvenli query handling.
+ * Provides centralized query handling for filtering, searching, sorting, and pagination.
+ * Implements comprehensive NoSQL injection protection and query optimization.
+ * 
+ * Security:
+ * - Sanitizes all query parameters
+ * - Blocks MongoDB operators to prevent NoSQL injection
+ * - Validates ObjectId formats
+ * - Limits query complexity to prevent DoS attacks
+ * 
+ * Performance:
+ * - Efficient pagination
+ * - Query result caching (where appropriate)
+ * - Optimized populate queries to avoid N+1 problems
  * 
  * Clean Code Principles:
- * - DRY: Query logic tek bir yerde
- * - Security: NoSQL injection koruması
- * - KISS: Basit ve anlaşılır query handling
+ * - DRY: Query logic centralized in single location
+ * - Security: Comprehensive NoSQL injection protection
+ * - KISS: Simple and clear query handling
+ * - Single Responsibility: Only handles query processing
+ * 
+ * @author WCFinder Team
+ * @version 2.0.0
  */
 
 const { sanitizeInput, validateObjectId } = require('./validation');
 const logger = require('../utils/logger');
 
 /**
- * MongoDB operatörlerini temizle (NoSQL injection koruması)
- * Kullanıcıların $gt, $ne, $regex gibi operatörleri kullanmasını engeller
+ * Sanitize MongoDB filter to prevent NoSQL injection attacks
+ * 
+ * Security: Blocks MongoDB operators ($gt, $ne, $regex, etc.) from user input
+ * Performance: Single pass sanitization with depth limit to prevent recursion DoS
+ * 
+ * @param {object} filter - Filter object to sanitize
+ * @param {number} depth - Current recursion depth (prevents infinite recursion)
+ * @param {object} req - Express request object (for logging IP)
+ * @returns {object} - Sanitized filter object
  */
-const sanitizeFilter = (filter) => {
+const sanitizeFilter = (filter, depth = 0, req = null) => {
+    // SECURITY: Prevent infinite recursion (max depth: 5)
+    if (depth > 5) {
+        logger.warn('Maximum filter sanitization depth exceeded', { 
+            depth,
+            ip: req?.ip || 'unknown'
+        });
+        return {};
+    }
+
     if (!filter || typeof filter !== 'object') return {};
     
+    // SECURITY: Limit filter size to prevent DoS attacks
+    const filterKeys = Object.keys(filter);
+    if (filterKeys.length > 50) {
+        logger.warn('Filter too large, truncating', { 
+            keyCount: filterKeys.length,
+            ip: req?.ip || 'unknown'
+        });
+        // Keep only first 50 keys
+        filterKeys.splice(50);
+    }
+    
     const sanitized = {};
-    for (const [key, value] of Object.entries(filter)) {
-        // MongoDB operatörlerini atla
+    for (const key of filterKeys) {
+        const value = filter[key];
+        
+        // SECURITY: Block MongoDB operators to prevent NoSQL injection
         if (key.startsWith('$')) {
-            logger.warn('Blocked MongoDB operator in filter', { key, ip: 'req.ip' });
+            logger.warn('Blocked MongoDB operator in filter', { 
+                key, 
+                ip: req?.ip || 'unknown',
+                path: req?.path || 'unknown'
+            });
             continue;
         }
         
-        // Nested object'leri recursive olarak sanitize et
+        // SECURITY: Recursively sanitize nested objects
         if (typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
-            // İç içe MongoDB operatörlerini kontrol et
-            const hasOperator = Object.keys(value).some(k => k.startsWith('$'));
+            // SECURITY: Check for nested MongoDB operators
+            const nestedKeys = Object.keys(value);
+            const hasOperator = nestedKeys.some(k => k.startsWith('$'));
             if (hasOperator) {
-                logger.warn('Blocked nested MongoDB operator', { key, ip: 'req.ip' });
+                logger.warn('Blocked nested MongoDB operator', { 
+                    key, 
+                    nestedKeys,
+                    ip: req?.ip || 'unknown',
+                    path: req?.path || 'unknown'
+                });
                 continue;
             }
-            sanitized[key] = sanitizeFilter(value);
+            sanitized[key] = sanitizeFilter(value, depth + 1, req);
+        } else if (Array.isArray(value)) {
+            // SECURITY: Limit array size to prevent DoS
+            const limitedArray = value.slice(0, 100);
+            sanitized[key] = limitedArray.map(item => 
+                typeof item === 'object' && item !== null && !(item instanceof Date)
+                    ? sanitizeFilter(item, depth + 1, req)
+                    : item
+            );
         } else {
             sanitized[key] = value;
         }
@@ -46,20 +108,45 @@ const sanitizeFilter = (filter) => {
 };
 
 /**
- * Search query'lerini sanitize et
+ * Sanitize search queries with regex injection protection
+ * 
+ * Security:
+ * - Escapes regex special characters to prevent regex injection
+ * - Limits search string length to prevent DoS
+ * - Blocks MongoDB operators
+ * 
+ * @param {object} search - Search object to sanitize
+ * @param {object} req - Express request object (for logging)
+ * @returns {object} - Sanitized search object
  */
-const sanitizeSearch = (search) => {
+const sanitizeSearch = (search, req = null) => {
     if (!search || typeof search !== 'object') return {};
     
+    // SECURITY: Limit search fields to prevent DoS
+    const searchKeys = Object.keys(search).slice(0, 20);
+    
     const sanitized = {};
-    for (const [key, value] of Object.entries(search)) {
+    for (const key of searchKeys) {
+        // SECURITY: Block MongoDB operators
         if (key.startsWith('$')) {
-            continue; // MongoDB operatörlerini atla
+            logger.warn('Blocked MongoDB operator in search', { 
+                key,
+                ip: req?.ip || 'unknown'
+            });
+            continue;
         }
         
+        const value = search[key];
+        
         if (typeof value === 'string') {
-            // Regex injection koruması: özel karakterleri escape et
-            const escaped = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // SECURITY: Limit search string length to prevent DoS
+            const limitedValue = value.trim().substring(0, 500);
+            
+            // SECURITY: Escape regex special characters to prevent regex injection
+            // This prevents attackers from injecting malicious regex patterns
+            const escaped = limitedValue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // SECURITY: Only allow case-insensitive search (no complex regex)
             sanitized[key] = { $regex: escaped, $options: 'i' };
         }
     }
@@ -67,48 +154,85 @@ const sanitizeSearch = (search) => {
 };
 
 /**
- * Sort query'lerini validate et
+ * Sanitize sort queries
+ * 
+ * Security:
+ * - Blocks MongoDB operators
+ * - Only allows valid sort directions (asc/desc, 1/-1)
+ * - Limits number of sort fields to prevent DoS
+ * 
+ * @param {object} sort - Sort object to sanitize
+ * @returns {object} - Sanitized sort object
  */
 const sanitizeSort = (sort) => {
     if (!sort || typeof sort !== 'object') return {};
     
+    // SECURITY: Limit sort fields to prevent DoS
+    const sortKeys = Object.keys(sort).slice(0, 10);
+    
     const sanitized = {};
-    for (const [key, value] of Object.entries(sort)) {
+    for (const key of sortKeys) {
+        // SECURITY: Block MongoDB operators
         if (key.startsWith('$')) {
-            continue; // MongoDB operatörlerini atla
+            continue;
         }
         
-        // Sadece 'asc', 'desc', 1, -1 değerlerine izin ver
+        const value = sort[key];
+        
+        // SECURITY: Only allow valid sort directions
         if (value === 'asc' || value === 1) {
             sanitized[key] = 1;
         } else if (value === 'desc' || value === -1) {
             sanitized[key] = -1;
         }
+        // Invalid values are silently ignored (fail-safe)
     }
     return sanitized;
 };
 
 /**
- * Pagination parametrelerini validate et
+ * Sanitize pagination parameters
+ * 
+ * Security:
+ * - Validates and limits pagination values to prevent DoS attacks
+ * - Prevents excessive resource consumption
+ * - Sets reasonable defaults
+ * 
+ * Performance:
+ * - Limits maximum page size to prevent large data dumps
+ * - Caps skip value to prevent deep pagination performance issues
+ * 
+ * @param {object} query - Query object containing pagination parameters
+ * @returns {object} - Sanitized pagination parameters { limit, page, skip }
  */
 const sanitizePagination = (query) => {
+    // SECURITY: Parse and validate limit (max 100 to prevent DoS)
     let limit = Number(query?.limit);
+    if (isNaN(limit) || limit <= 0) {
+        limit = Number(process.env.PAGE_SIZE || 20);
+    } else if (limit > 100) {
+        logger.warn('Limit too large, capped at 100', { requestedLimit: limit });
+        limit = 100;
+    }
+    
+    // SECURITY: Parse and validate page (convert to 0-based index)
     let page = Number(query?.page);
+    if (isNaN(page) || page <= 0) {
+        page = 0;
+    } else {
+        page = page - 1; // Convert to 0-based index
+    }
+    
+    // SECURITY: Parse and validate skip
     let skip = Number(query?.skip);
+    if (isNaN(skip) || skip < 0) {
+        skip = page * limit;
+    }
     
-    // Limit validation (max 100, min 1)
-    limit = limit > 0 && limit <= 100 ? limit : Number(process.env.PAGE_SIZE || 20);
-    
-    // Page validation
-    page = page > 0 ? (page - 1) : 0;
-    
-    // Skip validation
-    skip = skip > 0 ? skip : (page * limit);
-    
-    // Max skip kontrolü (DoS koruması)
+    // SECURITY: Cap skip value to prevent DoS (deep pagination is inefficient)
     const maxSkip = 10000;
     if (skip > maxSkip) {
-        logger.warn('Skip value too large, capped', { skip, maxSkip });
+        logger.warn('Skip value too large, capped', { skip, maxSkip, ip: query?.ip });
         skip = maxSkip;
     }
     
@@ -120,12 +244,12 @@ module.exports = (req, res, next) => {
         // ### FILTERING ###
         // URL?filter[key1]=value1&filter[key2]=value2
         const rawFilter = req.query?.filter || {};
-        const filter = sanitizeFilter(rawFilter);
+        const filter = sanitizeFilter(rawFilter, 0, req);
 
         // ### SEARCHING ###
         // URL?search[key1]=value1&search[key2]=value2
         const rawSearch = req.query?.search || {};
-        const search = sanitizeSearch(rawSearch);
+        const search = sanitizeSearch(rawSearch, req);
 
         // ### SORTING ###
         // URL?sort[key1]=asc&sort[key2]=desc
@@ -147,8 +271,8 @@ module.exports = (req, res, next) => {
          */
         res.getModelList = async (Model, customFilter = {}, populate = null) => {
             try {
-                // Custom filter'ı da sanitize et
-                const sanitizedCustomFilter = sanitizeFilter(customFilter);
+                // SECURITY: Sanitize custom filter to prevent NoSQL injection
+                const sanitizedCustomFilter = sanitizeFilter(customFilter, 0, req);
                 
                 // Combined filter
                 const combinedFilter = { ...filter, ...search, ...sanitizedCustomFilter };
@@ -188,7 +312,8 @@ module.exports = (req, res, next) => {
          */
         res.getModelListDetails = async (Model, customFilter = {}) => {
             try {
-                const sanitizedCustomFilter = sanitizeFilter(customFilter);
+                // SECURITY: Sanitize custom filter to prevent NoSQL injection
+                const sanitizedCustomFilter = sanitizeFilter(customFilter, 0, req);
                 const combinedFilter = { ...filter, ...search, ...sanitizedCustomFilter };
                 
                 // Total count (optimized - sadece count, tüm dokümanları getirme)

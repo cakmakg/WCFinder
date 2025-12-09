@@ -16,29 +16,61 @@
 /**
  * NoSQL Injection koruması için sanitization
  * MongoDB query injection saldırılarına karşı koruma
+ * 
+ * Security: Prevents NoSQL injection attacks by sanitizing MongoDB operators
+ * Performance: Recursive sanitization handles nested objects efficiently
+ * 
+ * @param {object} obj - Object to sanitize
+ * @param {number} depth - Current recursion depth (prevents infinite recursion)
+ * @returns {object} - Sanitized object
  */
-const sanitizeInput = (obj) => {
+const sanitizeInput = (obj, depth = 0) => {
+    // Prevent infinite recursion (max depth: 10)
+    if (depth > 10) {
+        throw new Error('Maximum sanitization depth exceeded - possible circular reference');
+    }
+    
     if (!obj || typeof obj !== 'object') return obj;
+    
+    // Preserve Date objects
+    if (obj instanceof Date) return obj;
+    
+    // Handle arrays
+    if (Array.isArray(obj)) {
+        return obj.map(item => 
+            typeof item === 'string' 
+                ? escapeHtml(item.trim()) 
+                : sanitizeInput(item, depth + 1)
+        );
+    }
     
     const sanitized = {};
     for (const [key, value] of Object.entries(obj)) {
-        // MongoDB operatörlerini temizle ($gt, $ne, $regex, vb.)
+        // SECURITY: Block MongoDB operators to prevent NoSQL injection
         if (key.startsWith('$')) {
             continue; // MongoDB operatörlerini atla
         }
         
         if (typeof value === 'string') {
             // XSS koruması: HTML karakterlerini escape et
-            sanitized[key] = escapeHtml(value.trim());
-        } else if (typeof value === 'object' && value !== null && !Array.isArray(value) && !(value instanceof Date)) {
-            // Nested object'leri recursive olarak sanitize et
-            sanitized[key] = sanitizeInput(value);
-        } else if (Array.isArray(value)) {
-            // Array elemanlarını sanitize et
-            sanitized[key] = value.map(item => 
-                typeof item === 'string' ? escapeHtml(item.trim()) : item
-            );
+            // Trim to prevent padding attacks
+            const trimmed = value.trim();
+            // Limit string length to prevent DoS attacks
+            sanitized[key] = escapeHtml(trimmed.length > 10000 ? trimmed.substring(0, 10000) : trimmed);
+        } else if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
+            // SECURITY: Check for nested MongoDB operators
+            if (Array.isArray(value)) {
+                sanitized[key] = value.map(item => 
+                    typeof item === 'string' 
+                        ? escapeHtml(item.trim()) 
+                        : sanitizeInput(item, depth + 1)
+                );
+            } else {
+                // Recursive sanitization for nested objects
+                sanitized[key] = sanitizeInput(value, depth + 1);
+            }
         } else {
+            // Preserve numbers, booleans, null, etc.
             sanitized[key] = value;
         }
     }
@@ -47,17 +79,30 @@ const sanitizeInput = (obj) => {
 
 /**
  * HTML escape function (XSS koruması)
+ * 
+ * Security: Prevents XSS attacks by escaping HTML special characters
+ * Performance: Single pass replacement using regex
+ * 
+ * @param {string} text - Text to escape
+ * @returns {string} - Escaped text safe for HTML rendering
  */
 const escapeHtml = (text) => {
     if (typeof text !== 'string') return text;
+    
+    // Comprehensive XSS protection - escape all potentially dangerous characters
     const map = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
-        "'": '&#039;'
+        "'": '&#039;',
+        '/': '&#x2F;', // Prevent XSS via closing tags
+        '`': '&#x60;', // Backtick can be used in XSS
+        '=': '&#x3D;'  // Equals sign in attributes
     };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    
+    // Replace all dangerous characters in a single pass
+    return text.replace(/[&<>"'`=\/]/g, m => map[m] || m);
 };
 
 /**
@@ -109,23 +154,47 @@ const validateURL = (url) => {
 /**
  * Generic validation middleware
  * Request body, query ve params'ı sanitize eder
+ * 
+ * Security Features:
+ * - XSS Protection: Escapes HTML special characters
+ * - NoSQL Injection Protection: Removes MongoDB operators
+ * - Input Length Limits: Prevents DoS attacks via large payloads
+ * - Recursion Protection: Limits nested object depth
+ * 
+ * Performance:
+ * - Single pass sanitization
+ * - Efficient string operations
+ * - Early return on invalid input
  */
 const validateAndSanitize = (req, res, next) => {
     try {
-        // Body sanitization
+        // SECURITY: Limit request body size to prevent DoS attacks
         if (req.body && typeof req.body === 'object') {
+            const bodyString = JSON.stringify(req.body);
+            const MAX_BODY_SIZE = 100000; // 100KB limit
+            if (bodyString.length > MAX_BODY_SIZE) {
+                res.errorStatusCode = 413;
+                throw new Error('Request body too large');
+            }
             req.body = sanitizeInput(req.body);
         }
         
-        // Query sanitization (NoSQL injection koruması)
+        // SECURITY: Query sanitization (NoSQL injection koruması)
         if (req.query && typeof req.query === 'object') {
             req.query = sanitizeInput(req.query);
         }
         
-        // Params sanitization
+        // SECURITY: Params sanitization (XSS and injection protection)
         if (req.params && typeof req.params === 'object') {
             for (const [key, value] of Object.entries(req.params)) {
                 if (typeof value === 'string') {
+                    // SECURITY: Validate ObjectId format if it looks like an ID
+                    if (key.toLowerCase().includes('id') && value.length === 24) {
+                        if (!validateObjectId(value)) {
+                            res.errorStatusCode = 400;
+                            throw new Error(`Invalid ${key} format`);
+                        }
+                    }
                     req.params[key] = escapeHtml(value.trim());
                 }
             }
@@ -133,7 +202,7 @@ const validateAndSanitize = (req, res, next) => {
         
         next();
     } catch (error) {
-        res.errorStatusCode = 400;
+        res.errorStatusCode = res.errorStatusCode || 400;
         throw new Error('Input validation failed: ' + error.message);
     }
 };

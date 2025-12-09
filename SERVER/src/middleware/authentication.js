@@ -58,8 +58,12 @@ module.exports = async (req, res, next) => {
                     
                     if (userData) {
                         req.user = userData;
+                        // ✅ DEBUG: JWT payload'ını log'la
                         logger.debug('JWT authentication successful', {
                             userId: req.user._id,
+                            userIdType: typeof req.user._id,
+                            username: req.user.username,
+                            role: req.user.role,
                             path: req.path
                         });
                     } else {

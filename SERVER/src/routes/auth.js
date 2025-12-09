@@ -6,7 +6,7 @@ auth
 const router = require('express').Router()
 /* ------------------------------------------------------- */
 
-const { login, refresh, logout, register } = require('../controller/auth');
+const { login, refresh, logout, register, forgotPassword, resetPassword } = require('../controller/auth');
 const logger = require('../utils/logger');
 
 // URL: /auth
@@ -29,6 +29,8 @@ router.post('/login', async (req, res, next) => {
 router.post('/register', register);
 router.post('/refresh', refresh);
 router.get('/logout', logout);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 /* ------------------------------------------------------- */
 module.exports = router;

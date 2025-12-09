@@ -128,7 +128,8 @@ const PaymentSuccessPage = () => {
         <Alert severity="error">
           {t('paymentSuccess.noBookingInfo')}
         </Alert>
-        <Button onClick={() => navigate('/')} sx={{ mt: 2 }}>
+        {/* ✅ FIX: Hata durumunda da home sayfasına yönlendir */}
+        <Button onClick={() => navigate('/home')} sx={{ mt: 2 }}>
           {t('paymentSuccess.backToHome')}
         </Button>
       </Container>
@@ -306,11 +307,12 @@ const PaymentSuccessPage = () => {
             {t('paymentSuccess.viewBookings')}
           </Button>
 
+          {/* ✅ FIX: "Zur Startseite" butonu home sayfasına yönlendirmeli (StartPage değil) */}
           <Button
             fullWidth
             variant="outlined"
             size="large"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/home')}
           >
             {t('paymentSuccess.backToHome')}
           </Button>

@@ -240,17 +240,24 @@ const AuthModal = ({
                     placeholder={t('auth.passwordPlaceholder') || '••••••••'}
                   />
 
-                  <Typography
-                    variant="body2"
-                    align="center"
-                    sx={{
-                      color: "#0891b2",
-                      cursor: "pointer",
-                      "&:hover": { textDecoration: "underline" },
-                    }}
-                  >
-                    {t('auth.forgotPassword') || 'Passwort vergessen'}
-                  </Typography>
+                  <Box sx={{ textAlign: "center" }}>
+                    <Typography
+                      onClick={() => {
+                        onClose();
+                        navigate('/forgot-password');
+                      }}
+                      sx={{
+                        color: "#0891b2",
+                        fontSize: "0.875rem",
+                        cursor: "pointer",
+                        "&:hover": {
+                          textDecoration: "underline",
+                        },
+                      }}
+                    >
+                      {t('auth.forgotPassword') || 'Passwort vergessen'}
+                    </Typography>
+                  </Box>
 
                   <Button
                     fullWidth

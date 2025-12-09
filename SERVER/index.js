@@ -23,6 +23,38 @@ require('dotenv').config();
 // Logger
 const logger = require('./src/utils/logger');
 
+// ✅ ENVIRONMENT VALIDATION: Validate all required environment variables on startup
+// This ensures the application fails fast if configuration is missing
+const { validateAndLogEnvironment } = require('./src/utils/envValidator');
+validateAndLogEnvironment();
+
+// ✅ EMAIL CONFIGURATION CHECK: Log email configuration status on startup
+const hasEmailService = !!process.env.EMAIL_SERVICE;
+const hasEmailHost = !!process.env.EMAIL_HOST;
+const hasEmailPort = !!process.env.EMAIL_PORT;
+const hasEmailUser = !!process.env.EMAIL_USER;
+const hasEmailPassword = !!process.env.EMAIL_PASSWORD;
+const hasEmailPass = !!process.env.EMAIL_PASS;
+const hasEmailConfig = (hasEmailService || (hasEmailHost && hasEmailPort)) && hasEmailUser && (hasEmailPassword || hasEmailPass);
+
+console.log('📧 Email Configuration Check:', {
+    configured: hasEmailConfig,
+    method: hasEmailService ? 'SERVICE' : (hasEmailHost ? 'SMTP' : 'NONE'),
+    hasEmailService,
+    hasEmailHost: hasEmailHost ? `${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT}` : false,
+    hasEmailUser: hasEmailUser ? `${process.env.EMAIL_USER.substring(0, 10)}...` : false,
+    hasEmailPassword: hasEmailPassword || hasEmailPass
+});
+logger.info('📧 Email Configuration Check', {
+    configured: hasEmailConfig,
+    method: hasEmailService ? 'SERVICE' : (hasEmailHost ? 'SMTP' : 'NONE'),
+    hasEmailService,
+    hasEmailHost: !!hasEmailHost,
+    hasEmailPort: !!hasEmailPort,
+    hasEmailUser: !!hasEmailUser,
+    hasEmailPassword: hasEmailPassword || hasEmailPass
+});
+
 const app = express();
 //const HOST = process.env?.HOST || '127.0.0.1';
 const PORT = process.env.PORT || 8000;

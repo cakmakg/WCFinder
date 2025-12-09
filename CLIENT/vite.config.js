@@ -29,8 +29,16 @@ export default defineConfig({
     minify: 'terser', // Daha iyi minification
     terserOptions: {
       compress: {
-        drop_console: process.env.NODE_ENV === 'production', // Production'da console.log'ları kaldır
-        drop_debugger: true,
+        drop_console: false, // ✅ DEBUG: Console log'ları her zaman göster
+        drop_debugger: false, // ✅ DEBUG: Debugger'ları da göster
+        // Production'da event handler'ların bozulmasını önle
+        keep_fnames: true, // Function isimlerini koru (debug için)
+        keep_classnames: true, // Class isimlerini koru
+      },
+      mangle: {
+        // Production'da minification sırasında event handler'ları bozma
+        keep_fnames: true, // Function isimlerini koru
+        keep_classnames: true, // Class isimlerini koru
       },
     },
     rollupOptions: {

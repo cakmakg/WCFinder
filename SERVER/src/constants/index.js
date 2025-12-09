@@ -16,6 +16,9 @@
 /**
  * Fee Configuration
  * These values can be overridden by environment variables
+ * 
+ * Security: All fee values come from environment variables or constants
+ * (no hardcoded values in business logic)
  */
 const FEE_CONFIG = {
     /**
@@ -31,6 +34,13 @@ const FEE_CONFIG = {
      * Can be overridden by DEFAULT_TOILET_FEE environment variable
      */
     DEFAULT_TOILET_FEE: parseFloat(process.env.DEFAULT_TOILET_FEE) || 1.00,
+    
+    /**
+     * Minimum payment amount in EUR
+     * Default: 0.50 EUR
+     * Can be overridden by MIN_PAYMENT_AMOUNT environment variable
+     */
+    MIN_PAYMENT_AMOUNT: parseFloat(process.env.MIN_PAYMENT_AMOUNT) || 0.50,
 };
 
 /**

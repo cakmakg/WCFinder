@@ -6,29 +6,55 @@ const { FEE_CONFIG, STATUS } = require("../constants");
 const { validateToilet } = require("../services/validationService");
 
 module.exports = {
-  // GET: Tüm tuvaletleri listeleme
+  /**
+   * GET: List all toilets with optional business filter
+   * 
+   * Performance:
+   * - Uses server-side filtering to avoid N+1 query problem
+   * - Efficient database queries with proper indexing
+   * 
+   * Security:
+   * - Validates ObjectId format for business filter
+   * - Prevents NoSQL injection through query sanitization
+   * 
+   * @param {object} req - Express request
+   * @param {object} res - Express response
+   */
   list: async (req, res) => {
     /*
       #swagger.tags = ["Toilets"]
       #swagger.summary = "List all toilets"
     */
-    // Query parametrelerinden business filter al
+    const { validateObjectId } = require('../middleware/validation');
     const filter = {};
     
+    // ✅ SECURITY: Validate and sanitize business filter parameter
     if (req.query['filter[business]']) {
-      filter.business = req.query['filter[business]'];
+      const businessId = req.query['filter[business]'];
+      
+      // Validate ObjectId format to prevent injection attacks
+      if (!validateObjectId(businessId)) {
+        res.errorStatusCode = 400;
+        throw new Error('Invalid business ID format');
+      }
+      
+      filter.business = businessId;
     }
     
-    logger.debug('Fetching toilets with filter', { filter });
+    logger.debug('Fetching toilets with filter', { 
+      filter,
+      hasBusinessFilter: !!filter.business 
+    });
     
+    // ✅ OPTIMIZED: Single query with populate (avoids N+1 problem)
     const data = await res.getModelList(Toilet, filter, "business");
 
-  res.status(200).send({
-    error: false,
-    details: await res.getModelListDetails(Toilet, filter),
-    result: data,
-  });
-},
+    res.status(200).send({
+      error: false,
+      details: await res.getModelListDetails(Toilet, filter),
+      result: data,
+    });
+  },
 
   /**
    * POST: Create a new toilet
@@ -91,20 +117,41 @@ module.exports = {
     });
   },
 
-  // GET: Belirli bir tuvaleti ID ile okuma
+  /**
+   * GET: Get a single toilet by ID
+   * 
+   * Security:
+   * - Validates ObjectId format before querying database
+   * - Prevents NoSQL injection attacks
+   * 
+   * Performance:
+   * - Single query with populate (efficient)
+   * 
+   * @param {object} req - Express request
+   * @param {object} res - Express response
+   */
   read: async (req, res) => {
     /*
       #swagger.tags = ["Toilets"]
       #swagger.summary = "Get a single toilet by ID"
     */
+    const { validateObjectId } = require('../middleware/validation');
+    
+    // ✅ SECURITY: Validate ObjectId format to prevent injection
+    if (!validateObjectId(req.params.id)) {
+      res.errorStatusCode = 400;
+      throw new Error('Invalid toilet ID format');
+    }
+    
+    // ✅ OPTIMIZED: Single query with populate (avoids N+1)
     const result = await Toilet.findById(req.params.id).populate("business");
 
     if (!result) {
-      return res.status(404).send({
-        error: true,
-        message: "Toilet not found.",
-      });
+      res.errorStatusCode = 404;
+      throw new Error("Toilet not found.");
     }
+
+    logger.debug('Toilet retrieved successfully', { toiletId: req.params.id });
 
     res.status(200).send({
       error: false,
@@ -112,7 +159,17 @@ module.exports = {
     });
   },
 
-  // PUT/PATCH: Belirli bir tuvaleti güncelleme
+  /**
+   * PUT/PATCH: Update an existing toilet
+   * 
+   * Security:
+   * - Validates ObjectId format
+   * - Input validation through validationService
+   * - Prevents unauthorized field updates
+   * 
+   * @param {object} req - Express request
+   * @param {object} res - Express response
+   */
   update: async (req, res) => {
     /*
       #swagger.tags = ["Toilets"]
@@ -126,17 +183,43 @@ module.exports = {
         }
       }
     */
-    const result = await Toilet.findByIdAndUpdate(req.params.id, req.body, {
+    const { validateObjectId } = require('../middleware/validation');
+    
+    // ✅ SECURITY: Validate ObjectId format
+    if (!validateObjectId(req.params.id)) {
+      res.errorStatusCode = 400;
+      throw new Error('Invalid toilet ID format');
+    }
+    
+    // ✅ SECURITY: Prevent fee manipulation (fee should only be set via constants)
+    const updateData = { ...req.body };
+    delete updateData.fee; // Fee cannot be changed via update
+    
+    // ✅ SECURITY: Input validation
+    if (Object.keys(updateData).length > 0) {
+      const validation = validateToilet(updateData, true); // true = partial update
+      if (!validation.isValid) {
+        res.errorStatusCode = 400;
+        throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+      }
+    }
+    
+    logger.debug('Updating toilet', { 
+      toiletId: req.params.id,
+      updateFields: Object.keys(updateData)
+    });
+    
+    const result = await Toilet.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
 
     if (!result) {
-      return res.status(404).send({
-        error: true,
-        message: "Toilet not found for update.",
-      });
+      res.errorStatusCode = 404;
+      throw new Error("Toilet not found for update.");
     }
+    
+    logger.info('Toilet updated successfully', { toiletId: req.params.id });
 
     res.status(202).send({
       error: false,
@@ -144,21 +227,39 @@ module.exports = {
     });
   },
 
-  // DELETE: Belirli bir tuvaleti silme
+  /**
+   * DELETE: Delete a toilet
+   * 
+   * Security:
+   * - Validates ObjectId format
+   * - Logs deletion for audit trail
+   * 
+   * @param {object} req - Express request
+   * @param {object} res - Express response
+   */
   deletee: async (req, res) => {
     /*
       #swagger.tags = ["Toilets"]
       #swagger.summary = "Delete a toilet"
     */
+    const { validateObjectId } = require('../middleware/validation');
+    
+    // ✅ SECURITY: Validate ObjectId format
+    if (!validateObjectId(req.params.id)) {
+      res.errorStatusCode = 400;
+      throw new Error('Invalid toilet ID format');
+    }
+    
+    logger.debug('Deleting toilet', { toiletId: req.params.id });
+    
     const result = await Toilet.findByIdAndDelete(req.params.id);
 
     if (result) {
-      res.status(204).send(); // Silme başarılıysa 204 No Content döndür
+      logger.info('Toilet deleted successfully', { toiletId: req.params.id });
+      res.status(204).send(); // ✅ RESTful: 204 No Content for successful deletion
     } else {
-      res.status(404).send({
-        error: true,
-        message: "Toilet not found or already deleted.",
-      });
+      res.errorStatusCode = 404;
+      throw new Error("Toilet not found or already deleted.");
     }
   },
 };

@@ -19,8 +19,9 @@ const isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'developme
  */
 class Logger {
   constructor() {
-    this.enabled = isDevelopment || import.meta.env.VITE_ENABLE_LOGGING === 'true';
-    this.minLevel = isDevelopment ? LogLevel.DEBUG : LogLevel.INFO;
+    // ✅ DEBUG: Her zaman log'ları göster
+    this.enabled = true; // Her zaman aktif
+    this.minLevel = LogLevel.DEBUG; // Tüm log seviyelerini göster
   }
 
   /**

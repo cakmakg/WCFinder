@@ -9,7 +9,7 @@ import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import AppleIcon from "@mui/icons-material/Apple";
 import AndroidIcon from "@mui/icons-material/Android";
 
-const StartPageFooter = () => {
+const StartPageFooter = ({ onPartnerClick }) => {
   const { t } = useTranslation();
 
   return (
@@ -82,12 +82,33 @@ const StartPageFooter = () => {
                 {t("startPage.footer.uberUns")}
               </Typography>
               <Typography
-                component="a"
-                href="#"
+                component="button"
+                type="button"
+                onClick={(e) => {
+                  if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                  // Production-safe handler - direkt fonksiyon çağrısı
+                  const handler = onPartnerClick;
+                  if (handler && typeof handler === 'function') {
+                    try {
+                      handler();
+                    } catch (error) {
+                      // Silent error handling for production
+                    }
+                  }
+                }}
                 sx={{
                   color: "#cbd5e1",
                   textDecoration: "none",
                   fontSize: "0.875rem",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  font: "inherit",
+                  textAlign: "left",
                   "&:hover": { color: "#0891b2" },
                 }}
               >

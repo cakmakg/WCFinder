@@ -88,7 +88,10 @@ const PaymentPage = () => {
         totalAmount: bookingData.pricing.total,
       };
 
-      console.log('📤 Creating Stripe payment from booking:', bookingDataForPayment);
+      // ✅ SECURITY: Sensitive booking data loglanmıyor
+      if (import.meta.env.DEV) {
+        console.log('📤 Creating Stripe payment from booking');
+      }
 
       const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
       const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
@@ -109,7 +112,9 @@ const PaymentPage = () => {
         
         // 409 (Conflict - Duplicate) hatası için: Mevcut payment'i sorgula ve clientSecret'ı al
         if (response.status === 409) {
-          console.log('⚠️ Duplicate payment detected, fetching existing payment...');
+          if (import.meta.env.DEV) {
+            console.log('⚠️ Duplicate payment detected, fetching existing payment...');
+          }
           try {
             const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
             const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
@@ -136,12 +141,10 @@ const PaymentPage = () => {
                   new Date(b.createdAt) - new Date(a.createdAt)
                 )[0];
                 
-                console.log('✅ Found existing payment:', latestPayment._id);
-                
-                // Mevcut payment'i kullan - backend duplicate kontrolü çalışmalı
-                // Şimdilik: Backend'de duplicate kontrolünü düzeltmeliyiz
-                // Geçici çözüm: Mevcut payment'i sil ve yeniden oluştur
-                console.log('⚠️ Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
+                if (import.meta.env.DEV) {
+                  console.log('✅ Found existing payment:', latestPayment._id);
+                  console.log('⚠️ Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
+                }
                 errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
               }
             }
@@ -149,7 +152,9 @@ const PaymentPage = () => {
             // Eğer mevcut payment bulunamazsa, kullanıcıya bilgi ver
             errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
           } catch (fetchErr) {
-            console.error('❌ Error fetching existing payment:', fetchErr);
+            if (import.meta.env.DEV) {
+              console.error('❌ Error fetching existing payment:', fetchErr);
+            }
             errorMessage = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
           }
         }
@@ -164,24 +169,28 @@ const PaymentPage = () => {
           }
         }
         
-        console.error('❌ Payment creation error:', errorData);
+        if (import.meta.env.DEV) {
+          console.error('❌ Payment creation error:', errorData);
+        }
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      console.log('✅ Stripe response:', data);
-      console.log('✅ ClientSecret:', data.result?.clientSecret);
-      console.log('✅ PaymentId:', data.result?.paymentId);
+      // ✅ SECURITY: Sensitive data (clientSecret) loglanmıyor
+      if (import.meta.env.DEV) {
+        console.log('✅ Stripe response received');
+        console.log('✅ PaymentId:', data.result?.paymentId);
+        console.log('✅ PaymentIntentStatus:', data.result?.paymentIntentStatus);
+      }
       
       // ✅ Response formatını kontrol et
       if (!data.result || !data.result.clientSecret) {
-        console.error('❌ Invalid response format:', data);
+        console.error('❌ Invalid response format');
         throw new Error('Ungültige Antwort vom Server. Bitte versuchen Sie es erneut.');
       }
       
       setClientSecret(data.result.clientSecret);
-      setPaymentId(data.result.paymentId); // ✅ Payment ID'yi sakla
-      console.log('✅ ClientSecret set edildi:', data.result.clientSecret);
+      setPaymentId(data.result.paymentId);
     } catch (err) {
       console.error('❌ Stripe error:', err);
       const errorMessage = err.message || err.response?.data?.message || t('payment.paymentInitError');
@@ -214,7 +223,9 @@ const PaymentPage = () => {
         totalAmount: bookingData.pricing.total,
       };
 
-      console.log('📤 Creating PayPal order from booking:', bookingDataForPayment);
+      if (import.meta.env.DEV) {
+        console.log('📤 Creating PayPal order from booking');
+      }
 
       const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
       const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
@@ -248,12 +259,16 @@ const PaymentPage = () => {
           errorMessage = 'PayPal ist derzeit nicht konfiguriert. Bitte kontaktieren Sie den Administrator oder verwenden Sie die Kreditkartenzahlung.';
         }
         
-        console.error('❌ PayPal creation error:', errorData);
+        if (import.meta.env.DEV) {
+          console.error('❌ PayPal creation error:', errorData);
+        }
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      console.log('✅ PayPal response:', data);
+      if (import.meta.env.DEV) {
+        console.log('✅ PayPal response received');
+      }
       
       setPaypalOrderId(data.result.orderId);
       setPaymentId(data.result.paymentId); // ✅ Payment ID'yi sakla
@@ -285,7 +300,9 @@ const PaymentPage = () => {
       const token = localStorage.getItem("token");
 
       // ✅ Backend'den payment'i confirm et ve usage oluştur
-      console.log('📤 Confirming payment and creating usage...');
+      if (import.meta.env.DEV) {
+        console.log('📤 Confirming payment and creating usage...');
+      }
       const confirmResponse = await fetch(`${baseURL}/payments/stripe/confirm`, {
         method: "POST",
         headers: {
@@ -304,7 +321,9 @@ const PaymentPage = () => {
       const usageId = confirmData.result?.usageId;
       const confirmedPaymentId = confirmData.result?.paymentId;
 
-      console.log('✅ Payment confirmed, usage created:', usageId);
+      if (import.meta.env.DEV) {
+        console.log('✅ Payment confirmed, usage created:', usageId);
+      }
 
       // ✅ Success sayfasına yönlendir
       navigate('/payment/success', {
@@ -517,14 +536,24 @@ const PaymentPage = () => {
                   {paymentMethod === 'card' && (
                     <Box>
                       {(() => {
-                        console.log('🔍 Payment Form Debug:', {
-                          clientSecret: clientSecret ? 'SET' : 'NULL',
-                          paymentMethod,
-                          loading,
-                        });
+                        // ✅ SECURITY: Debug log sadece development'ta
+                        if (import.meta.env.DEV) {
+                          console.log('🔍 Payment Form Debug:', {
+                            clientSecret: clientSecret ? 'SET' : 'NULL',
+                            paymentMethod,
+                            loading,
+                            stripeKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'SET' : 'MISSING',
+                          });
+                        }
                         return null;
                       })()}
-                      {!clientSecret ? (
+                      {/* ✅ SECURITY: Stripe key kontrolü - eğer yoksa kullanıcıya bilgi ver */}
+                      {!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
+                       !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY.startsWith('pk_') ? (
+                        <Alert severity="warning" sx={{ mb: 2 }}>
+                          Stripe ist derzeit nicht konfiguriert. Bitte verwenden Sie PayPal oder kontaktieren Sie den Administrator.
+                        </Alert>
+                      ) : !clientSecret ? (
                         <Button
                           fullWidth
                           variant="contained"
@@ -546,13 +575,24 @@ const PaymentPage = () => {
                         </Button>
                       ) : (
                         <>
-                          {console.log('✅ Rendering StripeCardForm with clientSecret:', clientSecret)}
-                          <StripeCardForm
-                            clientSecret={clientSecret}
-                            amount={bookingData.pricing.total}
-                            onSuccess={handlePaymentSuccess}
-                            onError={handlePaymentError}
-                          />
+                          {/* ✅ SECURITY: Stripe key ve clientSecret kontrolü */}
+                          {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY && 
+                           import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY.startsWith('pk_') && 
+                           clientSecret ? (
+                            <>
+                              {/* ✅ SECURITY: clientSecret loglanmıyor */}
+                              <StripeCardForm
+                                clientSecret={clientSecret}
+                                amount={bookingData.pricing.total}
+                                onSuccess={handlePaymentSuccess}
+                                onError={handlePaymentError}
+                              />
+                            </>
+                          ) : (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                              Stripe ist derzeit nicht verfügbar. Bitte verwenden Sie PayPal oder kontaktieren Sie den Administrator.
+                            </Alert>
+                          )}
                         </>
                       )}
                     </Box>

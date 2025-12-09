@@ -39,10 +39,32 @@ const ReviewsSection = () => {
       sx={{
         py: { xs: 6, md: 10 },
         backgroundColor: "#f8fafc",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <Container maxWidth="lg">
-        <Box sx={{ textAlign: "center", mb: 6 }}>
+      {/* ✅ ASYMMETRIC: Decorative element */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: "-100px",
+          left: "-100px",
+          width: "300px",
+          height: "300px",
+          background: "linear-gradient(135deg, rgba(20,184,166,0.08) 0%, transparent 100%)",
+          borderRadius: "50%",
+          filter: "blur(50px)",
+          zIndex: 0,
+        }}
+      />
+      
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+        {/* ✅ ASYMMETRIC: Title positioned to the left */}
+        <Box sx={{ 
+          textAlign: { xs: "center", md: "left" }, 
+          mb: 6,
+          maxWidth: { md: "500px" },
+        }}>
           <Typography
             variant="h3"
             sx={{
@@ -54,7 +76,12 @@ const ReviewsSection = () => {
           >
             {t("startPage.reviews.title")}
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+          <Box sx={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: { xs: "center", md: "flex-start" }, 
+            gap: 1 
+          }}>
             <Rating value={5} readOnly precision={0.5} />
             <Typography variant="body1" sx={{ color: "#64748b", fontWeight: 600 }}>
               5.0 • 2.847 {t("startPage.reviews.reviewsCount")}
@@ -62,9 +89,20 @@ const ReviewsSection = () => {
           </Box>
         </Box>
 
+        {/* ✅ ASYMMETRIC: Staggered grid with offset */}
         <Grid container spacing={3}>
           {reviews.map((review, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
+            <Grid 
+              item 
+              xs={12} 
+              sm={6} 
+              md={3} 
+              key={index}
+              sx={{
+                // ✅ ASYMMETRIC: Offset every other card
+                mt: { md: index % 2 === 1 ? 4 : 0 },
+              }}
+            >
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -75,7 +113,14 @@ const ReviewsSection = () => {
                   sx={{
                     height: "100%",
                     boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                    borderRadius: 2,
+                    borderRadius: 3,
+                    borderTop: index % 2 === 0 ? "3px solid #0891b2" : "none",
+                    borderBottom: index % 2 === 1 ? "3px solid #14b8a6" : "none",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-4px) scale(1.02)", // ✅ ASYMMETRIC: Scale on hover
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                    },
                   }}
                 >
                   <CardContent sx={{ p: 3 }}>

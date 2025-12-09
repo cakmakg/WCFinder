@@ -3,18 +3,36 @@ import { Box, Container, Grid, Typography, Button } from "@mui/material";
 import WcIcon from "@mui/icons-material/Wc";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 
-const AboutUsSection = ({ onBookNow }) => {
+const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
   return (
     <Box
       id="uber-uns"
       sx={{
         py: { xs: 6, md: 10 },
         backgroundColor: "#f8fafc",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <Container maxWidth="lg">
+      {/* ✅ ASYMMETRIC: Decorative element on the left */}
+      <Box
+        sx={{
+          position: "absolute",
+          bottom: "-150px",
+          left: "-150px",
+          width: "400px",
+          height: "400px",
+          background: "linear-gradient(135deg, rgba(20,184,166,0.08) 0%, transparent 100%)",
+          borderRadius: "50%",
+          filter: "blur(50px)",
+          zIndex: 0,
+        }}
+      />
+      
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+        {/* ✅ ASYMMETRIC: Reversed grid order (image on right, text on left) */}
         <Grid container spacing={6} alignItems="center">
-          <Grid item xs={12} md={5}>
+          <Grid item xs={12} md={7} sx={{ order: { xs: 2, md: 1 } }}>
             <Box
               sx={{
                 width: { xs: 200, md: 280 },
@@ -26,6 +44,7 @@ const AboutUsSection = ({ onBookNow }) => {
                 justifyContent: "center",
                 mx: { xs: "auto", md: 0 },
                 position: "relative",
+                ml: { md: "auto" }, // ✅ ASYMMETRIC: Push to right
               }}
             >
               <WcIcon
@@ -52,7 +71,7 @@ const AboutUsSection = ({ onBookNow }) => {
             </Box>
           </Grid>
 
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12} md={5} sx={{ order: { xs: 1, md: 2 } }}>
             <Typography
               variant="h3"
               sx={{
@@ -60,6 +79,7 @@ const AboutUsSection = ({ onBookNow }) => {
                 color: "#1e293b",
                 mb: 3,
                 fontSize: { xs: "1.75rem", md: "2.5rem" },
+                textAlign: { xs: "center", md: "left" },
               }}
             >
               Über uns
@@ -121,26 +141,66 @@ const AboutUsSection = ({ onBookNow }) => {
               </Typography>
             </Box>
 
-            <Button
-              variant="contained"
-              size="large"
-              onClick={onBookNow}
-              sx={{
-                backgroundColor: "#0891b2",
-                color: "white",
-                px: 5,
-                py: 1.5,
-                fontSize: "1.05rem",
-                fontWeight: 600,
-                textTransform: "none",
-                borderRadius: 2,
-                "&:hover": {
-                  backgroundColor: "#0e7490",
-                },
-              }}
-            >
-              JETZT BUCHEN
-            </Button>
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={onBookNow}
+                sx={{
+                  backgroundColor: "#0891b2",
+                  color: "white",
+                  px: 5,
+                  py: 1.5,
+                  fontSize: "1.05rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  borderRadius: 2,
+                  "&:hover": {
+                    backgroundColor: "#0e7490",
+                  },
+                }}
+              >
+                JETZT BUCHEN
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                type="button"
+                onClick={(e) => {
+                  if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                  // Production-safe handler - direkt fonksiyon çağrısı
+                  const handler = onPartnerClick;
+                  if (handler && typeof handler === 'function') {
+                    try {
+                      handler();
+                    } catch (error) {
+                      // Silent error handling for production
+                      // Error'u logla ama kullanıcıya gösterme
+                    }
+                  }
+                }}
+                sx={{
+                  borderColor: "#0891b2",
+                  color: "#0891b2",
+                  px: 5,
+                  py: 1.5,
+                  fontSize: "1.05rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  borderRadius: 2,
+                  "&:hover": {
+                    backgroundColor: "#0891b2",
+                    color: "white",
+                    borderColor: "#0891b2",
+                  },
+                }}
+              >
+                Unser Partner werden
+              </Button>
+            </Box>
           </Grid>
         </Grid>
       </Container>

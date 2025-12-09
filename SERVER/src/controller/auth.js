@@ -28,6 +28,8 @@ const {
 
 const User = require("../models/user");
 const Token = require('../models/token');
+const PasswordReset = require('../models/passwordReset');
+const sendMail = require('../helper/sendMail');
 
 module.exports = {
   /**
@@ -131,15 +133,17 @@ module.exports = {
             role: user.role 
         });
 
-        // Security: Don't send email in login response
-        // Email is sensitive PII and should only be fetched when needed
+        // Send user data including email, firstName, lastName for profile display
+        // Email is not sensitive PII and is needed for profile management
         res.send({
             error: false,
             bearer: { accessToken, refreshToken },
             user: {
                 _id: user._id,
                 username: user.username,
-                // email: NOT SENT (security: sensitive PII)
+                email: user.email, // Email is needed for profile display
+                firstName: user.firstName,
+                lastName: user.lastName,
                 role: user.role,
                 isActive: user.isActive
             },
@@ -256,6 +260,48 @@ module.exports = {
             isActive: user.isActive
         });
 
+        // ✅ Send welcome email to user
+        // Not: SMTP configuration kontrolü sendMail helper içinde yapılıyor (custom SMTP destekli).
+        // Burada ekstra EMAIL_SERVICE / EMAIL_HOST kontrolü yapmayıp, sonucu logluyoruz.
+        try {
+            const welcomeEmailSubject = 'Willkommen bei WCFinder!';
+            const welcomeEmailMessage = `
+                <h2>Willkommen bei WCFinder, ${user.firstName || user.username}!</h2>
+                <p>Vielen Dank für Ihre Registrierung bei WCFinder.</p>
+                <p>Ihr Konto wurde erfolgreich erstellt:</p>
+                <ul>
+                    <li><strong>Benutzername:</strong> ${user.username}</li>
+                    <li><strong>E-Mail:</strong> ${user.email}</li>
+                </ul>
+                <p>Sie können sich jetzt anmelden und Toiletten in Ihrer Nähe finden und buchen.</p>
+                <p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p>
+                <br>
+                <p>Mit freundlichen Grüßen,<br>Das WCFinder Team</p>
+            `;
+
+            const emailSent = await sendMail(user.email, welcomeEmailSubject, welcomeEmailMessage);
+            
+            if (emailSent) {
+                logger.info('Welcome email sent successfully', { 
+                    userId: user._id, 
+                    email: user.email 
+                });
+            } else {
+                logger.warn('Welcome email send returned false', { 
+                    userId: user._id, 
+                    email: user.email 
+                });
+            }
+        } catch (emailError) {
+            // Email hatası register işlemini engellemez
+            logger.error('Failed to send welcome email', emailError, { 
+                userId: user._id, 
+                email: user.email,
+                errorMessage: emailError.message,
+                errorStack: emailError.stack
+            });
+        }
+
         // Security: Don't send email in register response
         // Email is sensitive PII and should only be fetched when needed
         res.status(201).send({
@@ -335,6 +381,173 @@ module.exports = {
             error: false,
             message,
             result
+        });
+    },
+
+    /**
+     * Forgot Password
+     * 
+     * Kullanıcı şifresini unuttuğunda email adresine reset linki gönderir.
+     */
+    forgotPassword: async (req, res) => {
+        const { email } = req.body;
+
+        if (!email) {
+            throw new ValidationError("Email is required");
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail || !validateEmail(normalizedEmail)) {
+            throw new ValidationError("Invalid email format");
+        }
+
+        // Kullanıcıyı bul
+        const user = await User.findOne({ email: normalizedEmail });
+        
+        // Güvenlik: Kullanıcı yoksa bile aynı mesajı döndür (timing attack koruması)
+        if (!user) {
+            logger.warn('Forgot password attempt - user not found', { 
+                email: normalizedEmail, 
+                ip: req.ip 
+            });
+            // Kullanıcı yoksa bile başarılı mesaj döndür (güvenlik)
+            return res.status(200).send({
+                error: false,
+                message: "If the email exists, a password reset link has been sent."
+            });
+        }
+
+        // Eski token'ları sil (kullanılmamış olsa bile)
+        await PasswordReset.deleteMany({ 
+            userId: user._id, 
+            used: false 
+        });
+
+        // Yeni token oluştur
+        const token = PasswordReset.generateToken();
+        const resetToken = await PasswordReset.create({
+            userId: user._id,
+            token: token,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 saat
+        });
+
+        // Reset linki oluştur
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+
+        // Email gönder
+        try {
+            console.log('📧 [forgotPassword] Preparing to send reset email', {
+                userId: user._id,
+                email: user.email,
+                resetLink: resetLink.substring(0, 50) + '...'
+            });
+            
+            const emailSubject = 'WCFinder - Passwort zurücksetzen';
+            const emailMessage = `
+                <h2>Passwort zurücksetzen</h2>
+                <p>Hallo ${user.firstName || user.username},</p>
+                <p>Sie haben eine Passwort-Zurücksetzung für Ihr WCFinder-Konto angefordert.</p>
+                <p>Klicken Sie auf den folgenden Link, um Ihr Passwort zurückzusetzen:</p>
+                <p><a href="${resetLink}" style="background-color: #0891b2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Passwort zurücksetzen</a></p>
+                <p>Oder kopieren Sie diesen Link in Ihren Browser:</p>
+                <p>${resetLink}</p>
+                <p><strong>Dieser Link ist 1 Stunde gültig.</strong></p>
+                <p>Wenn Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail bitte.</p>
+                <br>
+                <p>Mit freundlichen Grüßen,<br>Das WCFinder Team</p>
+            `;
+
+            const emailSent = await sendMail(user.email, emailSubject, emailMessage);
+            
+            if (emailSent) {
+                logger.info('Password reset email sent successfully', { 
+                    userId: user._id, 
+                    email: user.email,
+                    resetLink: resetLink.substring(0, 50) + '...'
+                });
+                console.log('✅ [forgotPassword] Email sent successfully to:', user.email);
+            } else {
+                logger.warn('Password reset email send returned false', { 
+                    userId: user._id, 
+                    email: user.email 
+                });
+                console.log('⚠️ [forgotPassword] Email send returned false');
+            }
+
+            res.status(200).send({
+                error: false,
+                message: "If the email exists, a password reset link has been sent."
+            });
+        } catch (emailError) {
+            logger.error('Failed to send password reset email', emailError, {
+                userId: user._id,
+                email: user.email,
+                errorMessage: emailError.message,
+                errorStack: emailError.stack
+            });
+            console.error('❌ [forgotPassword] Email send failed:', emailError.message);
+            // Email hatası durumunda bile başarılı mesaj döndür (güvenlik)
+            res.status(200).send({
+                error: false,
+                message: "If the email exists, a password reset link has been sent."
+            });
+        }
+    },
+
+    /**
+     * Reset Password
+     * 
+     * Token ile şifre sıfırlama işlemi.
+     */
+    resetPassword: async (req, res) => {
+        const { token, newPassword } = req.body;
+
+        if (!token || !newPassword) {
+            throw new ValidationError("Token and new password are required");
+        }
+
+        // Password validation
+        if (!validatePassword(newPassword)) {
+            throw new ValidationError("Password must be at least 8 characters with uppercase, lowercase and number");
+        }
+
+        // Token'ı bul
+        const resetToken = await PasswordReset.findOne({ 
+            token: token,
+            used: false,
+            expiresAt: { $gt: new Date() } // Süresi dolmamış
+        });
+
+        if (!resetToken) {
+            logger.warn('Password reset attempt - invalid or expired token', { 
+                token: token.substring(0, 10) + '...', 
+                ip: req.ip 
+            });
+            throw new AuthenticationError("Invalid or expired reset token");
+        }
+
+        // Kullanıcıyı bul
+        const user = await User.findById(resetToken.userId);
+        if (!user) {
+            throw new AuthenticationError("User not found");
+        }
+
+        // Şifreyi güncelle
+        user.password = passwordEncrypt(newPassword);
+        await user.save();
+
+        // Token'ı kullanıldı olarak işaretle
+        await resetToken.markAsUsed();
+
+        logger.info('Password reset successful', { 
+            userId: user._id, 
+            email: user.email 
+        });
+
+        res.status(200).send({
+            error: false,
+            message: "Password has been reset successfully. You can now login with your new password."
         });
     },
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Grid,
   Paper,
@@ -25,9 +25,22 @@ const ProfileTab = ({
   onUpdateProfile,
   onDeleteProfile,
 }) => {
+  // ✅ DEBUG: Prop'ların doğru geçirildiğini kontrol et
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('🔍 [ProfileTab] Component rendered with props:', {
+        hasUser: !!user,
+        userId: user?._id,
+        hasOnDeleteProfile: typeof onDeleteProfile === 'function',
+        onDeleteProfileType: typeof onDeleteProfile
+      });
+    }
+  }, [user, onDeleteProfile]);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     username: user?.username || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
     email: user?.email || '',
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -42,19 +55,66 @@ const ProfileTab = ({
   const handleCancel = () => {
     setProfileData({
       username: user?.username || '',
+      firstName: user?.firstName || '',
+      lastName: user?.lastName || '',
       email: user?.email || '',
     });
     setIsEditing(false);
   };
 
-  const handleDeleteClick = () => {
-    if (deleteConfirmText !== 'LÖSCHEN') {
+  const handleDeleteClick = async () => {
+    // ✅ Normalize: trim + lowercase ile kontrol et (LÖSCHEN, löschen, Löschen hepsi kabul edilir)
+    const normalizedConfirm = deleteConfirmText.trim().toLowerCase();
+    
+    console.log('🗑️ [ProfileTab] handleDeleteClick called', {
+      deleteConfirmText,
+      normalizedConfirm,
+      hasOnDeleteProfile: typeof onDeleteProfile === 'function',
+      onDeleteProfileType: typeof onDeleteProfile
+    });
+    
+    // ✅ Normalize edilmiş kontrol
+    if (normalizedConfirm !== 'löschen') {
+      console.warn('⚠️ [ProfileTab] Delete confirmation text does not match:', {
+        original: deleteConfirmText,
+        normalized: normalizedConfirm,
+        expected: 'löschen'
+      });
       setError('Bitte geben Sie "LÖSCHEN" ein, um zu bestätigen.');
       return;
     }
-    onDeleteProfile();
-    setDeleteDialogOpen(false);
-    setDeleteConfirmText('');
+    
+    // ✅ onDeleteProfile prop'unun tanımlı olduğunu kontrol et
+    if (typeof onDeleteProfile !== 'function') {
+      console.error('❌ [ProfileTab] onDeleteProfile is not a function:', {
+        onDeleteProfile,
+        type: typeof onDeleteProfile,
+        value: onDeleteProfile
+      });
+      setError('Fehler: Delete-Funktion ist nicht verfügbar. Bitte kontaktieren Sie den Support.');
+      return;
+    }
+    
+    try {
+      console.log('📤 [ProfileTab] Calling onDeleteProfile...');
+      // ✅ onDeleteProfile async olabilir, await ile bekliyoruz
+      await onDeleteProfile();
+      console.log('✅ [ProfileTab] onDeleteProfile completed successfully');
+      // ✅ Başarılı olursa dialog kapanır
+      setDeleteDialogOpen(false);
+      setDeleteConfirmText('');
+      setError(null);
+    } catch (err) {
+      console.error('❌ [ProfileTab] Error in handleDeleteClick:', {
+        error: err,
+        message: err.message,
+        stack: err.stack,
+        response: err.response,
+        status: err.response?.status
+      });
+      // ✅ Hata durumunda dialog açık kalır ve hata gösterilir
+      setError(err.message || 'Fehler beim Löschen des Profils. Bitte versuchen Sie es erneut.');
+    }
   };
 
   return (
@@ -87,6 +147,22 @@ const ProfileTab = ({
                   fullWidth
                   size="small"
                 />
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField
+                    label="Vorname"
+                    value={profileData.firstName}
+                    onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                    fullWidth
+                    size="small"
+                  />
+                  <TextField
+                    label="Nachname"
+                    value={profileData.lastName}
+                    onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                    fullWidth
+                    size="small"
+                  />
+                </Box>
                 <TextField
                   label="E-Mail"
                   type="email"
@@ -112,6 +188,22 @@ const ProfileTab = ({
                   </Typography>
                   <Typography variant="body1" fontWeight={500}>
                     {user?.username || 'N/A'}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Vorname
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {user?.firstName || 'N/A'}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Nachname
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {user?.lastName || 'N/A'}
                   </Typography>
                 </Box>
                 <Box sx={{ mb: 2 }}>
@@ -209,7 +301,12 @@ const ProfileTab = ({
                 variant="outlined"
                 color="error"
                 startIcon={<DeleteIcon />}
-                onClick={() => setDeleteDialogOpen(true)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔴 [ProfileTab] Open delete dialog button clicked');
+                  setDeleteDialogOpen(true);
+                }}
               >
                 Profil löschen
               </Button>
@@ -228,6 +325,9 @@ const ProfileTab = ({
         }}
         maxWidth="sm"
         fullWidth
+        disableEnforceFocus={false} // ✅ Focus yönetimini etkinleştir
+        disableAutoFocus={false} // ✅ İlk focus'u TextField'a ver
+        disableRestoreFocus={false} // ✅ Dialog kapandığında focus'u geri ver
       >
         <DialogTitle>
           Profil löschen bestätigen
@@ -270,6 +370,10 @@ const ProfileTab = ({
             }}
             placeholder="LÖSCHEN"
             sx={{ mt: 2 }}
+            autoFocus // ✅ Dialog açıldığında otomatik focus
+            inputProps={{
+              'aria-label': 'Bestätigungstext eingeben'
+            }}
           />
         </DialogContent>
         <DialogActions>
@@ -281,10 +385,21 @@ const ProfileTab = ({
             Abbrechen
           </Button>
           <Button
-            onClick={handleDeleteClick}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const normalizedConfirm = deleteConfirmText.trim().toLowerCase();
+              console.log('🔴 [ProfileTab] Delete button clicked', {
+                deleteConfirmText,
+                normalizedConfirm,
+                isDisabled: normalizedConfirm !== 'löschen',
+                hasOnDeleteProfile: typeof onDeleteProfile === 'function'
+              });
+              handleDeleteClick();
+            }}
             color="error"
             variant="contained"
-            disabled={deleteConfirmText !== 'LÖSCHEN'}
+            disabled={deleteConfirmText.trim().toLowerCase() !== 'löschen'}
             startIcon={<DeleteIcon />}
           >
             Profil löschen

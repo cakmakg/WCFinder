@@ -5,6 +5,8 @@ import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import Home from '../pages/Home';
 import PrivateRouter from './PrivateRouter';
 import AppLayout from '../components/layout/AppLayout';
@@ -52,6 +54,8 @@ const AppRouter = () => {
         {/* Auth Pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         {/* Home/Dashboard - PUBLIC! */}
         <Route path="/home" element={<Home />} />
@@ -90,7 +94,9 @@ const AppRouter = () => {
     </PayPalScriptProvider>
   );
 
-  // Stripe varsa Elements ile de sar
+  // ✅ FIX: Elements provider'ı sadece Stripe key varsa render et
+  // PaymentPage'de Stripe key kontrolü yapılıyor, sadece key varsa StripeCardForm render ediliyor
+  // Bu sayede Elements provider olmadan StripeCardForm render edilmeyecek
   if (stripePromise) {
     wrappedContent = (
       <Elements stripe={stripePromise}>

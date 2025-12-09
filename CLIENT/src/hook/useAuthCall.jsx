@@ -16,8 +16,21 @@ const useAuthCall = () => {
   const dispatch = useDispatch();
   const apiCall = useApiCall();
 
+  /**
+   * Masks sensitive data (password) before logging
+   * @param {object} data - Data to mask
+   * @returns {object} - Masked data
+   */
+  const maskSensitiveData = (data) => {
+    if (!data || typeof data !== 'object') return data;
+    const safe = { ...data };
+    if (safe.password) safe.password = '***REDACTED***';
+    return safe;
+  };
+
   const login = async (userInfo) => {
-    console.log("🔐 [useAuthCall] Login called with:", userInfo);
+    // ✅ SECURITY: Never log password in plain text
+    console.log("🔐 [useAuthCall] Login called with:", maskSensitiveData(userInfo));
     try {
       console.log("🔐 [useAuthCall] Calling apiCall with url: /auth/login");
       const data = await apiCall({

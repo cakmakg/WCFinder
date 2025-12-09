@@ -1,4 +1,32 @@
-// controllers/usage.controller.js - TAM GÜNCELLENMİŞ
+/**
+ * Usage/Booking Controller
+ * 
+ * Handles all usage/booking-related operations including:
+ * - Creating bookings/reservations
+ * - Listing user bookings
+ * - Canceling reservations
+ * - Access code management
+ * 
+ * Security:
+ * - Input validation for all booking data
+ * - ObjectId validation to prevent injection attacks
+ * - User authentication required for all operations
+ * - Ownership verification (users can only access their own bookings)
+ * 
+ * Performance:
+ * - Optimized queries with populate to avoid N+1 problems
+ * - Parallel queries where possible
+ * - Efficient field selection to reduce data transfer
+ * 
+ * Clean Code Principles:
+ * - DRY: Validation logic uses constants and helper functions
+ * - Single Responsibility: Only handles HTTP requests/responses
+ * - Dependency Injection: Models and services can be mocked for testing
+ * - KISS: Simple, clear business logic
+ * 
+ * @module usageController
+ * @version 2.0.0
+ */
 
 "use strict";
 
@@ -158,16 +186,15 @@ module.exports = {
             message: "Reservation created successfully. Please proceed to payment.",
             result: populatedUsage,
         });
-
-    } catch (error) {
-        logger.error('Failed to create usage', error, { 
-            userId: req.user._id,
-            businessId,
-            toiletId
-        });
-        throw error;
-    }
-},
+        } catch (error) {
+            logger.error('Failed to create usage', error, { 
+                userId: req.user._id,
+                businessId,
+                toiletId
+            });
+            throw error;
+        }
+    },
 
     /**
      * Get user's own usages/reservations
@@ -410,9 +437,10 @@ module.exports = {
             throw new Error("Payment not completed for this reservation");
         }
 
-        // Süresi dolmuş mu? (örnek: başlangıç zamanından 24 saat sonra)
+        // Süresi dolmuş mu? (ACCESS_CODE.EXPIRY_HOURS kullan)
+        const { ACCESS_CODE } = require('../constants');
         const expiryTime = new Date(usage.startTime);
-        expiryTime.setHours(expiryTime.getHours() + 24);
+        expiryTime.setHours(expiryTime.getHours() + ACCESS_CODE.EXPIRY_HOURS);
         
         if (new Date() > expiryTime) {
             usage.status = 'expired';

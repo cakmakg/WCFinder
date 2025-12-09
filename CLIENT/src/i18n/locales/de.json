@@ -52,6 +52,8 @@
     "locationError": "Standort konnte nicht ermittelt werden.",
     "locationNotSupported": "Geolocation wird von deinem Browser nicht unterstützt.",
     "footer": {
+      "quickLinks": "Schnellzugriff",
+      "description": "WCFinder hilft dir dabei, schnell und einfach saubere, zugängliche Toiletten in deiner Nähe zu finden. Buche online, bezahle sicher und nutze deine reservierte Toilette ohne Wartezeit.",
       "kontakt": "Kontakt",
       "uberUns": "Über uns",
       "partnerWerden": "Partner werden",

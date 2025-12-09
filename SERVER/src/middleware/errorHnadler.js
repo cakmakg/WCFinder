@@ -152,8 +152,10 @@ module.exports = (err, req, res, next) => {
     if (process.env.NODE_ENV === 'development') {
         response.stack = err.stack;
         response.cause = err.cause;
+        // ✅ SECURITY: Mask sensitive fields (password, tokens, etc.) before logging
         if (req.body && Object.keys(req.body).length > 0) {
-            response.body = req.body;
+            const { safeRequestBody } = require('../utils/passwordMasker');
+            response.body = safeRequestBody(req.body);
         }
     }
 

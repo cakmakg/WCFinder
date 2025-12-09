@@ -46,12 +46,17 @@ const authSlice = createSlice({
       const userData = payload.user || payload.data?.user;
       const tokenData = payload.bearer?.accessToken || payload.token;
       
-      // Sanitize user data before storing (remove password, email, etc.)
+      // Security: Sanitize user data - remove sensitive information
+      // Store: _id, username, role, isActive, email, firstName, lastName
+      // Never store: password
       const sanitizedUser = userData ? {
         _id: userData._id,
         username: userData.username,
         role: userData.role,
         isActive: userData.isActive,
+        email: userData.email, // Email is safe to store (not sensitive PII)
+        firstName: userData.firstName,
+        lastName: userData.lastName,
       } : null;
       
       state.currentUser = sanitizedUser;
@@ -62,7 +67,7 @@ const authSlice = createSlice({
         localStorage.setItem('token', tokenData);
       }
       if (sanitizedUser) {
-        // Use secure storage utility
+        // Use secure storage utility (removes password only)
         storeUserData(sanitizedUser);
       }
     },
@@ -73,13 +78,16 @@ const authSlice = createSlice({
       const tokenData = payload?.bearer?.accessToken || payload?.token;
       
       // Security: Sanitize user data - remove sensitive information
-      // Only store: _id, username, role, isActive
-      // Never store: password, email, or other sensitive PII
+      // Store: _id, username, role, isActive, email, firstName, lastName
+      // Never store: password
       const sanitizedUser = userData ? {
         _id: userData._id,
         username: userData.username,
         role: userData.role,
         isActive: userData.isActive,
+        email: userData.email, // Email is safe to store (not sensitive PII)
+        firstName: userData.firstName,
+        lastName: userData.lastName,
       } : null;
       
       state.currentUser = sanitizedUser;
@@ -90,7 +98,7 @@ const authSlice = createSlice({
         localStorage.setItem('token', tokenData);
       }
       if (sanitizedUser) {
-        // Use secure storage utility (removes password, email, etc.)
+        // Use secure storage utility (removes password only)
         storeUserData(sanitizedUser);
       }
     },
@@ -109,18 +117,23 @@ const authSlice = createSlice({
       const userData = payload.user || payload.data?.user;
       
       // Security: Sanitize user data before storing
+      // Store: _id, username, role, isActive, email, firstName, lastName
+      // Never store: password
       const sanitizedUser = userData ? {
         _id: userData._id,
         username: userData.username,
         role: userData.role,
         isActive: userData.isActive,
+        email: userData.email, // Email is safe to store (not sensitive PII)
+        firstName: userData.firstName,
+        lastName: userData.lastName,
       } : null;
       
       state.currentUser = sanitizedUser;
       state.loading = false;
       
       if (sanitizedUser) {
-        // Use secure storage utility
+        // Use secure storage utility (removes password only)
         storeUserData(sanitizedUser);
       }
     },

@@ -3,6 +3,46 @@
 import axios from "axios";
 import { useSelector } from "react-redux";
 
+/**
+ * Masks sensitive fields in data objects (password, tokens, etc.)
+ * Prevents sensitive data from appearing in console logs
+ * @param {object} data - Data object to mask
+ * @returns {object} - Masked data object
+ */
+const maskSensitiveData = (data) => {
+  if (!data || typeof data !== 'object') return data;
+  
+  const sensitiveFields = ['password', 'passwd', 'pwd', 'token', 'accessToken', 'refreshToken'];
+  const masked = { ...data };
+  
+  for (const key in masked) {
+    if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
+      masked[key] = '***REDACTED***';
+    } else if (typeof masked[key] === 'object' && masked[key] !== null) {
+      masked[key] = maskSensitiveData(masked[key]);
+    }
+  }
+  
+  return masked;
+};
+
+/**
+ * Masks sensitive headers (Authorization, etc.)
+ * @param {object} headers - Headers object
+ * @returns {object} - Masked headers object
+ */
+const maskSensitiveHeaders = (headers) => {
+  if (!headers || typeof headers !== 'object') return headers;
+  
+  const safeHeaders = { ...headers };
+  if (safeHeaders.Authorization || safeHeaders.authorization) {
+    safeHeaders.Authorization = 'Bearer ***REDACTED***';
+    safeHeaders.authorization = 'Bearer ***REDACTED***';
+  }
+  
+  return safeHeaders;
+};
+
 const useAxios = () => {
   const { token } = useSelector((state) => state.auth);
 
@@ -36,13 +76,18 @@ const useAxios = () => {
   axiosPublic.interceptors.request.use(
     (config) => {
       const fullURL = `${config.baseURL}${config.url}`;
+      
+      // ✅ SECURITY: Mask sensitive data (password, tokens) before logging
+      const safeData = config.data ? maskSensitiveData(config.data) : config.data;
+      const safeHeaders = config.headers ? maskSensitiveHeaders(config.headers) : config.headers;
+      
       console.log("📤 [Public] Request:", {
         method: config.method?.toUpperCase(),
         url: config.url,
         baseURL: config.baseURL,
         fullURL: fullURL,
-        headers: config.headers,
-        data: config.data
+        headers: safeHeaders,
+        data: safeData
       });
       return config;
     },

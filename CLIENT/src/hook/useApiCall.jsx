@@ -25,7 +25,10 @@ const useApiCall = () => {
       body,
     });
     
-    dispatch(startAction());
+    // ✅ startAction optional - sadece tanımlıysa dispatch et
+    if (startAction) {
+      dispatch(startAction());
+    }
     try {
       // ✅ Auth durumuna göre doğru axios instance'ı seç
       const axiosInstance = requiresAuth ? axiosWithToken : axiosPublic;
@@ -44,17 +47,13 @@ const useApiCall = () => {
           response = await axiosInstance[method.toLowerCase()](url);
         } else {
           console.log("📡 [useApiCall] Making request:", method.toLowerCase(), url, "with body:", body);
-          console.log("📡 [useApiCall] Full request details:", {
-            method: method.toLowerCase(),
-            url: `${axiosInstance.defaults.baseURL}${url}`,
-            body: body,
-            headers: axiosInstance.defaults.headers
-          });
           response = await axiosInstance[method.toLowerCase()](url, body);
         }
       } catch (requestError) {
         // ✅ Request hatası (network, timeout, vb.)
-        console.error("❌ [useApiCall] Request failed at line 46:", {
+        // ✅ 204 No Content durumunda axios hata fırlatmaz, bu normal bir response'dur
+        // Ama eğer gerçek bir hata varsa (network, 4xx, 5xx), onu yakalayalım
+        console.error("❌ [useApiCall] Request failed:", {
           error: requestError,
           message: requestError.message,
           response: requestError.response?.data,
@@ -65,8 +64,27 @@ const useApiCall = () => {
       }
       
       const { data } = response;
+      const status = response.status;
       
-      console.log(`✅ API Call Success [${method.toUpperCase()} ${url}]:`, data);
+      if (import.meta.env.DEV) {
+        console.log(`✅ API Call Success [${method.toUpperCase()} ${url}]:`, { status, data });
+      }
+      
+      // ✅ 204 No Content durumunda data boş olabilir, bu normaldir
+      if (status === 204) {
+        // 204 No Content - başarılı ama body yok
+        if (import.meta.env.DEV) {
+          console.log(`✅ 204 No Content - Success without body [${method.toUpperCase()} ${url}]`);
+        }
+        if (successAction) {
+          dispatch(successAction(null));
+        }
+        if (successMessage) {
+          toastSuccessNotify(successMessage);
+        }
+        // ✅ 204 durumunda null döndür (başarılı)
+        return null;
+      }
       
       // ✅ Error kontrolü: Backend bazen { error: false, ... } formatında dönebilir
       if (data?.error === true) {
@@ -77,7 +95,9 @@ const useApiCall = () => {
         throw new Error(message);
       }
       
-      dispatch(successAction(data));
+      if (successAction) {
+        dispatch(successAction(data));
+      }
       if (successMessage) {
         toastSuccessNotify(successMessage);
       }
@@ -100,10 +120,10 @@ const useApiCall = () => {
       });
       
       // ✅ Backend'den gelen hata mesajını kullan
-      let message = errorMessage || "Bir hata oluştu.";
+      let message = null;
       
+      // ✅ Önce backend'den gelen mesajı kontrol et
       if (responseData?.message) {
-        // Backend'den gelen mesajı kullan
         message = responseData.message;
       } else if (status === 401) {
         message = "Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.";
@@ -113,11 +133,28 @@ const useApiCall = () => {
         message = "İstenen kaynak bulunamadı.";
       } else if (status === 500) {
         message = "Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.";
+      } else {
+        // ✅ Genel hata mesajı sadece errorMessage parametresi varsa kullan
+        message = errorMessage || error.message || "Bir hata oluştu.";
       }
       
-      dispatch(errorAction());
-      toastErrorNotify(message);
-      throw error;
+      // ✅ Error action'ı sadece tanımlıysa dispatch et
+      if (errorAction) {
+        dispatch(errorAction());
+      }
+      
+      // ✅ Error message'ı sadece errorMessage parametresi tanımlıysa toast göster
+      // Eğer errorMessage null ise, toast gösterme (hatayı çağıran fonksiyon kendisi handle edecek)
+      if (errorMessage !== null && errorMessage !== undefined && message) {
+        toastErrorNotify(message);
+      }
+      
+      // ✅ Error'u throw et ama message'ı error objesine ekle
+      const enhancedError = new Error(message);
+      enhancedError.response = error.response;
+      enhancedError.status = status;
+      enhancedError.originalError = error;
+      throw enhancedError;
     }
   };
 

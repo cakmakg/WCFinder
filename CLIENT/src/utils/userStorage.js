@@ -22,14 +22,18 @@ export const sanitizeUserData = (userData) => {
   }
 
   // Only store non-sensitive data needed for UI
+  // Email, firstName, lastName are safe to store (not sensitive PII)
+  // Password is NEVER stored (even hashed)
   const safeData = {
     _id: userData._id,
     username: userData.username,
     role: userData.role,
     isActive: userData.isActive,
+    email: userData.email, // Email is safe to store
+    firstName: userData.firstName,
+    lastName: userData.lastName,
     // Explicitly exclude sensitive data
-    // email: NOT STORED (fetch from backend when needed)
-    // password: NOT STORED (never store passwords)
+    // password: NOT STORED (never store passwords, even hashed)
   };
 
   return safeData;

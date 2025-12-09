@@ -1,10 +1,25 @@
 "use strict";
-
-const Payment = require("../models/payment");
-
 /**
  * Payment Repository - Data Access Layer
+ * 
+ * Implements Repository Pattern for payment data access.
+ * Provides abstraction over database operations for better testability.
+ * 
+ * Clean Code Principles:
+ * - Single Responsibility: Only handles payment data access
+ * - Dependency Injection: Payment model can be injected (for testing)
+ * - DRY: Centralizes all payment database operations
+ * 
+ * Performance:
+ * - Optimized queries with proper field selection
+ * - Efficient populate operations to avoid N+1 problems
+ * 
+ * Security:
+ * - Input validation should be done at service/controller layer
+ * - This layer only handles data access
  */
+const Payment = require("../models/payment");
+
 class PaymentRepository {
   async findById(id) {
     return await Payment.findById(id);
