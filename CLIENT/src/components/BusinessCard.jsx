@@ -91,8 +91,8 @@ const BusinessCard = ({ business, isSelected }) => {
               label={business.businessType}
               size="small"
               sx={{ 
-                fontSize: '0.65rem',
-                height: '20px',
+                fontSize: '0.75rem',
+                height: '22px',
                 px: 0.75,
                 backgroundColor: '#e0f2fe',
                 color: '#0891b2',
@@ -105,7 +105,7 @@ const BusinessCard = ({ business, isSelected }) => {
               sx={{ 
                 fontWeight: 600,
                 color: '#0891b2',
-                fontSize: '0.65rem',
+                fontSize: '0.75rem',
                 whiteSpace: 'nowrap',
               }}
             >
@@ -119,7 +119,7 @@ const BusinessCard = ({ business, isSelected }) => {
             component="div" 
             sx={{ 
               fontWeight: 700,
-              fontSize: '0.875rem',
+              fontSize: '1rem',
               mb: 1,
               color: '#1e293b',
               height: '2.4rem',
@@ -145,7 +145,7 @@ const BusinessCard = ({ business, isSelected }) => {
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
               <AccessTimeIcon sx={{ 
-                fontSize: '0.875rem', 
+                fontSize: '1rem', 
                 color: '#64748b',
                 mr: 0.4,
                 flexShrink: 0
@@ -154,7 +154,7 @@ const BusinessCard = ({ business, isSelected }) => {
                 variant="body2" 
                 sx={{ 
                   color: '#64748b', 
-                  fontSize: '0.7rem',
+                  fontSize: '0.85rem',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -171,7 +171,7 @@ const BusinessCard = ({ business, isSelected }) => {
                 size="small" 
                 readOnly 
                 sx={{ 
-                  fontSize: '0.875rem',
+                  fontSize: '1rem',
                   '& .MuiRating-iconFilled': {
                     color: '#f59e0b',
                   }
@@ -182,7 +182,7 @@ const BusinessCard = ({ business, isSelected }) => {
                 sx={{ 
                   color: '#64748b', 
                   fontWeight: 600,
-                  fontSize: '0.7rem',
+                  fontSize: '0.85rem',
                   whiteSpace: 'nowrap'
                 }}
               >
@@ -198,7 +198,7 @@ const BusinessCard = ({ business, isSelected }) => {
             mb: 1,
           }}>
             <LocationOnIcon sx={{ 
-              fontSize: '0.875rem', 
+              fontSize: '1rem', 
               color: '#0891b2',
               mr: 0.4,
               mt: 0.1,
@@ -207,7 +207,7 @@ const BusinessCard = ({ business, isSelected }) => {
             <Typography 
               variant="body2" 
               sx={{ 
-                fontSize: '0.7rem', 
+                fontSize: '0.85rem', 
                 lineHeight: 1.3,
                 color: '#64748b',
                 overflow: 'hidden',
@@ -239,7 +239,7 @@ const BusinessCard = ({ business, isSelected }) => {
                 variant="caption" 
                 sx={{ 
                   color: '#64748b', 
-                  fontSize: '0.65rem' 
+                  fontSize: '0.75rem' 
                 }}
               >
                 {t('businessCard.from')}
@@ -249,17 +249,17 @@ const BusinessCard = ({ business, isSelected }) => {
                 sx={{ 
                   fontWeight: 700, 
                   color: '#0891b2', 
-                  fontSize: '1rem',
+                  fontSize: '1.125rem',
                   lineHeight: 1
                 }}
               >
-                €2
+                €1
               </Typography>
               <Typography 
                 variant="caption" 
                 sx={{ 
                   color: '#64748b', 
-                  fontSize: '0.65rem' 
+                  fontSize: '0.75rem' 
                 }}
               >
                 {t('common.perDay')}
@@ -281,7 +281,7 @@ const BusinessCard = ({ business, isSelected }) => {
                 boxShadow: '0 2px 6px rgba(8,145,178,0.25)',
               }}
             >
-              <ArrowForwardIcon sx={{ fontSize: '0.875rem' }} />
+              <ArrowForwardIcon sx={{ fontSize: '1rem' }} />
             </Box>
           </Box>
         </CardContent>

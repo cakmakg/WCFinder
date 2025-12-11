@@ -32,6 +32,11 @@ import {
   Menu as MenuIcon,
   AccountCircle,
   Logout,
+  EventNote as EventNoteIcon,
+  Payment as PaymentIcon,
+  Analytics as AnalyticsIcon,
+  Settings as SettingsIcon,
+  Wc as WcIcon,
 } from "@mui/icons-material";
 import useAuthCall from "../../../hook/useAuthCall";
 
@@ -85,9 +90,34 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
       index: 2,
     },
     {
+      text: "Rezervasyonlar",
+      icon: <EventNoteIcon />,
+      index: 3,
+    },
+    {
+      text: "Ödemeler",
+      icon: <PaymentIcon />,
+      index: 4,
+    },
+    {
+      text: "Tuvaletler",
+      icon: <WcIcon />,
+      index: 5,
+    },
+    {
+      text: "Analytics",
+      icon: <AnalyticsIcon />,
+      index: 6,
+    },
+    {
       text: "Business Management",
       icon: <AddBusinessIcon />,
-      index: 3,
+      index: 7,
+    },
+    {
+      text: "Ayarlar",
+      icon: <SettingsIcon />,
+      index: 8,
     },
   ];
 

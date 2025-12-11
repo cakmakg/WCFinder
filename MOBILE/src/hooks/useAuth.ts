@@ -25,25 +25,23 @@ export const useAuth = () => {
     initializeAuth();
   }, []);
 
-  // Validate token with backend
+  // Validate token with backend (optional - token validation)
+  // Note: Backend doesn't have /auth/me endpoint, so we skip validation
+  // Token will be validated on next API call automatically
   const validateToken = async (token: string): Promise<boolean> => {
     try {
       setIsValidating(true);
-      const response = await api.get('/auth/me');
       
-      if (response.data?.user) {
-        // Token is valid, update user data
-        const user = response.data.user;
-        await AsyncStorage.setItem('token', token);
-        dispatch(setInitialAuth({ token, user }));
+      // If we have token and user data, assume valid
+      // Token will be validated on next API call if invalid
+      if (token) {
+        // Just check if token exists, don't validate with backend
+        // Backend will validate token on next API call
         return true;
       }
       return false;
     } catch (error: any) {
       console.error('Token validation failed:', error);
-      // Token is invalid, clear storage
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
       return false;
     } finally {
       setIsValidating(false);
@@ -60,12 +58,9 @@ export const useAuth = () => {
       ]);
 
       if (storedToken && storedUser) {
-        // Validate token with backend
-        const isValid = await validateToken(storedToken);
-        if (!isValid) {
-          // Token invalid, redirect to login
-          router.replace('/(auth)/login');
-        }
+        // Set initial auth state from storage
+        // Token will be validated on next API call if invalid
+        dispatch(setInitialAuth({ token: storedToken, user: storedUser }));
       } else {
         // No token, redirect to login
         router.replace('/(auth)/login');

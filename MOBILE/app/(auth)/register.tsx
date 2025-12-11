@@ -1,39 +1,37 @@
 /**
- * Login Screen
+ * Register Screen
  * 
- * User authentication screen
+ * User registration screen
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, useTheme } from 'react-native-paper';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { useRouter } from 'expo-router';
-import { useSelector } from 'react-redux';
-import useAuthCall from '../src/hooks/useAuthCall';
-import { useSnackbar } from '../src/helper/toastNotify';
+import useAuthCall from '../../src/hooks/useAuthCall';
+import { useSnackbar } from '../../src/helper/toastNotify';
 
-const loginSchema = Yup.object({
+const registerSchema = Yup.object({
+  username: Yup.string()
+    .min(3, "Benutzername muss mindestens 3 Zeichen lang sein")
+    .required("Benutzername ist erforderlich"),
   email: Yup.string()
     .email("Bitte geben Sie eine gültige E-Mail ein")
     .required("E-Mail ist erforderlich"),
-  password: Yup.string().required("Passwort ist erforderlich"),
+  password: Yup.string()
+    .min(6, "Passwort muss mindestens 6 Zeichen lang sein")
+    .required("Passwort ist erforderlich"),
+  firstName: Yup.string().required("Vorname ist erforderlich"),
+  lastName: Yup.string().required("Nachname ist erforderlich"),
 });
 
-export default function LoginScreen() {
-  const { login } = useAuthCall();
+export default function RegisterScreen() {
+  const { register } = useAuthCall();
   const router = useRouter();
   const theme = useTheme();
-  const { currentUser } = useSelector((state: any) => state.auth);
   const { show, SnackbarComponent } = useSnackbar();
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (currentUser) {
-      router.replace('/(tabs)');
-    }
-  }, [currentUser, router]);
 
   return (
     <KeyboardAvoidingView
@@ -46,18 +44,26 @@ export default function LoginScreen() {
       >
         <View style={styles.content}>
           <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-            SIGN IN
+            SIGN UP
           </Text>
 
           <Formik
-            initialValues={{ email: "", password: "" }}
-            validationSchema={loginSchema}
+            initialValues={{ 
+              username: "", 
+              email: "", 
+              password: "", 
+              firstName: "", 
+              lastName: "" 
+            }}
+            validationSchema={registerSchema}
             onSubmit={async (values, actions) => {
               try {
-                await login(values);
+                await register(values);
                 actions.resetForm();
+                show("Registrierung erfolgreich! Bitte melden Sie sich an.", 'success');
+                router.push('/(auth)/login');
               } catch (error: any) {
-                show(error.message || "Login fehlgeschlagen", 'error');
+                show(error.message || "Registrierung fehlgeschlagen", 'error');
               } finally {
                 actions.setSubmitting(false);
               }
@@ -65,6 +71,20 @@ export default function LoginScreen() {
           >
             {({ values, handleChange, handleBlur, errors, touched, isSubmitting, handleSubmit }) => (
               <View style={styles.form}>
+                <TextInput
+                  label="Benutzername"
+                  value={values.username}
+                  onChangeText={handleChange('username')}
+                  onBlur={handleBlur('username')}
+                  autoCapitalize="none"
+                  error={touched.username && !!errors.username}
+                  style={styles.input}
+                  mode="outlined"
+                />
+                {touched.username && errors.username && (
+                  <Text style={styles.errorText}>{errors.username}</Text>
+                )}
+
                 <TextInput
                   label="E-Mail-Adresse"
                   value={values.email}
@@ -80,6 +100,32 @@ export default function LoginScreen() {
                 {touched.email && errors.email && (
                   <Text style={styles.errorText}>{errors.email}</Text>
                 )}
+
+                <View style={styles.row}>
+                  <TextInput
+                    label="Vorname"
+                    value={values.firstName}
+                    onChangeText={handleChange('firstName')}
+                    onBlur={handleBlur('firstName')}
+                    error={touched.firstName && !!errors.firstName}
+                    style={[styles.input, styles.halfInput]}
+                    mode="outlined"
+                  />
+                  <TextInput
+                    label="Nachname"
+                    value={values.lastName}
+                    onChangeText={handleChange('lastName')}
+                    onBlur={handleBlur('lastName')}
+                    error={touched.lastName && !!errors.lastName}
+                    style={[styles.input, styles.halfInput]}
+                    mode="outlined"
+                  />
+                </View>
+                {(touched.firstName && errors.firstName) || (touched.lastName && errors.lastName) ? (
+                  <Text style={styles.errorText}>
+                    {errors.firstName || errors.lastName}
+                  </Text>
+                ) : null}
 
                 <TextInput
                   label="Kennwort"
@@ -103,7 +149,7 @@ export default function LoginScreen() {
                   style={styles.button}
                   contentStyle={styles.buttonContent}
                 >
-                  {isSubmitting ? 'EINLOGGEN...' : 'EINLOGGEN'}
+                  {isSubmitting ? 'REGISTRIEREN...' : 'REGISTRIEREN'}
                 </Button>
               </View>
             )}
@@ -112,18 +158,10 @@ export default function LoginScreen() {
           <View style={styles.links}>
             <Button
               mode="text"
-              onPress={() => router.push('/forgot-password')}
+              onPress={() => router.push('/(auth)/login')}
               style={styles.linkButton}
             >
-              Passwort vergessen
-            </Button>
-
-            <Button
-              mode="text"
-              onPress={() => router.push('/register')}
-              style={styles.linkButton}
-            >
-              Don't have an account? Sign Up
+              Bereits ein Konto? Anmelden
             </Button>
           </View>
         </View>
@@ -157,6 +195,13 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  halfInput: {
+    flex: 1,
   },
   errorText: {
     color: '#d32f2f',

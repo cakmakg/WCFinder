@@ -64,6 +64,9 @@ const BusinessDetail = () => {
      * Error Handling:
      * - Comprehensive error handling with user-friendly messages
      * - Logs errors for debugging while protecting sensitive info
+     * 
+     * ✅ FIX: Dependency array'den axiosWithToken ve t kaldırıldı
+     * Çünkü bunlar her render'da yeni referanslar oluşturuyor ve sonsuz döngüye neden oluyor
      */
     const fetchBusinessDetail = async () => {
       try {
@@ -121,7 +124,9 @@ const BusinessDetail = () => {
     if (id) {
       fetchBusinessDetail();
     }
-  }, [id, axiosWithToken, t]);
+    // ✅ FIX: Sadece id dependency olarak kalmalı, axiosWithToken ve t her render'da yeni referans oluşturuyor
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (loading) {
     return (

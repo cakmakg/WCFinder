@@ -10,10 +10,13 @@ export default ({ config }) => {
   const env = process.env.EXPO_PUBLIC_ENV || process.env.NODE_ENV || 'development';
   
   // API URLs for different environments
+  // ⚠️ ÖNEMLİ: Web uygulaması ile aynı backend URL'ini kullanın!
+  // Web uygulaması: https://wcfinder-production.up.railway.app
   const apiUrls = {
-    development: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000',
-    staging: process.env.EXPO_PUBLIC_API_URL || 'https://your-staging-url.railway.app',
-    production: process.env.EXPO_PUBLIC_API_URL || 'https://your-production-url.railway.app',
+    // Development: Web uygulaması ile aynı backend URL'ini kullan
+    development: process.env.EXPO_PUBLIC_API_URL || 'https://wcfinder-production.up.railway.app',  // ← Web ile aynı backend
+    staging: process.env.EXPO_PUBLIC_API_URL || 'https://wcfinder-production.up.railway.app',  // ← Staging (varsa)
+    production: process.env.EXPO_PUBLIC_API_URL || 'https://wcfinder-production.up.railway.app',  // ← Production Railway URL (Web ile aynı)
   };
 
   const apiUrl = apiUrls[env] || apiUrls.development;

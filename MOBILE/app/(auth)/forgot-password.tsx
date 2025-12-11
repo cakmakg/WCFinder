@@ -1,39 +1,28 @@
 /**
- * Login Screen
+ * Forgot Password Screen
  * 
- * User authentication screen
+ * Password reset request screen
  */
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, useTheme } from 'react-native-paper';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { useRouter } from 'expo-router';
-import { useSelector } from 'react-redux';
-import useAuthCall from '../../src/hooks/useAuthCall';
 import { useSnackbar } from '../../src/helper/toastNotify';
+import api from '../../src/services/api';
 
-const loginSchema = Yup.object({
+const forgotPasswordSchema = Yup.object({
   email: Yup.string()
     .email("Bitte geben Sie eine gültige E-Mail ein")
     .required("E-Mail ist erforderlich"),
-  password: Yup.string().required("Passwort ist erforderlich"),
 });
 
-export default function LoginScreen() {
-  const { login } = useAuthCall();
+export default function ForgotPasswordScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { currentUser } = useSelector((state: any) => state.auth);
   const { show, SnackbarComponent } = useSnackbar();
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (currentUser) {
-      router.replace('/(tabs)');
-    }
-  }, [currentUser, router]);
 
   return (
     <KeyboardAvoidingView
@@ -46,18 +35,26 @@ export default function LoginScreen() {
       >
         <View style={styles.content}>
           <Text variant="headlineMedium" style={[styles.title, { color: theme.colors.primary }]}>
-            SIGN IN
+            Passwort zurücksetzen
+          </Text>
+
+          <Text variant="bodyMedium" style={styles.description}>
+            Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen des Passworts.
           </Text>
 
           <Formik
-            initialValues={{ email: "", password: "" }}
-            validationSchema={loginSchema}
+            initialValues={{ email: "" }}
+            validationSchema={forgotPasswordSchema}
             onSubmit={async (values, actions) => {
               try {
-                await login(values);
+                await api.post('/auth/forgot-password', { email: values.email });
+                show("E-Mail zum Zurücksetzen des Passworts wurde gesendet.", 'success');
                 actions.resetForm();
+                setTimeout(() => {
+                  router.push('/(auth)/login');
+                }, 2000);
               } catch (error: any) {
-                show(error.message || "Login fehlgeschlagen", 'error');
+                show(error.response?.data?.message || "Fehler beim Senden der E-Mail", 'error');
               } finally {
                 actions.setSubmitting(false);
               }
@@ -81,20 +78,6 @@ export default function LoginScreen() {
                   <Text style={styles.errorText}>{errors.email}</Text>
                 )}
 
-                <TextInput
-                  label="Kennwort"
-                  value={values.password}
-                  onChangeText={handleChange('password')}
-                  onBlur={handleBlur('password')}
-                  secureTextEntry
-                  error={touched.password && !!errors.password}
-                  style={styles.input}
-                  mode="outlined"
-                />
-                {touched.password && errors.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
-
                 <Button
                   mode="contained"
                   onPress={() => handleSubmit()}
@@ -103,7 +86,7 @@ export default function LoginScreen() {
                   style={styles.button}
                   contentStyle={styles.buttonContent}
                 >
-                  {isSubmitting ? 'EINLOGGEN...' : 'EINLOGGEN'}
+                  {isSubmitting ? 'SENDEN...' : 'LINK SENDEN'}
                 </Button>
               </View>
             )}
@@ -112,18 +95,10 @@ export default function LoginScreen() {
           <View style={styles.links}>
             <Button
               mode="text"
-              onPress={() => router.push('/(auth)/forgot-password')}
+              onPress={() => router.back()}
               style={styles.linkButton}
             >
-              Passwort vergessen
-            </Button>
-
-            <Button
-              mode="text"
-              onPress={() => router.push('/(auth)/register')}
-              style={styles.linkButton}
-            >
-              Don't have an account? Sign Up
+              Zurück zur Anmeldung
             </Button>
           </View>
         </View>
@@ -149,8 +124,13 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 16,
     fontWeight: 'bold',
+  },
+  description: {
+    textAlign: 'center',
+    marginBottom: 32,
+    opacity: 0.7,
   },
   form: {
     marginBottom: 20,

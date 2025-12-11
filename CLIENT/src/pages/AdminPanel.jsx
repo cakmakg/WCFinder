@@ -32,6 +32,10 @@ import RecentActivities from "../features/admin/components/dashboard/RecentActiv
 import UsersTable from "../features/admin/components/dashboard/UsersTable";
 import BusinessesTab from "../features/admin/components/BusinessesTab";
 import BusinessManagementForm from "../features/admin/components/BusinessManagementForm";
+import BookingsPage from "../features/admin/components/bookings/BookingsPage";
+import PaymentsPage from "../features/admin/components/payments/PaymentsPage";
+import ToiletsPage from "../features/admin/components/toilets/ToiletsPage";
+import AnalyticsPage from "../features/admin/components/analytics/AnalyticsPage";
 import { adminService } from "../features/admin/services/adminService";
 import {
   calculateBusinessSales,
@@ -97,7 +101,7 @@ const AdminPanel = () => {
     }
   };
 
-  // Calculate statistics
+  // Calculate statistics with trends
   const stats = useMemo(() => {
     const paidUsages = usages.filter(
       (u) => u.paymentStatus === "paid" || u.status === "completed"
@@ -107,11 +111,86 @@ const AdminPanel = () => {
       0
     );
 
+    // Calculate trends (comparing last 30 days with previous 30 days)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    // Revenue trend
+    const recentRevenue = paidUsages
+      .filter((u) => {
+        const date = new Date(u.createdAt || u.startTime);
+        return date >= thirtyDaysAgo;
+      })
+      .reduce((sum, u) => sum + (Number(u.totalFee) || 0), 0);
+
+    const previousRevenue = paidUsages
+      .filter((u) => {
+        const date = new Date(u.createdAt || u.startTime);
+        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+      })
+      .reduce((sum, u) => sum + (Number(u.totalFee) || 0), 0);
+
+    const revenueTrend = previousRevenue > 0
+      ? ((recentRevenue - previousRevenue) / previousRevenue) * 100
+      : 0;
+
+    // User trend
+    const recentUsers = users.filter(
+      (u) => new Date(u.createdAt) >= thirtyDaysAgo
+    ).length;
+    const previousUsers = users.filter(
+      (u) => {
+        const date = new Date(u.createdAt);
+        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+      }
+    ).length;
+    const userTrend = previousUsers > 0
+      ? ((recentUsers - previousUsers) / previousUsers) * 100
+      : 0;
+
+    // Business trend
+    const recentBusinesses = businesses.filter(
+      (b) => new Date(b.createdAt) >= thirtyDaysAgo
+    ).length;
+    const previousBusinesses = businesses.filter(
+      (b) => {
+        const date = new Date(b.createdAt);
+        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+      }
+    ).length;
+    const businessTrend = previousBusinesses > 0
+      ? ((recentBusinesses - previousBusinesses) / previousBusinesses) * 100
+      : 0;
+
+    // Usage trend
+    const recentUsages = usages.filter(
+      (u) => new Date(u.createdAt || u.startTime) >= thirtyDaysAgo
+    ).length;
+    const previousUsages = usages.filter(
+      (u) => {
+        const date = new Date(u.createdAt || u.startTime);
+        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+      }
+    ).length;
+    const usageTrend = previousUsages > 0
+      ? ((recentUsages - previousUsages) / previousUsages) * 100
+      : 0;
+
     return {
       totalUsers: users.length,
       totalBusinesses: businesses.length,
       totalUsages: usages.length,
       totalRevenue,
+      revenueTrend: revenueTrend.toFixed(1),
+      userTrend: userTrend.toFixed(1),
+      businessTrend: businessTrend.toFixed(1),
+      usageTrend: usageTrend.toFixed(1),
+      newUsersLast30Days: recentUsers,
+      completedBookings: usages.filter((u) => u.status === "completed").length,
+      pendingBookings: usages.filter((u) => u.status === "pending").length,
+      approvedBusinesses: businesses.filter((b) => b.approvalStatus === "approved").length,
+      pendingBusinesses: businesses.filter((b) => b.approvalStatus === "pending").length,
     };
   }, [users, businesses, usages]);
 
@@ -165,39 +244,71 @@ const AdminPanel = () => {
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 2.5, width: "100%", maxWidth: "100%", p: 0 }}>
           {/* Stats Grid */}
           <Grid container spacing={2} sx={{ width: "100%", maxWidth: "100%", m: 0 }}>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={4} md={3}>
               <StatCard
-                title="Gesamtumsatz"
+                title="Toplam Gelir"
                 value={`€${stats.totalRevenue.toLocaleString("de-DE", {
-                  maximumFractionDigits: 2,
-                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 0,
+                  minimumFractionDigits: 0,
                 })}`}
                 icon={AccountBalanceWallet}
                 color="#0891b2"
+                trend={stats.revenueTrend > 0 ? "up" : stats.revenueTrend < 0 ? "down" : null}
+                trendValue={Math.abs(parseFloat(stats.revenueTrend))}
+                subtitle="Tüm zamanlar"
               />
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={4} md={3}>
               <StatCard
-                title="Neue Kunden"
+                title="Toplam Kullanıcı"
                 value={stats.totalUsers.toLocaleString("de-DE")}
                 icon={People}
                 color="#16a34a"
+                trend={stats.userTrend > 0 ? "up" : stats.userTrend < 0 ? "down" : null}
+                trendValue={Math.abs(parseFloat(stats.userTrend))}
+                subtitle={`Son 30 günde: ${stats.newUsersLast30Days}`}
               />
             </Grid>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={6} sm={4} md={3}>
               <StatCard
-                title="Aktive Kampagnen"
+                title="Toplam İşletme"
                 value={stats.totalBusinesses.toLocaleString("de-DE")}
                 icon={Business}
+                color="#f59e0b"
+                trend={stats.businessTrend > 0 ? "up" : stats.businessTrend < 0 ? "down" : null}
+                trendValue={Math.abs(parseFloat(stats.businessTrend))}
+                subtitle={`Onaylanmış: ${stats.approvedBusinesses}`}
+              />
+            </Grid>
+            <Grid item xs={6} sm={4} md={3}>
+              <StatCard
+                title="Toplam Rezervasyon"
+                value={stats.totalUsages.toLocaleString("de-DE")}
+                icon={Payment}
+                color="#dc2626"
+                trend={stats.usageTrend > 0 ? "up" : stats.usageTrend < 0 ? "down" : null}
+                trendValue={Math.abs(parseFloat(stats.usageTrend))}
+                subtitle={`Tamamlanan: ${stats.completedBookings}`}
+              />
+            </Grid>
+          </Grid>
+
+          {/* Additional Stats */}
+          <Grid container spacing={2} sx={{ width: "100%", maxWidth: "100%", m: 0, mt: 2 }}>
+            <Grid item xs={6} sm={3}>
+              <StatCard
+                title="Bekleyen Rezervasyonlar"
+                value={stats.pendingBookings.toLocaleString("de-DE")}
+                icon={Payment}
                 color="#f59e0b"
               />
             </Grid>
             <Grid item xs={6} sm={3}>
               <StatCard
-                title="Abgeschlossene Reservierungen"
-                value={usages.filter((u) => u.status === "completed").length.toLocaleString("de-DE")}
-                icon={Payment}
-                color="#dc2626"
+                title="Onay Bekleyen İşletmeler"
+                value={stats.pendingBusinesses.toLocaleString("de-DE")}
+                icon={Business}
+                color="#f59e0b"
               />
             </Grid>
           </Grid>
@@ -309,7 +420,26 @@ const AdminPanel = () => {
 
       {activeTab === 2 && <BusinessesTab />}
 
-      {activeTab === 3 && <BusinessManagementForm />}
+      {activeTab === 3 && <BookingsPage />}
+
+      {activeTab === 4 && <PaymentsPage />}
+
+      {activeTab === 5 && <ToiletsPage />}
+
+      {activeTab === 6 && <AnalyticsPage />}
+
+      {activeTab === 7 && <BusinessManagementForm />}
+
+      {activeTab === 8 && (
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>
+            Ayarlar
+          </Typography>
+          <Typography color="text.secondary">
+            Ayarlar özelliği yakında eklenecek.
+          </Typography>
+        </Box>
+      )}
     </AdminLayout>
   );
 };
