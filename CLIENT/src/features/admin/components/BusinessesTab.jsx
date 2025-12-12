@@ -27,6 +27,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Tooltip as MuiTooltip,
 } from "@mui/material";
 import {
   PictureAsPdf as PdfIcon,
@@ -48,7 +49,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { adminService } from "../services/adminService";
-import InvoiceForm from "./InvoiceForm";
 
 const BusinessesTab = () => {
   const [businesses, setBusinesses] = useState([]);
@@ -61,8 +61,6 @@ const BusinessesTab = () => {
   const [order, setOrder] = useState("desc");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -226,20 +224,6 @@ const BusinessesTab = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const handleOpenInvoiceDialog = (business) => {
-    const businessData = businesses.find((b) => {
-      const businessId = b._id?.toString() || b._id;
-      return businessId === business.id;
-    });
-    setSelectedBusiness(businessData || business);
-    setInvoiceDialogOpen(true);
-  };
-
-  const handleCloseInvoiceDialog = () => {
-    setInvoiceDialogOpen(false);
-    setSelectedBusiness(null);
   };
 
   const formatCurrency = (value) => {
@@ -525,13 +509,17 @@ const BusinessesTab = () => {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpenInvoiceDialog(business)}
-                        size="small"
-                      >
-                        <PdfIcon />
-                      </IconButton>
+                      <MuiTooltip title="Rechnungen über 'Rechnungen' Seite verwalten">
+                        <span>
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            disabled
+                          >
+                            <PdfIcon />
+                          </IconButton>
+                        </span>
+                      </MuiTooltip>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -551,15 +539,6 @@ const BusinessesTab = () => {
           />
         </Paper>
 
-      {/* Invoice Form Dialog */}
-      <InvoiceForm
-        open={invoiceDialogOpen}
-        onClose={handleCloseInvoiceDialog}
-        business={selectedBusiness}
-        businessStats={businessStats}
-        viewMode={viewMode}
-        selectedDate={selectedDate}
-      />
     </Box>
   );
 };

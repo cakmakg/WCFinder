@@ -1,17 +1,23 @@
 "use strict";
 /* -------------------------------------------------------
     Rechnung Controller - Deutsche Rechnungen
+    §14 UStG, EN 16931, XRechnung 3.0, GoBD Konform
 ------------------------------------------------------- */
 
 const Rechnung = require('../models/rechnung');
 const Payout = require('../models/payout');
 const Business = require('../models/business');
 const RechnungService = require('../services/rechnungService');
+const XRechnungService = require('../services/xrechnungService');
 const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
 
 module.exports = {
+
+    // ============================================
+    // LISTE & LESEN
+    // ============================================
 
     // ✅ Liste (Admin ve Owner)
     list: async (req, res) => {
@@ -31,6 +37,22 @@ module.exports = {
                     throw new Error("Business not found");
                 }
                 filter['rechnungsempfaenger.businessId'] = business._id;
+            }
+            
+            // Query filters
+            if (req.query.status) {
+                filter.status = req.query.status;
+            }
+            if (req.query.from) {
+                filter.rechnungsdatum = filter.rechnungsdatum || {};
+                filter.rechnungsdatum.$gte = new Date(req.query.from);
+            }
+            if (req.query.to) {
+                filter.rechnungsdatum = filter.rechnungsdatum || {};
+                filter.rechnungsdatum.$lte = new Date(req.query.to);
+            }
+            if (req.query.rechnungstyp) {
+                filter.rechnungstyp = req.query.rechnungstyp;
             }
             
             const data = await res.getModelList(Rechnung, filter, [
@@ -58,7 +80,8 @@ module.exports = {
         try {
             const rechnung = await Rechnung.findById(req.params.id)
                 .populate('rechnungsempfaenger.businessId')
-                .populate('payoutId');
+                .populate('payoutId')
+                .populate('verknuepfteRechnungId');
             
             if (!rechnung) {
                 res.errorStatusCode = 404;
@@ -72,6 +95,14 @@ module.exports = {
                     res.errorStatusCode = 403;
                     throw new Error("Unauthorized");
                 }
+                
+                // Mark as viewed (angesehen)
+                if (rechnung.status === 'versendet' && !rechnung.angesehenAm) {
+                    rechnung.angesehenAm = new Date();
+                    rechnung.status = 'angesehen';
+                    rechnung.addAuditLog('angesehen', req.user.email, 'Rechnung vom Kunden angesehen');
+                    await rechnung.save();
+                }
             }
             
             res.status(200).send({
@@ -83,6 +114,10 @@ module.exports = {
         }
     },
 
+    // ============================================
+    // RECHNUNG ERSTELLEN
+    // ============================================
+
     // ✅ Payout için Rechnung oluştur (Admin)
     createForPayout: async (req, res) => {
         /*
@@ -91,12 +126,7 @@ module.exports = {
         */
         
         try {
-            const { payoutId } = req.body;
-            
-            if (!payoutId) {
-                res.errorStatusCode = 400;
-                throw new Error("payoutId is required");
-            }
+            const { payoutId, kleinunternehmer } = req.body;
             
             // Payout'u kontrol et
             const payout = await Payout.findById(payoutId);
@@ -110,23 +140,56 @@ module.exports = {
                 throw new Error("Payout must be completed before creating Rechnung");
             }
             
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const benutzerId = req.user?._id;
+            
             // Rechnung oluştur
-            const rechnung = await RechnungService.erstelleRechnungFuerPayout(payoutId);
+            const rechnung = await RechnungService.erstelleRechnungFuerPayout(payoutId, benutzer);
+            
+            // Ersteller setzen
+            rechnung.erstelltVon = {
+                benutzerId: benutzerId,
+                benutzerEmail: req.user?.email,
+                benutzerName: benutzer
+            };
+            
+            // Kleinunternehmer ayarı
+            if (kleinunternehmer) {
+                rechnung.kleinunternehmer = {
+                    istKleinunternehmer: true,
+                    hinweisText: 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.'
+                };
+                // MwSt sıfırla
+                rechnung.summen.mehrwertsteuer.betrag = 0;
+                rechnung.summen.bruttobetrag = rechnung.summen.nettobetrag;
+                rechnung.summen.zahlbetrag = rechnung.summen.nettobetrag;
+            }
+            
+            await rechnung.save();
             
             // PDF oluştur
-            const pdfPfad = await RechnungService.generiereRechnungPDF(rechnung);
+            const pdfPfad = await RechnungService.generiereRechnungPDF(rechnung, benutzer);
             rechnung.pdfPfad = pdfPfad;
             await rechnung.save();
             
+            // XRechnung XML oluştur
+            try {
+                await RechnungService.generiereXRechnung(rechnung, benutzer);
+            } catch (xrechnungError) {
+                logger.warn('XRechnung Generierung fehlgeschlagen (wird fortgesetzt)', {
+                    rechnungId: rechnung._id,
+                    error: xrechnungError.message
+                });
+            }
+            
             // Email gönder
             try {
-                await RechnungService.sendeRechnungEmail(rechnung);
+                await RechnungService.sendeRechnungEmail(rechnung, benutzer);
             } catch (emailError) {
                 logger.warn('Email gönderim hatası (devam ediliyor)', {
                     rechnungId: rechnung._id,
                     error: emailError.message
                 });
-                // Email hatası rechnung oluşturmayı engellemez
             }
             
             res.status(201).send({
@@ -138,6 +201,10 @@ module.exports = {
             throw error;
         }
     },
+
+    // ============================================
+    // DOWNLOAD ENDPOINTS
+    // ============================================
 
     // ✅ PDF indir
     downloadPDF: async (req, res) => {
@@ -184,6 +251,124 @@ module.exports = {
         }
     },
 
+    // ✅ XRechnung XML indir (EN 16931 / XRechnung 3.0)
+    downloadXRechnung: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Download XRechnung XML (EN 16931)"
+        */
+        
+        try {
+            const rechnung = await Rechnung.findById(req.params.id);
+            
+            if (!rechnung) {
+                res.errorStatusCode = 404;
+                throw new Error("Rechnung not found");
+            }
+            
+            // Owner kontrolü
+            if (req.user.role === 'owner') {
+                const business = await Business.findOne({ owner: req.user._id });
+                if (!business || rechnung.rechnungsempfaenger.businessId.toString() !== business._id.toString()) {
+                    res.errorStatusCode = 403;
+                    throw new Error("Unauthorized");
+                }
+            }
+            
+            // XRechnung yoksa oluştur
+            if (!rechnung.xrechnungPfad || !rechnung.xrechnung?.xmlGeneriert) {
+                const benutzer = req.user?.username || req.user?.email || 'System';
+                await RechnungService.generiereXRechnung(rechnung, benutzer);
+            }
+            
+            const xmlPath = path.join(__dirname, '../../public', rechnung.xrechnungPfad);
+            
+            if (!fs.existsSync(xmlPath)) {
+                // Yeniden oluştur
+                const benutzer = req.user?.username || req.user?.email || 'System';
+                await RechnungService.generiereXRechnung(rechnung, benutzer);
+            }
+            
+            res.setHeader('Content-Type', 'application/xml');
+            res.setHeader('Content-Disposition', `attachment; filename="${rechnung.rechnungsnummer}_xrechnung.xml"`);
+            res.sendFile(path.join(__dirname, '../../public', rechnung.xrechnungPfad));
+            
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ============================================
+    // VALIDIERUNG & AUDIT
+    // ============================================
+
+    // ✅ XRechnung Validierung
+    validateXRechnung: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Validate XRechnung (Basic)"
+        */
+        
+        try {
+            const rechnung = await Rechnung.findById(req.params.id);
+            
+            if (!rechnung) {
+                res.errorStatusCode = 404;
+                throw new Error("Rechnung not found");
+            }
+            
+            const validation = XRechnungService.validateBasic(rechnung);
+            
+            res.status(200).send({
+                error: false,
+                result: {
+                    valid: validation.valid,
+                    errors: validation.errors,
+                    rechnungsnummer: rechnung.rechnungsnummer,
+                    xrechnungProfil: rechnung.xrechnung?.profilId || XRechnungService.SPECIFICATION_ID
+                }
+            });
+            
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ✅ Audit Log getir (Admin)
+    getAuditLog: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Get Rechnung Audit Log (Admin) - GoBD Compliant"
+        */
+        
+        try {
+            const rechnung = await Rechnung.findById(req.params.id);
+            
+            if (!rechnung) {
+                res.errorStatusCode = 404;
+                throw new Error("Rechnung not found");
+            }
+            
+            res.status(200).send({
+                error: false,
+                result: {
+                    rechnungsnummer: rechnung.rechnungsnummer,
+                    auditLog: rechnung.auditLog,
+                    zahlungen: rechnung.zahlungen,
+                    archivierung: rechnung.archivierung,
+                    createdAt: rechnung.createdAt,
+                    updatedAt: rechnung.updatedAt
+                },
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ============================================
+    // STATUS & ZAHLUNGEN
+    // ============================================
+
     // ✅ Rechnung durumunu güncelle (Admin)
     updateStatus: async (req, res) => {
         /*
@@ -192,13 +377,7 @@ module.exports = {
         */
         
         try {
-            const { status } = req.body;
-            const allowedStatuses = ['entwurf', 'versendet', 'bezahlt', 'ueberfaellig', 'storniert', 'mahnung'];
-            
-            if (!allowedStatuses.includes(status)) {
-                res.errorStatusCode = 400;
-                throw new Error(`Invalid status. Allowed: ${allowedStatuses.join(', ')}`);
-            }
+            const { status, details } = req.body;
             
             const rechnung = await Rechnung.findById(req.params.id);
             if (!rechnung) {
@@ -206,24 +385,168 @@ module.exports = {
                 throw new Error("Rechnung not found");
             }
             
-            rechnung.status = status;
-            
-            if (status === 'bezahlt') {
-                rechnung.bezahltAm = new Date();
-            } else if (status === 'storniert') {
-                rechnung.storniertAm = new Date();
+            // GoBD: Stornierte Rechnungen können nicht reaktiviert werden (außer zu entwurf)
+            if (rechnung.status === 'storniert' && status !== 'entwurf') {
+                res.errorStatusCode = 400;
+                throw new Error("Stornierte Rechnungen können nicht reaktiviert werden");
             }
             
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const benutzerId = req.user?._id;
+            
+            rechnung.setStatus(status, benutzer, details, benutzerId);
             await rechnung.save();
             
             res.status(200).send({
                 error: false,
                 result: rechnung,
+                message: `Status auf "${status}" aktualisiert`
             });
         } catch (error) {
             throw error;
         }
     },
+
+    // ✅ Zahlung registrieren (Admin) - NEU
+    registerPayment: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Register Payment for Invoice (Admin)"
+        */
+        
+        try {
+            const { betrag, zahlungsdatum, zahlungsmethode, transaktionsreferenz, notizen } = req.body;
+            
+            const rechnung = await Rechnung.findById(req.params.id);
+            if (!rechnung) {
+                res.errorStatusCode = 404;
+                throw new Error("Rechnung not found");
+            }
+            
+            // Stornierte Rechnungen können nicht bezahlt werden
+            if (rechnung.status === 'storniert') {
+                res.errorStatusCode = 400;
+                throw new Error("Stornierte Rechnungen können nicht bezahlt werden");
+            }
+            
+            // Bereits vollständig bezahlt?
+            if (rechnung.status === 'bezahlt') {
+                res.errorStatusCode = 400;
+                throw new Error("Rechnung ist bereits vollständig bezahlt");
+            }
+            
+            // Betrag prüfen
+            const offenerBetrag = rechnung.offenerBetrag || (rechnung.summen.zahlbetrag || rechnung.summen.bruttobetrag) - (rechnung.bezahlterBetrag || 0);
+            if (betrag > offenerBetrag) {
+                res.errorStatusCode = 400;
+                throw new Error(`Betrag übersteigt offenen Betrag (${offenerBetrag.toFixed(2)}€)`);
+            }
+            
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const benutzerId = req.user?._id;
+            
+            // Zahlung hinzufügen
+            const zahlung = rechnung.addZahlung({
+                betrag,
+                zahlungsdatum: zahlungsdatum ? new Date(zahlungsdatum) : new Date(),
+                zahlungsmethode,
+                transaktionsreferenz,
+                notizen
+            }, benutzer, benutzerId);
+            
+            await rechnung.save();
+            
+            res.status(200).send({
+                error: false,
+                result: {
+                    rechnung,
+                    zahlung,
+                    bezahlterBetrag: rechnung.bezahlterBetrag,
+                    offenerBetrag: rechnung.offenerBetrag,
+                    status: rechnung.status
+                },
+                message: rechnung.status === 'bezahlt' 
+                    ? 'Rechnung vollständig bezahlt' 
+                    : `Teilzahlung von ${betrag}€ registriert. Offen: ${rechnung.offenerBetrag.toFixed(2)}€`
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ✅ Zahlungsverlauf (Admin) - NEU
+    getPayments: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Get Payment History for Invoice (Admin)"
+        */
+        
+        try {
+            const rechnung = await Rechnung.findById(req.params.id);
+            
+            if (!rechnung) {
+                res.errorStatusCode = 404;
+                throw new Error("Rechnung not found");
+            }
+            
+            res.status(200).send({
+                error: false,
+                result: {
+                    rechnungsnummer: rechnung.rechnungsnummer,
+                    gesamtbetrag: rechnung.summen.bruttobetrag,
+                    zahlbetrag: rechnung.summen.zahlbetrag,
+                    bezahlterBetrag: rechnung.bezahlterBetrag || 0,
+                    offenerBetrag: rechnung.offenerBetrag || rechnung.summen.zahlbetrag,
+                    zahlungen: rechnung.zahlungen || [],
+                    status: rechnung.status
+                }
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ============================================
+    // STORNO
+    // ============================================
+
+    // ✅ Storno Rechnung erstellen (Admin)
+    createStorno: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Create Storno (Credit Note) for Rechnung (Admin)"
+        */
+        
+        try {
+            const { grund } = req.body;
+            
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            
+            const stornoRechnung = await RechnungService.erstelleStornoRechnung(
+                req.params.id,
+                grund,
+                benutzer
+            );
+            
+            // PDF für Storno erstellen
+            const pdfPfad = await RechnungService.generiereRechnungPDF(stornoRechnung, benutzer);
+            stornoRechnung.pdfPfad = pdfPfad;
+            await stornoRechnung.save();
+            
+            res.status(201).send({
+                error: false,
+                result: stornoRechnung,
+                message: "Stornorechnung erfolgreich erstellt"
+            });
+            
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ============================================
+    // EMAIL & REGENERATION
+    // ============================================
 
     // ✅ Rechnung'i yeniden gönder (Email)
     resendEmail: async (req, res) => {
@@ -240,7 +563,8 @@ module.exports = {
                 throw new Error("Rechnung not found");
             }
             
-            await RechnungService.sendeRechnungEmail(rechnung);
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            await RechnungService.sendeRechnungEmail(rechnung, benutzer);
             
             res.status(200).send({
                 error: false,
@@ -266,7 +590,8 @@ module.exports = {
                 throw new Error("Rechnung not found");
             }
             
-            const pdfPfad = await RechnungService.generiereRechnungPDF(rechnung);
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const pdfPfad = await RechnungService.generiereRechnungPDF(rechnung, benutzer);
             rechnung.pdfPfad = pdfPfad;
             await rechnung.save();
             
@@ -279,6 +604,41 @@ module.exports = {
             throw error;
         }
     },
+
+    // ✅ XRechnung XML yeniden oluştur
+    regenerateXRechnung: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Regenerate XRechnung XML (Admin)"
+        */
+        
+        try {
+            const rechnung = await Rechnung.findById(req.params.id);
+            
+            if (!rechnung) {
+                res.errorStatusCode = 404;
+                throw new Error("Rechnung not found");
+            }
+            
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const xmlPfad = await RechnungService.generiereXRechnung(rechnung, benutzer);
+            
+            res.status(200).send({
+                error: false,
+                result: {
+                    xrechnungPfad: xmlPfad,
+                    xrechnung: rechnung.xrechnung
+                },
+                message: "XRechnung XML erfolgreich neu generiert"
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ============================================
+    // STATISTIKEN & METADATA
+    // ============================================
 
     // ✅ İstatistikler (Admin)
     getStatistics: async (req, res) => {
@@ -297,24 +657,7 @@ module.exports = {
                 if (endDate) filter.rechnungsdatum.$lte = new Date(endDate);
             }
             
-            const rechnungen = await Rechnung.find(filter);
-            
-            const stats = {
-                total: rechnungen.length,
-                totalNetto: rechnungen.reduce((sum, r) => sum + r.summen.nettobetrag, 0),
-                totalMwSt: rechnungen.reduce((sum, r) => sum + r.summen.mehrwertsteuer.betrag, 0),
-                totalBrutto: rechnungen.reduce((sum, r) => sum + r.summen.bruttobetrag, 0),
-                byStatus: {
-                    entwurf: rechnungen.filter(r => r.status === 'entwurf').length,
-                    versendet: rechnungen.filter(r => r.status === 'versendet').length,
-                    bezahlt: rechnungen.filter(r => r.status === 'bezahlt').length,
-                    ueberfaellig: rechnungen.filter(r => r.status === 'ueberfaellig').length,
-                    storniert: rechnungen.filter(r => r.status === 'storniert').length,
-                },
-                unpaid: rechnungen
-                    .filter(r => r.status !== 'bezahlt' && r.status !== 'storniert')
-                    .reduce((sum, r) => sum + r.summen.bruttobetrag, 0)
-            };
+            const stats = await RechnungService.getStatistiken(filter);
             
             res.status(200).send({
                 error: false,
@@ -325,11 +668,72 @@ module.exports = {
         }
     },
 
-    // ✅ Silme (Admin - sadece entwurf durumunda)
+    // ✅ Birim Kodları (UN/ECE Recommendation 20)
+    getUnitCodes: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Get UN/ECE Recommendation 20 Unit Codes"
+        */
+        
+        try {
+            const unitCodes = Rechnung.getUnitCodes();
+            
+            res.status(200).send({
+                error: false,
+                result: unitCodes,
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ✅ Fatura Türleri
+    getInvoiceTypes: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Get Invoice Types"
+        */
+        
+        try {
+            const types = Rechnung.getInvoiceTypes();
+            
+            res.status(200).send({
+                error: false,
+                result: types,
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ✅ Fatura Durumları
+    getInvoiceStatuses: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Get Invoice Statuses"
+        */
+        
+        try {
+            const statuses = Rechnung.getInvoiceStatuses();
+            
+            res.status(200).send({
+                error: false,
+                result: statuses,
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ============================================
+    // DELETE (GoBD COMPLIANT)
+    // ============================================
+
+    // ✅ Silme (Admin - sadece entwurf durumunda - GoBD)
     deletee: async (req, res) => {
         /*
             #swagger.tags = ["Rechnungen"]
-            #swagger.summary = "Delete Rechnung (Admin - only draft)"
+            #swagger.summary = "Delete Rechnung (Admin - only draft) - GoBD Compliant"
         */
         
         try {
@@ -340,9 +744,10 @@ module.exports = {
                 throw new Error("Rechnung not found");
             }
             
+            // GoBD: Sadece entwurf (taslak) rechnungen silinebilir
             if (rechnung.status !== 'entwurf') {
                 res.errorStatusCode = 400;
-                throw new Error("Only draft Rechnungen can be deleted");
+                throw new Error("GoBD: Nur Entwürfe können gelöscht werden. Versendete Rechnungen müssen storniert werden.");
             }
             
             // PDF'i sil
@@ -350,6 +755,14 @@ module.exports = {
                 const pdfPath = path.join(__dirname, '../../public', rechnung.pdfPfad);
                 if (fs.existsSync(pdfPath)) {
                     fs.unlinkSync(pdfPath);
+                }
+            }
+            
+            // XRechnung XML'i sil
+            if (rechnung.xrechnungPfad) {
+                const xmlPath = path.join(__dirname, '../../public', rechnung.xrechnungPfad);
+                if (fs.existsSync(xmlPath)) {
+                    fs.unlinkSync(xmlPath);
                 }
             }
             
@@ -361,4 +774,3 @@ module.exports = {
         }
     }
 };
-

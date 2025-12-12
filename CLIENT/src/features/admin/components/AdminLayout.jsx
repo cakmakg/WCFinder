@@ -34,9 +34,11 @@ import {
   Logout,
   EventNote as EventNoteIcon,
   Payment as PaymentIcon,
-  Analytics as AnalyticsIcon,
   Settings as SettingsIcon,
   Wc as WcIcon,
+  AccountBalance as PayoutIcon,
+  Receipt as InvoiceIcon,
+  Assessment as ReportsIcon,
 } from "@mui/icons-material";
 import useAuthCall from "../../../hook/useAuthCall";
 
@@ -100,24 +102,34 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
       index: 4,
     },
     {
-      text: "Tuvaletler",
-      icon: <WcIcon />,
+      text: "Auszahlungen",
+      icon: <PayoutIcon />,
       index: 5,
     },
     {
-      text: "Analytics",
-      icon: <AnalyticsIcon />,
+      text: "Rechnungen",
+      icon: <InvoiceIcon />,
       index: 6,
+    },
+    {
+      text: "Tuvaletler",
+      icon: <WcIcon />,
+      index: 7,
+    },
+    {
+      text: "Berichte",
+      icon: <ReportsIcon />,
+      index: 8,
     },
     {
       text: "Business Management",
       icon: <AddBusinessIcon />,
-      index: 7,
+      index: 9,
     },
     {
       text: "Ayarlar",
       icon: <SettingsIcon />,
-      index: 8,
+      index: 10,
     },
   ];
 

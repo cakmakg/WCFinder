@@ -14,6 +14,12 @@ import {
   Card,
   CardContent,
   styled,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Chip,
 } from "@mui/material";
 import {
   AccountBalanceWallet,
@@ -22,7 +28,23 @@ import {
   Payment,
   PersonAdd,
   TrendingUp,
+  Refresh as RefreshIcon,
+  ShowChart,
 } from "@mui/icons-material";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import AdminLayout from "../features/admin/components/AdminLayout";
 import StatCard from "../features/admin/components/dashboard/StatCard";
 import RevenueChart from "../features/admin/components/dashboard/RevenueChart";
@@ -34,8 +56,11 @@ import BusinessesTab from "../features/admin/components/BusinessesTab";
 import BusinessManagementForm from "../features/admin/components/BusinessManagementForm";
 import BookingsPage from "../features/admin/components/bookings/BookingsPage";
 import PaymentsPage from "../features/admin/components/payments/PaymentsPage";
+import PayoutsPage from "../features/admin/components/payouts/PayoutsPage";
+import InvoicesPage from "../features/admin/components/invoices/InvoicesPage";
 import ToiletsPage from "../features/admin/components/toilets/ToiletsPage";
-import AnalyticsPage from "../features/admin/components/analytics/AnalyticsPage";
+import ReportsPage from "../features/admin/components/reports/ReportsPage";
+import { ExportButton } from "../features/admin/components/shared";
 import { adminService } from "../features/admin/services/adminService";
 import {
   calculateBusinessSales,
@@ -43,6 +68,9 @@ import {
   generateRecentActivity,
   generatePieChartData,
 } from "../features/admin/utils/dashboardUtils";
+
+// Pie Chart renkleri
+const PIE_COLORS = ["#16a34a", "#3b82f6", "#8b5cf6", "#f59e0b", "#dc2626", "#6b7280"];
 
 // Styled Card Component
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -57,11 +85,12 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const AdminPanel = () => {
-  const { currentUser } = useSelector((state) => state.auth);
+  const { currentUser, loading: authLoading } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dateRange, setDateRange] = useState("30"); // Dashboard tarih aralığı
 
   // Data states
   const [users, setUsers] = useState([]);
@@ -70,12 +99,37 @@ const AdminPanel = () => {
   const [payments, setPayments] = useState([]);
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "admin") {
+    // Auth yüklenirken bekle
+    if (authLoading) {
+      return;
+    }
+    
+    // Token var ama user yoksa, localStorage'dan kontrol et
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    if (!currentUser && !token) {
+      // Hiç login olmamış
+      navigate("/login");
+      return;
+    }
+    
+    if (!currentUser && token && !storedUser) {
+      // Token var ama user yok - login'e yönlendir
+      navigate("/login");
+      return;
+    }
+    
+    if (currentUser && currentUser.role !== "admin") {
+      // Login olmuş ama admin değil
       navigate("/home");
       return;
     }
-    fetchData();
-  }, [currentUser, navigate]);
+    
+    if (currentUser && currentUser.role === "admin") {
+      fetchData();
+    }
+  }, [currentUser, authLoading, navigate]);
 
   const fetchData = async () => {
     try {
@@ -213,6 +267,131 @@ const AdminPanel = () => {
     return generateRecentActivity(usages, businesses);
   }, [usages, businesses]);
 
+  // ===== YENİ: Analytics için gelişmiş hesaplamalar =====
+
+  // Günlük gelir trendi (tarih aralığına göre)
+  const dailyRevenueData = useMemo(() => {
+    const days = parseInt(dateRange);
+    const data = [];
+    const now = new Date();
+    
+    const paidUsages = usages.filter(
+      (u) => u.paymentStatus === "paid" || u.status === "completed" || u.status === "confirmed"
+    );
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const dayPaidUsages = paidUsages.filter((u) => {
+        const usageDate = new Date(u.createdAt || u.startTime);
+        return usageDate >= dayStart && usageDate <= dayEnd;
+      });
+
+      const revenue = dayPaidUsages.reduce((sum, u) => sum + (Number(u.totalFee) || 0), 0);
+      const bookings = usages.filter((u) => {
+        const usageDate = new Date(u.createdAt || u.startTime);
+        return usageDate >= dayStart && usageDate <= dayEnd;
+      }).length;
+
+      data.push({
+        date: date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
+        revenue,
+        bookings,
+      });
+    }
+
+    return data;
+  }, [usages, dateRange]);
+
+  // Top 10 İşletmeler (gelire göre)
+  const topBusinesses = useMemo(() => {
+    const businessRevenue = {};
+    
+    const paidUsages = usages.filter(
+      (u) => u.paymentStatus === "paid" || u.status === "completed" || u.status === "confirmed"
+    );
+    
+    paidUsages.forEach((usage) => {
+      const businessId = usage.businessId?._id?.toString() || usage.businessId?.toString() || usage.businessId;
+      if (businessId) {
+        businessRevenue[businessId] = (businessRevenue[businessId] || 0) + (Number(usage.totalFee) || 0);
+      }
+    });
+
+    return Object.entries(businessRevenue)
+      .map(([businessId, revenue]) => {
+        const business = businesses.find(
+          (b) => (b._id?.toString() || b._id) === businessId
+        );
+        return {
+          name: business?.businessName || "Bilinmeyen",
+          revenue,
+        };
+      })
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+  }, [usages, businesses]);
+
+  // Rezervasyon Durumu Dağılımı
+  const statusData = useMemo(() => {
+    const statusCounts = {
+      completed: usages.filter((u) => u.status === "completed").length,
+      confirmed: usages.filter((u) => u.status === "confirmed").length,
+      active: usages.filter((u) => u.status === "active").length,
+      pending: usages.filter((u) => u.status === "pending").length,
+      cancelled: usages.filter((u) => u.status === "cancelled").length,
+      expired: usages.filter((u) => u.status === "expired").length,
+    };
+
+    return [
+      { name: "Tamamlanan", value: statusCounts.completed, color: "#16a34a" },
+      { name: "Onaylanan", value: statusCounts.confirmed, color: "#3b82f6" },
+      { name: "Aktif", value: statusCounts.active, color: "#8b5cf6" },
+      { name: "Bekleyen", value: statusCounts.pending, color: "#f59e0b" },
+      { name: "İptal Edilen", value: statusCounts.cancelled, color: "#dc2626" },
+      { name: "Süresi Dolmuş", value: statusCounts.expired, color: "#6b7280" },
+    ].filter((item) => item.value > 0);
+  }, [usages]);
+
+  // Export için veri hazırlama
+  const dashboardExportData = useMemo(() => {
+    return dailyRevenueData.map((item) => ({
+      'Tarih': item.date,
+      'Gelir (€)': item.revenue?.toFixed(2) || '0.00',
+      'Rezervasyon': item.bookings || 0,
+    }));
+  }, [dailyRevenueData]);
+
+  // Para formatı
+  const formatCurrency = (value) => {
+    return `€${Number(value).toLocaleString("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  // Auth yüklenirken veya user yoksa loading göster
+  if (authLoading || (!currentUser && localStorage.getItem('token'))) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Admin değilse hiçbir şey gösterme (useEffect yönlendirecek)
   if (!currentUser || currentUser.role !== "admin") {
     return null;
   }
@@ -242,6 +421,46 @@ const AdminPanel = () => {
 
       {activeTab === 0 && (
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 2.5, width: "100%", maxWidth: "100%", p: 0 }}>
+          {/* Header with Date Range & Export */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+            <Box>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a1a2e' }}>
+                Dashboard
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Platform genel görünümü ve analitik veriler
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>Tarih Aralığı</InputLabel>
+                <Select
+                  value={dateRange}
+                  label="Tarih Aralığı"
+                  onChange={(e) => setDateRange(e.target.value)}
+                >
+                  <MenuItem value="7">Son 7 Gün</MenuItem>
+                  <MenuItem value="30">Son 30 Gün</MenuItem>
+                  <MenuItem value="90">Son 90 Gün</MenuItem>
+                  <MenuItem value="365">Son 1 Yıl</MenuItem>
+                </Select>
+              </FormControl>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={fetchData}
+                size="small"
+              >
+                Yenile
+              </Button>
+              <ExportButton
+                data={dashboardExportData}
+                filename="dashboard_report"
+                title="Dashboard Export"
+              />
+            </Box>
+          </Box>
+
           {/* Stats Grid */}
           <Grid container spacing={2} sx={{ width: "100%", maxWidth: "100%", m: 0 }}>
             <Grid item xs={6} sm={4} md={3}>
@@ -293,32 +512,12 @@ const AdminPanel = () => {
             </Grid>
           </Grid>
 
-          {/* Additional Stats */}
-          <Grid container spacing={2} sx={{ width: "100%", maxWidth: "100%", m: 0, mt: 2 }}>
-            <Grid item xs={6} sm={3}>
-              <StatCard
-                title="Bekleyen Rezervasyonlar"
-                value={stats.pendingBookings.toLocaleString("de-DE")}
-                icon={Payment}
-                color="#f59e0b"
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <StatCard
-                title="Onay Bekleyen İşletmeler"
-                value={stats.pendingBusinesses.toLocaleString("de-DE")}
-                icon={Business}
-                color="#f59e0b"
-              />
-            </Grid>
-          </Grid>
-
-          {/* Charts Row - CSS Grid */}
+          {/* Charts Row 1 - Ana Grafikler */}
           <Box
             sx={{
               display: 'grid',
               gridTemplateColumns: { xs: '1fr', lg: '2.5fr 1fr' },
-              gap: 3,
+              gap: 2.5,
               width: '100%',
             }}
           >
@@ -326,10 +525,10 @@ const AdminPanel = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
-                    Umsatzkurve
+                    Gelir Trendi
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    Letzte 12 Monate
+                    Son 12 ay
                   </Typography>
                 </Box>
                 <RevenueChart data={lineChartData} loading={loading} />
@@ -340,16 +539,190 @@ const AdminPanel = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
-                    Kanalverteilung
+                    İşletme Durumu
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#64748b' }}>
-                    Dieses Quartal
+                    Tüm zamanlar
                   </Typography>
                 </Box>
                 <ChannelDistributionChart data={pieChartData} loading={loading} />
               </CardContent>
             </StyledCard>
           </Box>
+
+          {/* Charts Row 2 - Ek Grafikler (Analytics'ten) */}
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} lg={5}>
+              <StyledCard sx={{ height: '100%' }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+                      Rezervasyon Durumu
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748b' }}>
+                      Tüm zamanlar
+                    </Typography>
+                  </Box>
+                  {statusData.length > 0 ? (
+                    <>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={statusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={85}
+                            paddingAngle={2}
+                            dataKey="value"
+                            label={({ percent }) => percent >= 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
+                            labelLine={false}
+                          >
+                            {statusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ 
+                              background: 'white', 
+                              border: 'none', 
+                              borderRadius: '12px', 
+                              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                              fontSize: '13px',
+                            }}
+                            formatter={(value, name) => [`${value} rezervasyon`, name]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', mt: 1 }}>
+                        {statusData.map((item, index) => (
+                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
+                            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                              {item.name}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </>
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 250 }}>
+                      <Typography variant="body2" color="text.secondary">Veri bulunamadı</Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </StyledCard>
+            </Grid>
+            <Grid item xs={12} lg={7}>
+              <StyledCard>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+                      En Çok Gelir Getiren İşletmeler
+                    </Typography>
+                    <Chip label="Top 10" size="small" sx={{ bgcolor: '#0891b215', color: '#0891b2', fontWeight: 600, fontSize: '0.7rem' }} />
+                  </Box>
+                  {topBusinesses.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={topBusinesses} margin={{ top: 10, right: 20, bottom: 60, left: 10 }}>
+                        <defs>
+                          <linearGradient id="colorBarGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#0891b2" stopOpacity={1} />
+                            <stop offset="95%" stopColor="#0891b2" stopOpacity={0.6} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                        <XAxis 
+                          dataKey="name" 
+                          stroke="#94a3b8" 
+                          style={{ fontSize: "10px" }} 
+                          tick={{ fill: '#64748b' }}
+                          angle={-45} 
+                          textAnchor="end" 
+                          height={60}
+                          interval={0}
+                        />
+                        <YAxis 
+                          stroke="#94a3b8" 
+                          style={{ fontSize: "11px" }}
+                          tick={{ fill: '#64748b' }}
+                          tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(1)}K` : `€${value}`}
+                        />
+                        <Tooltip
+                          contentStyle={{ background: "white", border: "none", borderRadius: "12px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", fontSize: '13px' }}
+                          formatter={(value) => [formatCurrency(value), 'Gelir']}
+                          cursor={{ fill: 'rgba(8, 145, 178, 0.1)' }}
+                        />
+                        <Bar dataKey="revenue" fill="url(#colorBarGrad)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+                      <Typography variant="body2" color="text.secondary">Veri bulunamadı</Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </StyledCard>
+            </Grid>
+          </Grid>
+
+          {/* Dual-axis Chart: Rezervasyon & Gelir Karşılaştırması */}
+          <StyledCard>
+            <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+                  Günlük Rezervasyon & Gelir Trendi
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#16a34a' }} />
+                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>Rezervasyon</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#0891b2' }} />
+                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>Gelir (€)</Typography>
+                  </Box>
+                </Box>
+              </Box>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={dailyRevenueData} margin={{ top: 10, right: 30, bottom: 20, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#94a3b8" 
+                    style={{ fontSize: "11px" }}
+                    tick={{ fill: '#64748b' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    stroke="#94a3b8" 
+                    style={{ fontSize: "11px" }}
+                    tick={{ fill: '#64748b' }}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    stroke="#94a3b8" 
+                    style={{ fontSize: "11px" }}
+                    tick={{ fill: '#64748b' }}
+                    tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(1)}K` : `€${value}`}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: "white", border: "none", borderRadius: "12px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", fontSize: '13px' }}
+                    formatter={(value, name) => {
+                      if (name === 'bookings') return [value, 'Rezervasyon'];
+                      return [formatCurrency(value), 'Gelir'];
+                    }}
+                  />
+                  <Line yAxisId="left" type="monotone" dataKey="bookings" stroke="#16a34a" strokeWidth={2.5} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#0891b2" strokeWidth={2.5} dot={{ fill: '#0891b2', r: 3 }} activeDot={{ r: 5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </StyledCard>
 
           {/* Table and Activities Row */}
           <Grid container spacing={2.5} sx={{ flex: 1, minHeight: 0 }}>
@@ -424,13 +797,17 @@ const AdminPanel = () => {
 
       {activeTab === 4 && <PaymentsPage />}
 
-      {activeTab === 5 && <ToiletsPage />}
+      {activeTab === 5 && <PayoutsPage />}
 
-      {activeTab === 6 && <AnalyticsPage />}
+      {activeTab === 6 && <InvoicesPage />}
 
-      {activeTab === 7 && <BusinessManagementForm />}
+      {activeTab === 7 && <ToiletsPage />}
 
-      {activeTab === 8 && (
+      {activeTab === 8 && <ReportsPage />}
+
+      {activeTab === 9 && <BusinessManagementForm />}
+
+      {activeTab === 10 && (
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>
             Ayarlar

@@ -104,8 +104,11 @@ if (process.env.CORS_ORIGIN) {
     // Development default origins
     corsOrigins = [
         'http://localhost:5173',  // Vite dev server
+        'http://localhost:5174',  // Vite dev server (alternatif port)
+        'http://localhost:5175',  // Vite dev server (alternatif port)
         'http://localhost:3000',  // Create React App
         'http://127.0.0.1:5173',
+        'http://127.0.0.1:5174',
     ];
 }
 

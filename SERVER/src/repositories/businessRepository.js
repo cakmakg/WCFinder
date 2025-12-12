@@ -67,6 +67,16 @@ class BusinessRepository {
       },
     };
   }
+
+  async findWithPopulate(filter = {}, populateFields = []) {
+    const query = Business.find(filter);
+    
+    populateFields.forEach((path) => {
+      query.populate(path);
+    });
+
+    return await query.exec();
+  }
 }
 
 module.exports = new BusinessRepository();

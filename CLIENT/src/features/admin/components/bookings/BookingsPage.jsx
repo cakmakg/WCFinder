@@ -30,23 +30,28 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Collapse,
 } from "@mui/material";
 import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
-  GetApp as ExportIcon,
   Visibility as ViewIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import { adminService } from "../../services/adminService";
+import { DateRangePicker, ExportButton } from "../shared";
 
 const BookingsPage = () => {
   const [usages, setUsages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
+    endDate: new Date()
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [orderBy, setOrderBy] = useState("createdAt");
   const [order, setOrder] = useState("desc");
   const [page, setPage] = useState(0);
@@ -91,20 +96,11 @@ const BookingsPage = () => {
       filtered = filtered.filter((usage) => usage.status === statusFilter);
     }
 
-    // Date filter
-    if (dateFilter !== "all") {
-      const now = new Date();
-      let startDate;
-      if (dateFilter === "today") {
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      } else if (dateFilter === "week") {
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (dateFilter === "month") {
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
+    // Date range filter
+    if (dateRange.startDate && dateRange.endDate) {
       filtered = filtered.filter((usage) => {
         const usageDate = new Date(usage.createdAt || usage.startTime);
-        return usageDate >= startDate;
+        return usageDate >= dateRange.startDate && usageDate <= dateRange.endDate;
       });
     }
 
@@ -127,7 +123,7 @@ const BookingsPage = () => {
         return aValue < bValue ? 1 : -1;
       }
     });
-  }, [usages, searchTerm, statusFilter, dateFilter, orderBy, order]);
+  }, [usages, searchTerm, statusFilter, dateRange, orderBy, order]);
 
   const paginatedData = useMemo(() => {
     return filteredAndSortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -194,18 +190,39 @@ const BookingsPage = () => {
     }
   };
 
-  // Statistics
+  // Statistics (filtered)
   const stats = useMemo(() => {
-    const total = usages.length;
-    const completed = usages.filter((u) => u.status === "completed").length;
-    const pending = usages.filter((u) => u.status === "pending").length;
-    const cancelled = usages.filter((u) => u.status === "cancelled").length;
-    const totalRevenue = usages
+    const data = filteredAndSortedData;
+    const total = data.length;
+    const completed = data.filter((u) => u.status === "completed").length;
+    const pending = data.filter((u) => u.status === "pending").length;
+    const cancelled = data.filter((u) => u.status === "cancelled").length;
+    const totalRevenue = data
       .filter((u) => u.status === "completed" || u.paymentStatus === "paid")
       .reduce((sum, u) => sum + (Number(u.totalFee) || 0), 0);
 
     return { total, completed, pending, cancelled, totalRevenue };
-  }, [usages]);
+  }, [filteredAndSortedData]);
+
+  // Export data
+  const exportData = useMemo(() => {
+    return filteredAndSortedData.map((usage) => ({
+      'Datum': formatDate(usage.createdAt || usage.startTime),
+      'Geschäft': usage.businessId?.businessName || 'N/A',
+      'Benutzer': usage.userId?.username || usage.userId?.email || 'N/A',
+      'Betrag (€)': Number(usage.totalFee || 0).toFixed(2),
+      'Status': getStatusColor(usage.status).label,
+      'Zahlungsstatus': usage.paymentStatus || 'N/A'
+    }));
+  }, [filteredAndSortedData]);
+
+  // Handle date range change
+  const handleDateRangeChange = (newRange) => {
+    setDateRange({
+      startDate: newRange.startDate,
+      endDate: newRange.endDate
+    });
+  };
 
   return (
     <Box>
@@ -299,6 +316,7 @@ const BookingsPage = () => {
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
+              size="small"
               placeholder="Ara (İşletme, Kullanıcı, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -312,7 +330,7 @@ const BookingsPage = () => {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
+            <FormControl fullWidth size="small">
               <InputLabel>Durum</InputLabel>
               <Select
                 value={statusFilter}
@@ -327,35 +345,35 @@ const BookingsPage = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Tarih</InputLabel>
-              <Select
-                value={dateFilter}
-                label="Tarih"
-                onChange={(e) => setDateFilter(e.target.value)}
-              >
-                <MenuItem value="all">Tümü</MenuItem>
-                <MenuItem value="today">Bugün</MenuItem>
-                <MenuItem value="week">Son 7 Gün</MenuItem>
-                <MenuItem value="month">Bu Ay</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={6} sm={3} md={2.5}>
             <Button
               fullWidth
               variant="outlined"
-              startIcon={<ExportIcon />}
-              onClick={() => {
-                // TODO: Implement export
-                alert("Export özelliği yakında eklenecek");
-              }}
+              startIcon={<FilterListIcon />}
+              onClick={() => setShowDatePicker(!showDatePicker)}
             >
-              Dışa Aktar
+              Zeitraum
             </Button>
           </Grid>
+          <Grid item xs={6} sm={3} md={2.5}>
+            <ExportButton
+              data={exportData}
+              filename="buchungen"
+              title="Buchungen Export"
+            />
+          </Grid>
         </Grid>
+
+        {/* Date Range Picker */}
+        <Collapse in={showDatePicker}>
+          <Box mt={2}>
+            <DateRangePicker
+              defaultPreset="last30days"
+              enableComparison={false}
+              onChange={handleDateRangeChange}
+            />
+          </Box>
+        </Collapse>
       </Paper>
 
       {/* Table */}

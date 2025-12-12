@@ -31,22 +31,29 @@ import {
   InputLabel,
   Select,
   Alert,
+  Collapse,
 } from "@mui/material";
 import {
   Search as SearchIcon,
-  GetApp as ExportIcon,
   Refresh as RefreshIcon,
   Visibility as ViewIcon,
   AccountBalanceWallet,
+  FilterList as FilterIcon,
 } from "@mui/icons-material";
 import { adminService } from "../../services/adminService";
+import { DateRangePicker, ExportButton } from "../shared";
+import { formatDate as formatDateHelper } from "../../utils/dateHelpers";
 
 const PaymentsPage = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
+    endDate: new Date()
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [orderBy, setOrderBy] = useState("createdAt");
   const [order, setOrder] = useState("desc");
   const [page, setPage] = useState(0);
@@ -90,20 +97,11 @@ const PaymentsPage = () => {
       filtered = filtered.filter((payment) => payment.status === statusFilter);
     }
 
-    // Date filter
-    if (dateFilter !== "all") {
-      const now = new Date();
-      let startDate;
-      if (dateFilter === "today") {
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      } else if (dateFilter === "week") {
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (dateFilter === "month") {
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
+    // Date range filter
+    if (dateRange.startDate && dateRange.endDate) {
       filtered = filtered.filter((payment) => {
         const paymentDate = new Date(payment.createdAt);
-        return paymentDate >= startDate;
+        return paymentDate >= dateRange.startDate && paymentDate <= dateRange.endDate;
       });
     }
 
@@ -128,7 +126,7 @@ const PaymentsPage = () => {
         return aValue < bValue ? 1 : -1;
       }
     });
-  }, [payments, searchTerm, statusFilter, dateFilter, orderBy, order]);
+  }, [payments, searchTerm, statusFilter, dateRange, orderBy, order]);
 
   const paginatedData = useMemo(() => {
     return filteredAndSortedData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -179,21 +177,42 @@ const PaymentsPage = () => {
     }
   };
 
-  // Statistics
+  // Statistics (filtered)
   const stats = useMemo(() => {
-    const total = payments.length;
-    const succeeded = payments.filter(
+    const data = filteredAndSortedData;
+    const total = data.length;
+    const succeeded = data.filter(
       (p) => p.status === "succeeded" || p.status === "paid"
     ).length;
-    const pending = payments.filter((p) => p.status === "pending").length;
-    const failed = payments.filter((p) => p.status === "failed").length;
-    const totalRevenue = payments
+    const pending = data.filter((p) => p.status === "pending").length;
+    const failed = data.filter((p) => p.status === "failed").length;
+    const totalRevenue = data
       .filter((p) => p.status === "succeeded" || p.status === "paid")
       .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
     const averagePayment = succeeded > 0 ? totalRevenue / succeeded : 0;
 
     return { total, succeeded, pending, failed, totalRevenue, averagePayment };
-  }, [payments]);
+  }, [filteredAndSortedData]);
+
+  // Export data
+  const exportData = useMemo(() => {
+    return filteredAndSortedData.map((payment) => ({
+      'Datum': formatDate(payment.createdAt),
+      'Benutzer': payment.userId?.username || payment.userId?.email || 'N/A',
+      'Betrag (€)': Number(payment.amount || 0).toFixed(2),
+      'Zahlungsmethode': payment.paymentMethod || 'N/A',
+      'Status': getStatusColor(payment.status).label,
+      'Payment Intent ID': payment.paymentIntentId || 'N/A'
+    }));
+  }, [filteredAndSortedData]);
+
+  // Handle date range change
+  const handleDateRangeChange = (newRange) => {
+    setDateRange({
+      startDate: newRange.startDate,
+      endDate: newRange.endDate
+    });
+  };
 
   return (
     <Box>
@@ -287,6 +306,7 @@ const PaymentsPage = () => {
           <Grid item xs={12} md={5}>
             <TextField
               fullWidth
+              size="small"
               placeholder="Ara (Kullanıcı, ID, Payment Intent ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -299,8 +319,8 @@ const PaymentsPage = () => {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2.5}>
-            <FormControl fullWidth>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth size="small">
               <InputLabel>Durum</InputLabel>
               <Select
                 value={statusFilter}
@@ -316,34 +336,35 @@ const PaymentsPage = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={6} md={2.5}>
-            <FormControl fullWidth>
-              <InputLabel>Tarih</InputLabel>
-              <Select
-                value={dateFilter}
-                label="Tarih"
-                onChange={(e) => setDateFilter(e.target.value)}
-              >
-                <MenuItem value="all">Tümü</MenuItem>
-                <MenuItem value="today">Bugün</MenuItem>
-                <MenuItem value="week">Son 7 Gün</MenuItem>
-                <MenuItem value="month">Bu Ay</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={6} sm={3} md={2}>
             <Button
               fullWidth
               variant="outlined"
-              startIcon={<ExportIcon />}
-              onClick={() => {
-                alert("Export özelliği yakında eklenecek");
-              }}
+              startIcon={<FilterIcon />}
+              onClick={() => setShowDatePicker(!showDatePicker)}
             >
-              Dışa Aktar
+              Zeitraum
             </Button>
           </Grid>
+          <Grid item xs={6} sm={3} md={2}>
+            <ExportButton
+              data={exportData}
+              filename="zahlungen"
+              title="Zahlungen Export"
+            />
+          </Grid>
         </Grid>
+
+        {/* Date Range Picker */}
+        <Collapse in={showDatePicker}>
+          <Box mt={2}>
+            <DateRangePicker
+              defaultPreset="last30days"
+              enableComparison={false}
+              onChange={handleDateRangeChange}
+            />
+          </Box>
+        </Collapse>
       </Paper>
 
       {/* Table */}

@@ -26,6 +26,11 @@ router.use('/payments', require('./payment'));
 router.use('/business-payouts', require('./businessPayout'));
 router.use('/rechnungen', require('./rechnung'));
 
+// Admin Analytics:
+router.use('/admin/analytics', require('./analytics'));
+
+// Monthly Reports:
+router.use('/monthly-reports', require('./monthlyReport'));
 
 // review:
 router.use('/review', require('./review'));
