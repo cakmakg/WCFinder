@@ -87,6 +87,7 @@ const PaymentsPage = () => {
         (payment) =>
           (payment.userId?.username || "").toLowerCase().includes(searchLower) ||
           (payment.userId?.email || "").toLowerCase().includes(searchLower) ||
+          (payment.businessId?.name || "").toLowerCase().includes(searchLower) ||
           (payment._id || "").toLowerCase().includes(searchLower) ||
           (payment.paymentIntentId || "").toLowerCase().includes(searchLower)
       );
@@ -199,6 +200,7 @@ const PaymentsPage = () => {
     return filteredAndSortedData.map((payment) => ({
       'Datum': formatDate(payment.createdAt),
       'Benutzer': payment.userId?.username || payment.userId?.email || 'N/A',
+      'İşletme': payment.businessId?.name || 'N/A',
       'Betrag (€)': Number(payment.amount || 0).toFixed(2),
       'Zahlungsmethode': payment.paymentMethod || 'N/A',
       'Status': getStatusColor(payment.status).label,
@@ -307,7 +309,7 @@ const PaymentsPage = () => {
             <TextField
               fullWidth
               size="small"
-              placeholder="Ara (Kullanıcı, ID, Payment Intent ID)..."
+              placeholder="Ara (Kullanıcı, İşletme, ID, Payment Intent ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -383,6 +385,7 @@ const PaymentsPage = () => {
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>Kullanıcı</TableCell>
+                <TableCell>İşletme</TableCell>
                 <TableCell align="right">
                   <TableSortLabel
                     active={orderBy === "amount"}
@@ -401,13 +404,13 @@ const PaymentsPage = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Typography>Yükleniyor...</Typography>
                   </TableCell>
                 </TableRow>
               ) : paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Typography color="text.secondary">Kayıt bulunamadı</Typography>
                   </TableCell>
                 </TableRow>
@@ -419,6 +422,11 @@ const PaymentsPage = () => {
                       <TableCell>{formatDate(payment.createdAt)}</TableCell>
                       <TableCell>
                         {payment.userId?.username || payment.userId?.email || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={500}>
+                          {payment.businessId?.name || "N/A"}
+                        </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography fontWeight={600}>
@@ -504,10 +512,34 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
+                  İşletme
+                </Typography>
+                <Typography variant="body1" fontWeight={500}>
+                  {selectedPayment.businessId?.name || "N/A"}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">
                   Tutar
                 </Typography>
                 <Typography variant="body1" fontWeight={600} sx={{ fontSize: "1.2rem", color: "#0891b2" }}>
                   {formatCurrency(selectedPayment.amount)}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">
+                  Platform Komisyonu
+                </Typography>
+                <Typography variant="body1">
+                  {formatCurrency(selectedPayment.platformFee || 0)}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">
+                  İşletme Payı
+                </Typography>
+                <Typography variant="body1">
+                  {formatCurrency(selectedPayment.businessFee || 0)}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
