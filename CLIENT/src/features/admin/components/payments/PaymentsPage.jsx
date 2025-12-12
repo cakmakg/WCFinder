@@ -85,6 +85,7 @@ const PaymentsPage = () => {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (payment) =>
+          (payment.businessId?.businessName || "").toLowerCase().includes(searchLower) ||
           (payment.userId?.username || "").toLowerCase().includes(searchLower) ||
           (payment.userId?.email || "").toLowerCase().includes(searchLower) ||
           (payment._id || "").toLowerCase().includes(searchLower) ||
@@ -198,6 +199,7 @@ const PaymentsPage = () => {
   const exportData = useMemo(() => {
     return filteredAndSortedData.map((payment) => ({
       'Datum': formatDate(payment.createdAt),
+      'Geschäft': payment.businessId?.businessName || 'N/A',
       'Benutzer': payment.userId?.username || payment.userId?.email || 'N/A',
       'Betrag (€)': Number(payment.amount || 0).toFixed(2),
       'Zahlungsmethode': payment.paymentMethod || 'N/A',
@@ -307,7 +309,7 @@ const PaymentsPage = () => {
             <TextField
               fullWidth
               size="small"
-              placeholder="Ara (Kullanıcı, ID, Payment Intent ID)..."
+              placeholder="Ara (İşletme, Kullanıcı, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -382,6 +384,15 @@ const PaymentsPage = () => {
                     Tarih
                   </TableSortLabel>
                 </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === "businessId"}
+                    direction={orderBy === "businessId" ? order : "asc"}
+                    onClick={() => handleRequestSort("businessId")}
+                  >
+                    İşletme
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell>Kullanıcı</TableCell>
                 <TableCell align="right">
                   <TableSortLabel
@@ -401,13 +412,13 @@ const PaymentsPage = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Typography>Yükleniyor...</Typography>
                   </TableCell>
                 </TableRow>
               ) : paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Typography color="text.secondary">Kayıt bulunamadı</Typography>
                   </TableCell>
                 </TableRow>
@@ -417,6 +428,9 @@ const PaymentsPage = () => {
                   return (
                     <TableRow key={payment._id} hover>
                       <TableCell>{formatDate(payment.createdAt)}</TableCell>
+                      <TableCell>
+                        {payment.businessId?.businessName || "N/A"}
+                      </TableCell>
                       <TableCell>
                         {payment.userId?.username || payment.userId?.email || "N/A"}
                       </TableCell>
@@ -492,6 +506,14 @@ const PaymentsPage = () => {
                 </Typography>
                 <Typography variant="body1" sx={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
                   {selectedPayment.paymentIntentId || "N/A"}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">
+                  İşletme
+                </Typography>
+                <Typography variant="body1">
+                  {selectedPayment.businessId?.businessName || "N/A"}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
