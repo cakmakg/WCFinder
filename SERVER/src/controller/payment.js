@@ -297,7 +297,7 @@ module.exports = {
     const data = await res.getModelList(
       require("../models/payment"),
       {},
-      ["usageId", "userId", "businessId"]
+      ["usageId", "userId"]
     );
     res.status(200).send({
       error: false,
@@ -309,7 +309,7 @@ module.exports = {
   read: async (req, res) => {
     const data = await paymentRepository.findWithPopulate(
       { _id: req.params.id },
-      ["usageId", "userId", "businessId"]
+      ["usageId", "userId"]
     );
     res.status(200).send({
       error: false,
