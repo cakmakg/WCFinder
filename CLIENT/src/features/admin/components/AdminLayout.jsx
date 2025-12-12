@@ -39,6 +39,7 @@ import {
   AccountBalance as PayoutIcon,
   Receipt as InvoiceIcon,
   Assessment as ReportsIcon,
+  Euro as FinanzIcon,
 } from "@mui/icons-material";
 import useAuthCall from "../../../hook/useAuthCall";
 
@@ -102,34 +103,30 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
       index: 4,
     },
     {
-      text: "Auszahlungen",
-      icon: <PayoutIcon />,
+      text: "💰 Finanzmanagement",
+      icon: <FinanzIcon />,
       index: 5,
-    },
-    {
-      text: "Rechnungen",
-      icon: <InvoiceIcon />,
-      index: 6,
+      highlight: true,
     },
     {
       text: "Tuvaletler",
       icon: <WcIcon />,
-      index: 7,
+      index: 6,
     },
     {
       text: "Berichte",
       icon: <ReportsIcon />,
-      index: 8,
+      index: 7,
     },
     {
       text: "Business Management",
       icon: <AddBusinessIcon />,
-      index: 9,
+      index: 8,
     },
     {
       text: "Ayarlar",
       icon: <SettingsIcon />,
-      index: 10,
+      index: 9,
     },
   ];
 

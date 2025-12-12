@@ -56,8 +56,7 @@ import BusinessesTab from "../features/admin/components/BusinessesTab";
 import BusinessManagementForm from "../features/admin/components/BusinessManagementForm";
 import BookingsPage from "../features/admin/components/bookings/BookingsPage";
 import PaymentsPage from "../features/admin/components/payments/PaymentsPage";
-import PayoutsPage from "../features/admin/components/payouts/PayoutsPage";
-import InvoicesPage from "../features/admin/components/invoices/InvoicesPage";
+import { FinanzmanagementPage } from "../features/admin/components/finanz";
 import ToiletsPage from "../features/admin/components/toilets/ToiletsPage";
 import ReportsPage from "../features/admin/components/reports/ReportsPage";
 import { ExportButton } from "../features/admin/components/shared";
@@ -797,17 +796,15 @@ const AdminPanel = () => {
 
       {activeTab === 4 && <PaymentsPage />}
 
-      {activeTab === 5 && <PayoutsPage />}
+      {activeTab === 5 && <FinanzmanagementPage />}
 
-      {activeTab === 6 && <InvoicesPage />}
+      {activeTab === 6 && <ToiletsPage />}
 
-      {activeTab === 7 && <ToiletsPage />}
+      {activeTab === 7 && <ReportsPage />}
 
-      {activeTab === 8 && <ReportsPage />}
+      {activeTab === 8 && <BusinessManagementForm />}
 
-      {activeTab === 9 && <BusinessManagementForm />}
-
-      {activeTab === 10 && (
+      {activeTab === 9 && (
         <Box sx={{ p: 3 }}>
           <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>
             Ayarlar
