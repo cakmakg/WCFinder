@@ -50,8 +50,8 @@ const PaymentsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
-    endDate: new Date()
+    startDate: null,
+    endDate: null
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [orderBy, setOrderBy] = useState("createdAt");
