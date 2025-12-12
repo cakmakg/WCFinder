@@ -245,18 +245,18 @@ class RechnungService {
                 kundennummer: business.businessNumber || `B-${business._id.toString().slice(-6).toUpperCase()}`,
                 rechnungsempfaenger: {
                     businessId: business._id,
-                    firmenname: business.businessName,
-                    ansprechpartner: business.owner?.username || '',
-                    strasse: business.address?.street || 'Nicht angegeben',
+                    firmenname: business.businessName || 'Unbekannt',
+                    ansprechpartner: business.owner?.username || business.contactName || '',
+                    strasse: business.address?.street || business.street || 'Nicht angegeben',
                     hausnummer: business.address?.houseNumber || '',
-                    plz: business.address?.postalCode || '00000',
-                    ort: business.address?.city || 'Nicht angegeben',
+                    plz: business.address?.postalCode || business.postalCode || '00000',
+                    ort: business.address?.city || business.city || 'Nicht angegeben',
                     land: business.address?.country || 'Deutschland',
                     landCode: 'DE',
                     ustIdNr: business.ustIdNr || '',
                     steuernummer: business.steuernummer || '',
-                    email: business.owner?.email || '',
-                    telefon: business.phone || ''
+                    email: business.owner?.email || business.email || business.contactEmail || 'noreply@wcfinder.de',
+                    telefon: business.phone || business.contactPhone || ''
                 },
                 positionen,
                 summen: {

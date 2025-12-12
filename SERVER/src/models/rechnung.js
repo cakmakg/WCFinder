@@ -550,12 +550,13 @@ const RechnungSchema = new mongoose.Schema({
 });
 
 // =============================================
-// PRE-SAVE HOOK
-// Rechnungsnummer automatisch generieren
+// PRE-VALIDATE HOOK
+// Rechnungsnummer MUSS vor Validation generiert werden
+// (weil required: true)
 // =============================================
-RechnungSchema.pre('save', async function(next) {
+RechnungSchema.pre('validate', async function(next) {
     // Rechnungsnummer generieren (wenn neu)
-    if (!this.rechnungsnummer) {
+    if (!this.rechnungsnummer && this.rechnungsdatum) {
         const jahr = this.rechnungsdatum.getFullYear();
         const monat = String(this.rechnungsdatum.getMonth() + 1).padStart(2, '0');
         
@@ -583,29 +584,41 @@ RechnungSchema.pre('save', async function(next) {
         this.rechnungsnummer = `RE-${jahr}-${monat}-${String(laufendeNummer).padStart(5, '0')}`;
     }
     
+    next();
+});
+
+// =============================================
+// PRE-SAVE HOOK
+// Zusätzliche Berechnungen nach Validation
+// =============================================
+RechnungSchema.pre('save', async function(next) {
     // Verwendungszweck = Rechnungsnummer
-    if (!this.zahlungsbedingungen.verwendungszweck) {
+    if (this.zahlungsbedingungen && !this.zahlungsbedingungen.verwendungszweck) {
         this.zahlungsbedingungen.verwendungszweck = this.rechnungsnummer;
     }
     
     // Zahlbetrag berechnen
-    if (!this.summen.zahlbetrag) {
+    if (this.summen && !this.summen.zahlbetrag) {
         this.summen.zahlbetrag = this.summen.bruttobetrag - (this.summen.vorauszahlung || 0);
     }
     
     // Offener Betrag berechnen
-    this.offenerBetrag = (this.summen.zahlbetrag || this.summen.bruttobetrag) - (this.bezahlterBetrag || 0);
+    if (this.summen) {
+        this.offenerBetrag = (this.summen.zahlbetrag || this.summen.bruttobetrag) - (this.bezahlterBetrag || 0);
+    }
     
     // Einheitnamen für Positionen setzen
-    this.positionen.forEach(pos => {
-        if (pos.einheitCode && !pos.einheitName) {
-            pos.einheitName = UNIT_CODES[pos.einheitCode] || 'Einheit';
-        }
-        // Steuerbetrag pro Position berechnen
-        if (!pos.steuerbetrag && pos.gesamtpreis && pos.steuersatz) {
-            pos.steuerbetrag = Math.round((pos.gesamtpreis * pos.steuersatz / 100) * 100) / 100;
-        }
-    });
+    if (this.positionen) {
+        this.positionen.forEach(pos => {
+            if (pos.einheitCode && !pos.einheitName) {
+                pos.einheitName = UNIT_CODES[pos.einheitCode] || 'Einheit';
+            }
+            // Steuerbetrag pro Position berechnen
+            if (!pos.steuerbetrag && pos.gesamtpreis && pos.steuersatz) {
+                pos.steuerbetrag = Math.round((pos.gesamtpreis * pos.steuersatz / 100) * 100) / 100;
+            }
+        });
+    }
     
     // Kleinunternehmer-Hinweis setzen
     if (this.kleinunternehmer?.istKleinunternehmer && !this.kleinunternehmer.hinweisText) {
@@ -613,7 +626,7 @@ RechnungSchema.pre('save', async function(next) {
     }
     
     // Aufbewahrungsfrist berechnen (10 Jahre nach Jahresende)
-    if (!this.archivierung?.aufbewahrungBis) {
+    if (!this.archivierung?.aufbewahrungBis && this.rechnungsdatum) {
         const jahresende = new Date(this.rechnungsdatum.getFullYear(), 11, 31);
         const aufbewahrungBis = new Date(jahresende);
         aufbewahrungBis.setFullYear(aufbewahrungBis.getFullYear() + 10);
