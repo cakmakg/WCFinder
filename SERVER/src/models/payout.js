@@ -87,6 +87,28 @@ const PayoutSchema = new mongoose.Schema({
         ref: 'User',
     },
 
+    // ✅ Rechnung Referansı (DOĞRU AKIŞ: Rechnung → Zahlung → Payout)
+    rechnungId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Rechnung',
+        index: true,
+    },
+
+    // ✅ Rechnung numarası (kolaylık için)
+    rechnungsnummer: {
+        type: String,
+    },
+
+    // ✅ İşlemi yapan kişi (admin email)
+    processedBy: {
+        type: String,
+    },
+
+    // ✅ İşlem tarihi
+    processedAt: {
+        type: Date,
+    },
+
 }, {
     collection: "payouts",
     timestamps: true,

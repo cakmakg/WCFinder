@@ -9,6 +9,8 @@ const {
     list,
     read,
     createForPayout,
+    createFromMonthlyReport,
+    recordPayment,
     downloadPDF,
     downloadXRechnung,
     validateXRechnung,
@@ -65,8 +67,14 @@ router.get('/statistics', isAdmin, getStatistics);
 // RECHNUNG ERSTELLEN
 // ============================================
 
-// ✅ Payout için Rechnung oluştur (Admin) - with validation
+// ✅ MonthlyReport için Rechnung oluştur (Admin) - DOĞRU AKIŞ
+router.post('/create-from-monthly-report', isAdmin, createFromMonthlyReport);
+
+// ✅ Payout için Rechnung oluştur (Admin) - ESKİ YÖNTEM (opsiyonel)
 router.post('/create-for-payout', isAdmin, createForPayoutValidation, createForPayout);
+
+// ✅ Zahlung erfassen ve Payout oluştur (Admin) - DOĞRU AKIŞ
+router.post('/:id/record-payment', isAdmin, idParamValidation, recordPayment);
 
 // ============================================
 // DOWNLOAD ENDPOINTS

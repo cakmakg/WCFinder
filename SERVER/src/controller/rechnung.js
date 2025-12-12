@@ -202,6 +202,126 @@ module.exports = {
         }
     },
 
+    // ✅ MonthlyReport için Rechnung oluştur (Admin) - DOĞRU AKIŞ
+    createFromMonthlyReport: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Create Rechnung from Monthly Report (Admin)"
+            #swagger.description = "Doğru akış: MonthlyReport → Rechnung → (Ödeme yapıldığında) Payout"
+        */
+        
+        try {
+            const { monthlyReportId, kleinunternehmer } = req.body;
+            
+            if (!monthlyReportId) {
+                res.errorStatusCode = 400;
+                throw new Error("monthlyReportId ist erforderlich");
+            }
+            
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const benutzerId = req.user?._id;
+            
+            // Rechnung oluştur
+            const rechnung = await RechnungService.erstelleRechnungFuerMonthlyReport(
+                monthlyReportId, 
+                benutzer, 
+                benutzerId
+            );
+            
+            // Kleinunternehmer ayarı
+            if (kleinunternehmer) {
+                rechnung.kleinunternehmer = {
+                    istKleinunternehmer: true,
+                    hinweisText: 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.'
+                };
+                // MwSt sıfırla
+                rechnung.summen.mehrwertsteuer.betrag = 0;
+                rechnung.summen.bruttobetrag = rechnung.summen.nettobetrag;
+                rechnung.summen.zahlbetrag = rechnung.summen.nettobetrag;
+            }
+            
+            await rechnung.save();
+            
+            // PDF oluştur
+            const pdfPfad = await RechnungService.generiereRechnungPDF(rechnung, benutzer);
+            rechnung.pdfPfad = pdfPfad;
+            await rechnung.save();
+            
+            // XRechnung XML oluştur
+            try {
+                await RechnungService.generiereXRechnung(rechnung, benutzer);
+            } catch (xrechnungError) {
+                logger.warn('XRechnung Generierung fehlgeschlagen (wird fortgesetzt)', {
+                    rechnungId: rechnung._id,
+                    error: xrechnungError.message
+                });
+            }
+            
+            res.status(201).send({
+                error: false,
+                result: rechnung,
+                message: "Rechnung erfolgreich aus Monatsbericht erstellt"
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // ✅ Zahlung erfassen und Payout erstellen (Admin) - DOĞRU AKIŞ
+    recordPayment: async (req, res) => {
+        /*
+            #swagger.tags = ["Rechnungen"]
+            #swagger.summary = "Record Payment for Rechnung and Create Payout (Admin)"
+            #swagger.description = "Ödeme kaydedildiğinde otomatik Payout oluşturulur"
+        */
+        
+        try {
+            const { id } = req.params;
+            const { 
+                betrag, 
+                zahlungsmethode = 'bank_transfer', 
+                transaktionsreferenz,
+                zahlungsdatum,
+                notizen 
+            } = req.body;
+            
+            if (!betrag || betrag <= 0) {
+                res.errorStatusCode = 400;
+                throw new Error("Gültiger Betrag ist erforderlich");
+            }
+            
+            const benutzer = req.user?.username || req.user?.email || 'Admin';
+            const benutzerId = req.user?._id;
+            
+            const result = await RechnungService.erfasseZahlungUndErzeugePayout(
+                id,
+                {
+                    betrag,
+                    zahlungsmethode,
+                    transaktionsreferenz,
+                    zahlungsdatum: zahlungsdatum ? new Date(zahlungsdatum) : new Date(),
+                    notizen
+                },
+                benutzer,
+                benutzerId
+            );
+            
+            res.status(200).send({
+                error: false,
+                result: {
+                    rechnung: result.rechnung,
+                    zahlung: result.zahlung,
+                    payout: result.payout
+                },
+                message: result.payout 
+                    ? `Zahlung erfasst und Auszahlung erstellt (${result.payout._id})`
+                    : `Teilzahlung erfasst. Offener Betrag: ${result.rechnung.offenerBetrag}€`
+            });
+        } catch (error) {
+            throw error;
+        }
+    },
+
     // ============================================
     // DOWNLOAD ENDPOINTS
     // ============================================

@@ -10,6 +10,7 @@ const Payment = require('../models/payment');
 const Usage = require('../models/usage');
 const Business = require('../models/business');
 const User = require('../models/user');
+const MonthlyReport = require('../models/monthlyReport');
 const XRechnungService = require('./xrechnungService');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
@@ -161,6 +162,224 @@ class RechnungService {
             
         } catch (error) {
             console.error('❌ Fehler beim Erstellen der Rechnung:', error);
+            throw error;
+        }
+    }
+    
+    // =========================================
+    // 📊 RECHNUNG FÜR MONTHLY REPORT ERSTELLEN
+    // Doğru Akış: MonthlyReport → Rechnung
+    // =========================================
+    static async erstelleRechnungFuerMonthlyReport(monthlyReportId, benutzer = 'System', benutzerId = null) {
+        console.log(`🧾 Erstelle Rechnung für MonthlyReport ${monthlyReportId}...`);
+        
+        try {
+            // MonthlyReport'u bul
+            const report = await MonthlyReport.findById(monthlyReportId)
+                .populate('businessId');
+            
+            if (!report) {
+                throw new Error("Monthly Report nicht gefunden");
+            }
+            
+            // Business'i bul
+            const business = await Business.findById(report.businessId._id)
+                .populate('owner');
+            
+            if (!business) {
+                throw new Error("Business nicht gefunden");
+            }
+            
+            // Daha önce bu report için rechnung var mı?
+            const existingRechnung = await Rechnung.findOne({ monthlyReportId: monthlyReportId });
+            if (existingRechnung) {
+                throw new Error(`Rechnung für diesen Bericht existiert bereits: ${existingRechnung.rechnungsnummer}`);
+            }
+            
+            // Leistungszeitraum: Raporun ay başı ve sonu
+            const leistungVon = new Date(report.year, report.month - 1, 1);
+            const leistungBis = new Date(report.year, report.month, 0); // Ayın son günü
+            
+            // Ay adları (Almanca)
+            const monatNamen = [
+                'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+            ];
+            const monatName = monatNamen[report.month - 1];
+            
+            // Position erstellen - İşletmenin aylık geliri
+            const positionen = [{
+                positionsnummer: 1,
+                datum: leistungBis,
+                beschreibung: `WC-Nutzungsgebühren ${monatName} ${report.year}`,
+                details: `Provision für WC-Nutzungen im Zeitraum ${monatName} ${report.year}. Geschäft: ${business.businessName}. Anzahl Buchungen: ${report.bookings?.completed || 0}.`,
+                menge: 1,
+                einheitCode: 'MON', // Monat
+                einheitName: 'Monat',
+                einzelpreis: report.financials?.businessRevenue || 0,
+                gesamtpreis: report.financials?.businessRevenue || 0,
+                steuersatz: 19,
+                steuerbetrag: Math.round(((report.financials?.businessRevenue || 0) * 0.19) * 100) / 100
+            }];
+            
+            // Summen berechnen
+            const nettobetrag = report.financials?.businessRevenue || 0;
+            const mwstBetrag = Math.round((nettobetrag * 0.19) * 100) / 100;
+            const bruttobetrag = Math.round((nettobetrag + mwstBetrag) * 100) / 100;
+            
+            // Rechnungsdatum: Heute
+            const rechnungsdatum = new Date();
+            
+            // Fälligkeitsdatum: 14 Tage ab Rechnungsdatum
+            const faelligkeitsdatum = new Date(rechnungsdatum);
+            faelligkeitsdatum.setDate(faelligkeitsdatum.getDate() + 14);
+            
+            // Rechnung erstellen
+            const rechnung = await Rechnung.create({
+                rechnungsdatum,
+                leistungszeitraum: {
+                    von: leistungVon,
+                    bis: leistungBis
+                },
+                monthlyReportId: report._id,
+                kundennummer: business.businessNumber || `B-${business._id.toString().slice(-6).toUpperCase()}`,
+                rechnungsempfaenger: {
+                    businessId: business._id,
+                    firmenname: business.businessName,
+                    ansprechpartner: business.owner?.username || '',
+                    strasse: business.address?.street || 'Nicht angegeben',
+                    hausnummer: business.address?.houseNumber || '',
+                    plz: business.address?.postalCode || '00000',
+                    ort: business.address?.city || 'Nicht angegeben',
+                    land: business.address?.country || 'Deutschland',
+                    landCode: 'DE',
+                    ustIdNr: business.ustIdNr || '',
+                    steuernummer: business.steuernummer || '',
+                    email: business.owner?.email || '',
+                    telefon: business.phone || ''
+                },
+                positionen,
+                summen: {
+                    nettobetrag: Math.round(nettobetrag * 100) / 100,
+                    mehrwertsteuer: {
+                        satz: 19,
+                        netto: Math.round(nettobetrag * 100) / 100,
+                        betrag: mwstBetrag
+                    },
+                    bruttobetrag: bruttobetrag,
+                    zahlbetrag: bruttobetrag
+                },
+                zahlungsbedingungen: {
+                    zahlungsziel: 14,
+                    faelligkeitsdatum
+                },
+                betreff: `Abrechnung ${monatName} ${report.year} - ${business.businessName}`,
+                einleitungstext: `Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie die Abrechnung für Ihre WC-Nutzungsgebühren im ${monatName} ${report.year}.`,
+                schlusstext: `Bei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen\nIhr WCFinder Team`,
+                xrechnung: {
+                    waehrungscode: 'EUR',
+                    dokumentTyp: '380',
+                    rechnungsTypCode: '380'
+                },
+                status: 'entwurf',
+                erstelltVon: {
+                    benutzerId: benutzerId,
+                    benutzerName: benutzer
+                },
+                auditLog: [{
+                    zeitstempel: new Date(),
+                    aktion: 'erstellt',
+                    benutzer: benutzer,
+                    benutzerId: benutzerId,
+                    details: `Rechnung für Monatsbericht ${monatName} ${report.year} erstellt (Report ID: ${monthlyReportId})`
+                }]
+            });
+            
+            console.log(`✅ Rechnung aus MonthlyReport erstellt: ${rechnung.rechnungsnummer}`);
+            return rechnung;
+            
+        } catch (error) {
+            console.error('❌ Fehler beim Erstellen der Rechnung aus MonthlyReport:', error);
+            throw error;
+        }
+    }
+    
+    // =========================================
+    // 💰 ZAHLUNG ERFASSEN UND PAYOUT ERSTELLEN
+    // Akış: Rechnung bezahlt → Payout oluştur
+    // =========================================
+    static async erfasseZahlungUndErzeugePayout(rechnungId, zahlungsDaten, benutzer = 'System', benutzerId = null) {
+        console.log(`💰 Erfasse Zahlung für Rechnung ${rechnungId}...`);
+        
+        try {
+            const rechnung = await Rechnung.findById(rechnungId)
+                .populate('rechnungsempfaenger.businessId')
+                .populate('monthlyReportId');
+            
+            if (!rechnung) {
+                throw new Error("Rechnung nicht gefunden");
+            }
+            
+            if (rechnung.status === 'bezahlt') {
+                throw new Error("Rechnung ist bereits vollständig bezahlt");
+            }
+            
+            if (rechnung.status === 'storniert') {
+                throw new Error("Stornierte Rechnungen können nicht bezahlt werden");
+            }
+            
+            // Zahlung zur Rechnung hinzufügen (bestehende Methode nutzen)
+            const zahlung = rechnung.addZahlung(zahlungsDaten, benutzer, benutzerId);
+            
+            // Wenn vollständig bezahlt, Payout erstellen
+            let payout = null;
+            if (rechnung.offenerBetrag <= 0 && rechnung.status === 'bezahlt') {
+                // Payout erstellen
+                payout = await Payout.create({
+                    businessId: rechnung.rechnungsempfaenger.businessId,
+                    amount: rechnung.summen.bruttobetrag,
+                    status: 'completed',
+                    period: {
+                        startDate: rechnung.leistungszeitraum.von,
+                        endDate: rechnung.leistungszeitraum.bis
+                    },
+                    paymentMethod: zahlungsDaten.zahlungsmethode || 'bank_transfer',
+                    transactionReference: zahlungsDaten.transaktionsreferenz,
+                    rechnungId: rechnung._id,
+                    rechnungsnummer: rechnung.rechnungsnummer,
+                    processedAt: new Date(),
+                    approvedBy: benutzerId,
+                    notes: `Auszahlung für Rechnung ${rechnung.rechnungsnummer}`
+                });
+                
+                // Rechnung'a payout referansı ekle
+                rechnung.payoutId = payout._id;
+                
+                // Audit Log
+                rechnung.addAuditLog(
+                    'bezahlt',
+                    benutzer,
+                    `Zahlung vollständig. Payout erstellt: ${payout._id}`,
+                    null,
+                    { payoutId: payout._id },
+                    benutzerId
+                );
+                
+                console.log(`✅ Payout erstellt: ${payout._id}`);
+            }
+            
+            await rechnung.save();
+            
+            console.log(`✅ Zahlung erfasst für Rechnung ${rechnung.rechnungsnummer}`);
+            
+            return {
+                rechnung,
+                zahlung,
+                payout
+            };
+            
+        } catch (error) {
+            console.error('❌ Fehler beim Erfassen der Zahlung:', error);
             throw error;
         }
     }

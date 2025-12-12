@@ -47,7 +47,8 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   Description as ReportIcon,
-  PlaylistAddCheck as BulkIcon
+  PlaylistAddCheck as BulkIcon,
+  Receipt as ReceiptIcon
 } from '@mui/icons-material';
 import {
   AreaChart,
@@ -63,6 +64,7 @@ import {
 import { monthlyReportService } from '../../services/monthlyReportService';
 import { adminService } from '../../services/adminService';
 import { exportService } from '../../services/exportService';
+import { invoiceService } from '../../services/invoiceService';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
 
 /**
@@ -220,6 +222,30 @@ const MonthlyReportsPage = () => {
     } catch (error) {
       console.error('Error deleting report:', error);
       toastErrorNotify('Fehler beim Löschen');
+    }
+  };
+
+  // Create Invoice from Report - DOĞRU AKIŞ
+  const handleCreateInvoice = async (report) => {
+    if (!confirm(`Bu rapor için Rechnung oluşturmak istediğinize emin misiniz?\n\nİşletme: ${report.businessSnapshot?.businessName}\nDönem: ${monthlyReportService.formatPeriodLabel(report.year, report.month)}\nTutar: ${monthlyReportService.formatCurrency(report.financials?.businessRevenue)}`)) {
+      return;
+    }
+
+    try {
+      setGenerating(true);
+      const response = await invoiceService.createFromMonthlyReport(report._id);
+      
+      toastSuccessNotify(
+        `Rechnung erfolgreich erstellt: ${response.result?.rechnungsnummer || 'Erfolgreich'}`
+      );
+      
+      // Optional: Open invoice detail or navigate to invoices page
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      const message = error.response?.data?.message || 'Fehler beim Erstellen der Rechnung';
+      toastErrorNotify(message);
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -531,6 +557,16 @@ const MonthlyReportsPage = () => {
                           <Tooltip title="Detayları Görüntüle">
                             <IconButton size="small" onClick={() => handleView(report)}>
                               <ViewIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Rechnung Erstellen">
+                            <IconButton 
+                              size="small" 
+                              color="success"
+                              onClick={() => handleCreateInvoice(report)}
+                              disabled={generating}
+                            >
+                              <ReceiptIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="PDF İndir">

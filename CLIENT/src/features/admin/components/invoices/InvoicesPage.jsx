@@ -26,7 +26,14 @@ import {
   Stack,
   TextField,
   MenuItem,
-  InputAdornment
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -41,7 +48,9 @@ import {
   Search as SearchIcon,
   FilterList as FilterListIcon,
   Code as CodeIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Payment as PaymentIcon,
+  AccountBalance as AccountBalanceIcon
 } from '@mui/icons-material';
 import { invoiceService } from '../../services/invoiceService';
 import { formatCurrency } from '../../utils/exportHelpers';
@@ -74,7 +83,16 @@ const InvoicesPage = () => {
   // Dialogs
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    betrag: '',
+    zahlungsmethode: 'bank_transfer',
+    transaktionsreferenz: '',
+    zahlungsdatum: new Date().toISOString().split('T')[0],
+    notizen: ''
+  });
 
   // Fetch invoices
   useEffect(() => {
@@ -251,6 +269,53 @@ const InvoicesPage = () => {
   const handleInvoiceUpdated = () => {
     setRefreshTrigger(prev => prev + 1);
     setDetailDialogOpen(false);
+  };
+
+  // ============ PAYMENT HANDLERS (DOĞRU AKIŞ) ============
+  
+  const handleOpenPaymentDialog = (invoice) => {
+    setSelectedInvoice(invoice);
+    setPaymentForm({
+      betrag: invoice.offenerBetrag || invoice.summen?.bruttobetrag || '',
+      zahlungsmethode: 'bank_transfer',
+      transaktionsreferenz: '',
+      zahlungsdatum: new Date().toISOString().split('T')[0],
+      notizen: ''
+    });
+    setPaymentDialogOpen(true);
+  };
+
+  const handleRecordPayment = async () => {
+    if (!selectedInvoice || !paymentForm.betrag) {
+      toastErrorNotify('Bitte geben Sie einen gültigen Betrag ein');
+      return;
+    }
+
+    try {
+      setPaymentLoading(true);
+      const result = await invoiceService.recordPayment(selectedInvoice._id, {
+        betrag: parseFloat(paymentForm.betrag),
+        zahlungsmethode: paymentForm.zahlungsmethode,
+        transaktionsreferenz: paymentForm.transaktionsreferenz,
+        zahlungsdatum: paymentForm.zahlungsdatum,
+        notizen: paymentForm.notizen
+      });
+
+      if (result.payout) {
+        toastSuccessNotify(`Zahlung erfasst! Auszahlung erstellt: ${result.payout._id}`);
+      } else {
+        toastSuccessNotify(`Teilzahlung erfasst. Offener Betrag: ${result.rechnung?.offenerBetrag?.toFixed(2)}€`);
+      }
+
+      setPaymentDialogOpen(false);
+      setRefreshTrigger(prev => prev + 1);
+    } catch (error) {
+      console.error('Payment error:', error);
+      const message = error.response?.data?.message || 'Fehler beim Erfassen der Zahlung';
+      toastErrorNotify(message);
+    } finally {
+      setPaymentLoading(false);
+    }
   };
 
   // Get status chip props
@@ -578,6 +643,18 @@ const InvoicesPage = () => {
                               <CodeIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
+                          {/* Payment Button - only for unpaid invoices */}
+                          {!['bezahlt', 'storniert'].includes(invoice.status) && (
+                            <Tooltip title="Zahlung erfassen">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() => handleOpenPaymentDialog(invoice)}
+                              >
+                                <PaymentIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           {invoice.status !== 'entwurf' && (
                             <Tooltip title="E-Mail erneut senden">
                               <IconButton
@@ -628,8 +705,10 @@ const InvoicesPage = () => {
       {/* Info Alert */}
       <Alert severity="info" sx={{ mt: 3 }}>
         <Typography variant="body2">
-          <strong>§14 UStG / XRechnung 3.0:</strong> Rechnungen werden automatisch aus abgeschlossenen Auszahlungen erstellt.
-          Sie können PDF und XRechnung XML (EN 16931) herunterladen. Das System ist GoBD-konform mit Audit-Log.
+          <strong>§14 UStG / XRechnung 3.0 - Korrekter Workflow:</strong><br />
+          📊 <strong>Monatsbericht</strong> → 📄 <strong>Rechnung</strong> → 💰 <strong>Zahlung erfassen</strong> → 🏦 <strong>Auszahlung</strong><br /><br />
+          Rechnungen werden aus Monatsberichten erstellt. Bei Zahlungseingang klicken Sie auf "Zahlung erfassen" - 
+          automatisch wird eine Auszahlung (Payout) erstellt. PDF und XRechnung XML (EN 16931) verfügbar. GoBD-konform.
         </Typography>
       </Alert>
 
@@ -645,7 +724,110 @@ const InvoicesPage = () => {
         onClose={() => setDetailDialogOpen(false)}
         invoice={selectedInvoice}
         onUpdate={handleInvoiceUpdated}
+        onRecordPayment={handleOpenPaymentDialog}
       />
+
+      {/* Payment Dialog - DOĞRU AKIŞ: Rechnung → Zahlung → Payout */}
+      <Dialog 
+        open={paymentDialogOpen} 
+        onClose={() => setPaymentDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <PaymentIcon color="success" />
+            <Typography variant="h6">Zahlung Erfassen</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedInvoice && (
+            <Stack spacing={3} sx={{ mt: 1 }}>
+              {/* Invoice Info */}
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Rechnung:</strong> {selectedInvoice.rechnungsnummer}<br />
+                  <strong>Geschäft:</strong> {selectedInvoice.rechnungsempfaenger?.firmenname}<br />
+                  <strong>Gesamtbetrag:</strong> {formatCurrency(selectedInvoice.summen?.bruttobetrag)}<br />
+                  <strong>Bereits bezahlt:</strong> {formatCurrency(selectedInvoice.bezahlterBetrag || 0)}<br />
+                  <strong>Offener Betrag:</strong> {formatCurrency(selectedInvoice.offenerBetrag || selectedInvoice.summen?.bruttobetrag)}
+                </Typography>
+              </Alert>
+
+              <TextField
+                fullWidth
+                label="Zahlungsbetrag *"
+                type="number"
+                value={paymentForm.betrag}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, betrag: e.target.value }))}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">€</InputAdornment>,
+                }}
+                helperText="Vollständiger oder Teilbetrag"
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>Zahlungsmethode</InputLabel>
+                <Select
+                  value={paymentForm.zahlungsmethode}
+                  label="Zahlungsmethode"
+                  onChange={(e) => setPaymentForm(prev => ({ ...prev, zahlungsmethode: e.target.value }))}
+                >
+                  <MenuItem value="bank_transfer">Banküberweisung</MenuItem>
+                  <MenuItem value="cash">Bargeld</MenuItem>
+                  <MenuItem value="credit_card">Kreditkarte</MenuItem>
+                  <MenuItem value="paypal">PayPal</MenuItem>
+                  <MenuItem value="other">Sonstige</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                label="Transaktionsreferenz"
+                value={paymentForm.transaktionsreferenz}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, transaktionsreferenz: e.target.value }))}
+                placeholder="z.B. SEPA Referenz, Buchungsnummer"
+              />
+
+              <TextField
+                fullWidth
+                label="Zahlungsdatum"
+                type="date"
+                value={paymentForm.zahlungsdatum}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, zahlungsdatum: e.target.value }))}
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                fullWidth
+                label="Notizen"
+                multiline
+                rows={2}
+                value={paymentForm.notizen}
+                onChange={(e) => setPaymentForm(prev => ({ ...prev, notizen: e.target.value }))}
+              />
+
+              <Alert severity="success" icon={<AccountBalanceIcon />}>
+                <Typography variant="body2">
+                  <strong>Automatischer Payout:</strong> Bei vollständiger Zahlung wird automatisch eine Auszahlung (Payout) für das Geschäft erstellt und in Auszahlungen angezeigt.
+                </Typography>
+              </Alert>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setPaymentDialogOpen(false)}>Abbrechen</Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleRecordPayment}
+            disabled={paymentLoading || !paymentForm.betrag}
+            startIcon={paymentLoading ? <CircularProgress size={20} /> : <PaymentIcon />}
+          >
+            {paymentLoading ? 'Verarbeite...' : 'Zahlung Erfassen'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

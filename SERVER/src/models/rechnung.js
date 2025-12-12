@@ -153,7 +153,16 @@ const RechnungSchema = new mongoose.Schema({
     },
     
     // ============================================
-    // 5. PAYOUT REFERENZ (WCFinder spezifisch)
+    // 5. MONTHLY REPORT REFERENZ (Hauptreferenz)
+    // ============================================
+    monthlyReportId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'MonthlyReport',
+        index: true,
+    },
+    
+    // ============================================
+    // 6. PAYOUT REFERENZ (wird erstellt wenn bezahlt)
     // ============================================
     payoutId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -741,6 +750,7 @@ RechnungSchema.set('toObject', { virtuals: true });
 // =============================================
 // INDEXES
 // =============================================
+RechnungSchema.index({ monthlyReportId: 1 });
 RechnungSchema.index({ payoutId: 1 });
 RechnungSchema.index({ 'rechnungsempfaenger.businessId': 1 });
 RechnungSchema.index({ status: 1, createdAt: -1 });

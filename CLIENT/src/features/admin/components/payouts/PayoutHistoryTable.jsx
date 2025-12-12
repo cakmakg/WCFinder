@@ -200,6 +200,7 @@ const PayoutHistoryTable = () => {
       { key: 'businessName', label: 'Geschäft' },
       { key: 'amount', label: 'Betrag' },
       { key: 'paymentMethod', label: 'Methode' },
+      { key: 'rechnungsnummer', label: 'Rechnung' },
       { key: 'status', label: 'Status' },
       { key: 'referenceNumber', label: 'Referenz' }
     ];
@@ -319,6 +320,7 @@ const PayoutHistoryTable = () => {
             { key: 'businessName', label: 'Geschäft' },
             { key: 'amount', label: 'Betrag' },
             { key: 'paymentMethod', label: 'Methode' },
+            { key: 'rechnungsnummer', label: 'Rechnung' },
             { key: 'status', label: 'Status' }
           ]}
           filename="payout-history"
@@ -336,6 +338,7 @@ const PayoutHistoryTable = () => {
                 <TableCell>Geschäft</TableCell>
                 <TableCell align="right">Betrag</TableCell>
                 <TableCell>Methode</TableCell>
+                <TableCell>Rechnung</TableCell>
                 <TableCell>Referenz</TableCell>
                 <TableCell align="center">Status</TableCell>
                 <TableCell align="center">Aktionen</TableCell>
@@ -344,7 +347,7 @@ const PayoutHistoryTable = () => {
             <TableBody>
               {paginatedPayouts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                     <Typography color="text.secondary">
                       Keine Auszahlungen gefunden
                     </Typography>
@@ -377,8 +380,28 @@ const PayoutHistoryTable = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>
+                      {payout.rechnungsnummer ? (
+                        <Chip
+                          icon={<ReceiptIcon />}
+                          label={payout.rechnungsnummer}
+                          size="small"
+                          color="info"
+                          variant="outlined"
+                          clickable
+                          onClick={() => {
+                            // TODO: Navigate to invoice detail or open dialog
+                            console.log('Rechnung:', payout.rechnungId);
+                          }}
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          -
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Typography variant="body2" color="text.secondary">
-                        {payout.referenceNumber || '-'}
+                        {payout.referenceNumber || payout.transactionReference || '-'}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">

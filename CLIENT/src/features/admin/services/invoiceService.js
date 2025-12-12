@@ -96,6 +96,38 @@ export const invoiceService = {
   },
 
   /**
+   * Create invoice from Monthly Report (Admin only) - DOĞRU AKIŞ
+   * MonthlyReport → Rechnung → (Ödeme yapıldığında) Payout
+   * @param {string} monthlyReportId - Monthly Report ID
+   * @param {Object} options - Additional options
+   * @returns {Promise} Created invoice
+   */
+  createFromMonthlyReport: async (monthlyReportId, options = {}) => {
+    const response = await apiClient.post("/rechnungen/create-from-monthly-report", {
+      monthlyReportId,
+      kleinunternehmer: options.kleinunternehmer || false,
+      ...options
+    });
+    return response.data;
+  },
+
+  /**
+   * Record payment for invoice and create Payout (Admin only) - DOĞRU AKIŞ
+   * @param {string} invoiceId - Invoice ID
+   * @param {Object} paymentData - Payment details
+   * @param {number} paymentData.betrag - Payment amount
+   * @param {string} paymentData.zahlungsmethode - Payment method
+   * @param {string} paymentData.transaktionsreferenz - Transaction reference
+   * @param {Date} paymentData.zahlungsdatum - Payment date
+   * @param {string} paymentData.notizen - Notes
+   * @returns {Promise} Result with invoice, payment and payout
+   */
+  recordPayment: async (invoiceId, paymentData) => {
+    const response = await apiClient.post(`/rechnungen/${invoiceId}/record-payment`, paymentData);
+    return response.data;
+  },
+
+  /**
    * Get single invoice by ID
    * @param {string} invoiceId - Invoice ID
    * @returns {Promise} Invoice data
@@ -581,13 +613,13 @@ export const invoiceService = {
 
       switch (invoice.status) {
         case 'bezahlt':
-          stats.paid++;
-          stats.paidAmount += amount;
+        stats.paid++;
+        stats.paidAmount += amount;
           break;
         case 'versendet':
         case 'angesehen':
-          stats.pending++;
-          stats.pendingAmount += amount;
+        stats.pending++;
+        stats.pendingAmount += amount;
           break;
         case 'teilbezahlt':
           stats.partiallyPaid++;
@@ -596,11 +628,11 @@ export const invoiceService = {
         case 'ueberfaellig':
         case 'mahnung':
         case 'angefochten':
-          stats.overdue++;
+        stats.overdue++;
           stats.overdueAmount += invoice.offenerBetrag || amount;
           break;
         case 'entwurf':
-          stats.draft++;
+        stats.draft++;
           break;
         case 'storniert':
           stats.cancelled++;
