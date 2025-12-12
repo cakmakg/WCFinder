@@ -1,172 +1,224 @@
 // features/admin/components/finanz/FinanzmanagementPage.jsx
-// Unified Financial Management - Workflow + Rechnungen + Auszahlungen
-// DOĞRU AKIŞ: MonthlyReport → Rechnung → Zahlung → Payout
+// Basit Finanzmanagement - İşletme Aylık Raporları ve Rechnungen
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Paper,
   Typography,
-  Tabs,
-  Tab,
   Card,
   CardContent,
   Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
   Chip,
-  Button,
   IconButton,
   Tooltip,
-  LinearProgress,
-  Divider,
-  Stack,
-  Alert,
+  TextField,
+  MenuItem,
+  Button,
   CircularProgress,
-  Badge
+  Alert,
+  Stack,
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Divider
 } from '@mui/material';
 import {
-  TrendingUp as WorkflowIcon,
   Receipt as InvoiceIcon,
-  AccountBalance as PayoutIcon,
-  Assessment as ReportIcon,
-  ArrowForward as ArrowIcon,
-  CheckCircle as CheckIcon,
-  Warning as WarningIcon,
-  Schedule as PendingIcon,
-  Euro as EuroIcon,
+  Download as DownloadIcon,
   Business as BusinessIcon,
-  Refresh as RefreshIcon
+  Euro as EuroIcon,
+  CalendarMonth as CalendarIcon,
+  Search as SearchIcon,
+  Refresh as RefreshIcon,
+  CheckCircle as PaidIcon,
+  Schedule as PendingIcon,
+  Visibility as ViewIcon
 } from '@mui/icons-material';
-import { invoiceService } from '../../services/invoiceService';
-import { payoutService } from '../../services/payoutService';
 import { monthlyReportService } from '../../services/monthlyReportService';
+import { invoiceService } from '../../services/invoiceService';
 import { formatCurrency } from '../../utils/exportHelpers';
-import { toastErrorNotify } from '../../../../helper/ToastNotify';
-
-// Sub-components
-import WorkflowOverview from './WorkflowOverview';
-import RechnungenTab from './RechnungenTab';
-import AuszahlungenTab from './AuszahlungenTab';
+import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
 
 /**
- * FinanzmanagementPage Component
- * Unified view for financial management workflow
+ * Basit FinanzmanagementPage
+ * - İşletme aylık raporları listesi
+ * - Tek tıkla Rechnung oluştur/görüntüle
+ * - PDF indir
  */
 const FinanzmanagementPage = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  // State
   const [loading, setLoading] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  
-  // Data
-  const [invoices, setInvoices] = useState([]);
-  const [payouts, setPayouts] = useState([]);
   const [reports, setReports] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
+  const [monthFilter, setMonthFilter] = useState('all');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Dialog state
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-  // Fetch all data
+  // Fetch data
   useEffect(() => {
-    fetchAllData();
-  }, [refreshTrigger]);
+    fetchData();
+  }, []);
 
-  const fetchAllData = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Fetch invoices
+      // Fetch monthly reports
+      const reportResponse = await monthlyReportService.getReports({ limit: 500 });
+      setReports(reportResponse?.result || []);
+      
+      // Fetch invoices to check which reports have invoices
       const invoiceResponse = await invoiceService.getInvoices();
       setInvoices(invoiceResponse?.result || []);
       
-      // Fetch payouts - try to get payout history
-      try {
-        const payoutResponse = await payoutService.getBusinessesWithPayouts();
-        const allPayouts = [];
-        if (payoutResponse?.businesses) {
-          payoutResponse.businesses.forEach(business => {
-            business.payouts?.forEach(payout => {
-              allPayouts.push({
-                ...payout,
-                businessName: business.name,
-                businessId: business._id
-              });
-            });
-          });
-        }
-        setPayouts(allPayouts);
-      } catch (e) {
-        console.log('Payouts fetch skipped:', e);
-        setPayouts([]);
-      }
-      
-      // Fetch reports
-      try {
-        const reportResponse = await monthlyReportService.getReports({ limit: 100 });
-        setReports(reportResponse?.result || []);
-      } catch (e) {
-        console.log('Reports fetch skipped:', e);
-        setReports([]);
-      }
-      
     } catch (error) {
-      console.error('Error fetching financial data:', error);
-      toastErrorNotify('Fehler beim Laden der Finanzdaten');
+      console.error('Error fetching data:', error);
+      toastErrorNotify('Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    setRefreshTrigger(prev => prev + 1);
+  // Get invoice for report (if exists)
+  const getInvoiceForReport = (reportId) => {
+    return invoices.find(inv => inv.monthlyReportId === reportId);
   };
 
-  // Calculate statistics
-  const stats = useMemo(() => {
-    // Invoices by status
-    const invoiceStats = {
-      total: invoices.length,
-      entwurf: invoices.filter(i => i.status === 'entwurf').length,
-      versendet: invoices.filter(i => i.status === 'versendet').length,
-      bezahlt: invoices.filter(i => i.status === 'bezahlt').length,
-      ueberfaellig: invoices.filter(i => i.status === 'ueberfaellig').length,
-      teilbezahlt: invoices.filter(i => i.status === 'teilbezahlt').length,
-      waitingPayment: invoices.filter(i => ['versendet', 'ueberfaellig', 'teilbezahlt'].includes(i.status)).length,
-      totalAmount: invoices.reduce((sum, i) => sum + (i.summen?.bruttobetrag || 0), 0),
-      paidAmount: invoices.filter(i => i.status === 'bezahlt').reduce((sum, i) => sum + (i.summen?.bruttobetrag || 0), 0),
-      openAmount: invoices.filter(i => !['bezahlt', 'storniert'].includes(i.status)).reduce((sum, i) => sum + (i.summen?.bruttobetrag || 0), 0)
+  // Filter reports
+  const filteredReports = useMemo(() => {
+    let result = [...reports];
+
+    // Search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(r => 
+        r.businessSnapshot?.businessName?.toLowerCase().includes(term)
+      );
+    }
+
+    // Year filter
+    if (yearFilter) {
+      result = result.filter(r => r.year === yearFilter);
+    }
+
+    // Month filter
+    if (monthFilter !== 'all') {
+      result = result.filter(r => r.month === parseInt(monthFilter));
+    }
+
+    // Sort by date descending
+    result.sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+
+    return result;
+  }, [reports, searchTerm, yearFilter, monthFilter]);
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    const filtered = filteredReports;
+    return {
+      totalRevenue: filtered.reduce((sum, r) => sum + (r.financials?.totalRevenue || 0), 0),
+      platformFee: filtered.reduce((sum, r) => sum + (r.financials?.platformFee || 0), 0),
+      businessRevenue: filtered.reduce((sum, r) => sum + (r.financials?.businessRevenue || 0), 0),
+      reportCount: filtered.length,
+      withInvoice: filtered.filter(r => getInvoiceForReport(r._id)).length
     };
+  }, [filteredReports, invoices]);
 
-    // Payouts
-    const payoutStats = {
-      total: payouts.length,
-      completed: payouts.filter(p => p.status === 'completed').length,
-      pending: payouts.filter(p => p.status === 'pending').length,
-      totalAmount: payouts.reduce((sum, p) => sum + (p.amount || 0), 0)
-    };
+  // Month names
+  const monthNames = [
+    'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+  ];
 
-    // Reports
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    const reportStats = {
-      total: reports.length,
-      currentMonth: reports.filter(r => r.month === currentMonth && r.year === currentYear).length,
-      withInvoice: reports.filter(r => invoices.some(i => i.monthlyReportId === r._id)).length,
-      withoutInvoice: reports.filter(r => !invoices.some(i => i.monthlyReportId === r._id)).length
-    };
+  // Handle view/create invoice
+  const handleViewInvoice = async (report) => {
+    setSelectedReport(report);
+    const existingInvoice = getInvoiceForReport(report._id);
+    
+    if (existingInvoice) {
+      // Invoice exists - show dialog with download option
+      setInvoiceDialogOpen(true);
+    } else {
+      // No invoice - create one
+      await handleCreateInvoice(report);
+    }
+  };
 
-    return { invoiceStats, payoutStats, reportStats };
-  }, [invoices, payouts, reports]);
+  // Create invoice from report
+  const handleCreateInvoice = async (report) => {
+    try {
+      setCreating(true);
+      setSelectedReport(report);
+      
+      const response = await invoiceService.createFromMonthlyReport(report._id);
+      
+      toastSuccessNotify(`Rechnung erstellt: ${response.result?.rechnungsnummer}`);
+      
+      // Refresh data
+      await fetchData();
+      
+      // Show dialog
+      setInvoiceDialogOpen(true);
+      
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      toastErrorNotify(error.response?.data?.message || 'Fehler beim Erstellen der Rechnung');
+    } finally {
+      setCreating(false);
+    }
+  };
 
-  // Tab labels with badges
-  const getTabLabel = (label, count, color = 'default') => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      {label}
-      {count > 0 && (
-        <Chip 
-          label={count} 
-          size="small" 
-          color={color}
-          sx={{ height: 20, minWidth: 24, fontSize: '0.75rem' }}
-        />
-      )}
-    </Box>
-  );
+  // Download PDF
+  const handleDownloadPDF = async () => {
+    if (!selectedReport) return;
+    
+    const invoice = getInvoiceForReport(selectedReport._id);
+    if (!invoice) {
+      toastErrorNotify('Keine Rechnung gefunden');
+      return;
+    }
+    
+    try {
+      setDownloading(true);
+      await invoiceService.downloadAndSaveInvoice(
+        invoice._id,
+        `Rechnung_${invoice.rechnungsnummer}.pdf`
+      );
+      toastSuccessNotify('PDF heruntergeladen');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toastErrorNotify('Fehler beim Herunterladen');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // Years for filter
+  const availableYears = useMemo(() => {
+    const years = [...new Set(reports.map(r => r.year))];
+    return years.sort((a, b) => b - a);
+  }, [reports]);
 
   if (loading) {
     return (
@@ -179,148 +231,362 @@ const FinanzmanagementPage = () => {
   return (
     <Box>
       {/* Header */}
-      <Box mb={3} display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
+      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
         <Box>
-          <Typography variant="h5" fontWeight={600} gutterBottom>
+          <Typography variant="h5" fontWeight={600}>
             💰 Finanzmanagement
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Doğru Akış: Monatsbericht → Rechnung → Zahlung → Auszahlung
+            Monatliche Geschäftsberichte und Rechnungen
           </Typography>
         </Box>
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
+          onClick={fetchData}
         >
           Aktualisieren
         </Button>
       </Box>
 
-      {/* Quick Stats */}
+      {/* Summary Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined" sx={{ borderLeft: 4, borderLeftColor: 'info.main' }}>
+          <Card variant="outlined">
             <CardContent sx={{ py: 2 }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <ReportIcon color="info" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">Berichte</Typography>
-              </Box>
-              <Typography variant="h5" fontWeight={600}>{stats.reportStats.total}</Typography>
-              <Typography variant="caption" color="warning.main">
-                {stats.reportStats.withoutInvoice} ohne Rechnung
+              <Typography variant="caption" color="text.secondary">Berichte</Typography>
+              <Typography variant="h5" fontWeight={600}>{totals.reportCount}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} sm={3}>
+          <Card variant="outlined">
+            <CardContent sx={{ py: 2 }}>
+              <Typography variant="caption" color="text.secondary">Gesamtumsatz</Typography>
+              <Typography variant="h5" fontWeight={600} color="primary.main">
+                {formatCurrency(totals.totalRevenue)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined" sx={{ borderLeft: 4, borderLeftColor: 'primary.main' }}>
+          <Card variant="outlined">
             <CardContent sx={{ py: 2 }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <InvoiceIcon color="primary" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">Rechnungen</Typography>
-              </Box>
-              <Typography variant="h5" fontWeight={600}>{stats.invoiceStats.total}</Typography>
-              <Typography variant="caption" color="warning.main">
-                {stats.invoiceStats.waitingPayment} warten auf Zahlung
+              <Typography variant="caption" color="text.secondary">Platform Gebühr</Typography>
+              <Typography variant="h5" fontWeight={600} color="info.main">
+                {formatCurrency(totals.platformFee)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined" sx={{ borderLeft: 4, borderLeftColor: 'warning.main' }}>
+          <Card variant="outlined">
             <CardContent sx={{ py: 2 }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <EuroIcon color="warning" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">Offener Betrag</Typography>
-              </Box>
-              <Typography variant="h5" fontWeight={600} color="warning.main">
-                {formatCurrency(stats.invoiceStats.openAmount)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={3}>
-          <Card variant="outlined" sx={{ borderLeft: 4, borderLeftColor: 'success.main' }}>
-            <CardContent sx={{ py: 2 }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <PayoutIcon color="success" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">Auszahlungen</Typography>
-              </Box>
+              <Typography variant="caption" color="text.secondary">Geschäftsanteil</Typography>
               <Typography variant="h5" fontWeight={600} color="success.main">
-                {formatCurrency(stats.payoutStats.totalAmount)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {stats.payoutStats.completed} abgeschlossen
+                {formatCurrency(totals.businessRevenue)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          indicatorColor="primary"
-          textColor="primary"
-          variant="fullWidth"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            '& .MuiTab-root': {
-              py: 2,
-              fontWeight: 500
-            }
-          }}
-        >
-          <Tab 
-            icon={<WorkflowIcon />} 
-            iconPosition="start"
-            label={getTabLabel('Workflow', stats.reportStats.withoutInvoice, 'warning')}
-          />
-          <Tab 
-            icon={<InvoiceIcon />} 
-            iconPosition="start"
-            label={getTabLabel('Rechnungen', stats.invoiceStats.waitingPayment, 'info')}
-          />
-          <Tab 
-            icon={<PayoutIcon />} 
-            iconPosition="start"
-            label={getTabLabel('Auszahlungen', stats.payoutStats.completed, 'success')}
-          />
-        </Tabs>
+      {/* Filters */}
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={4}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Geschäft suchen..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                )
+              }}
+            />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Jahr"
+              value={yearFilter}
+              onChange={(e) => setYearFilter(parseInt(e.target.value))}
+            >
+              {availableYears.map(year => (
+                <MenuItem key={year} value={year}>{year}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Monat"
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+            >
+              <MenuItem value="all">Alle Monate</MenuItem>
+              {monthNames.map((name, idx) => (
+                <MenuItem key={idx} value={idx + 1}>{name}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={2}>
+            <Typography variant="body2" color="text.secondary">
+              {totals.withInvoice} / {totals.reportCount} mit Rechnung
+            </Typography>
+          </Grid>
+        </Grid>
       </Paper>
 
-      {/* Tab Content */}
-      <Box>
-        {activeTab === 0 && (
-          <WorkflowOverview 
-            reports={reports}
-            invoices={invoices}
-            payouts={payouts}
-            stats={stats}
-            onRefresh={handleRefresh}
-          />
-        )}
-        {activeTab === 1 && (
-          <RechnungenTab 
-            invoices={invoices}
-            onRefresh={handleRefresh}
-          />
-        )}
-        {activeTab === 2 && (
-          <AuszahlungenTab 
-            payouts={payouts}
-            invoices={invoices}
-            onRefresh={handleRefresh}
-          />
-        )}
-      </Box>
+      {/* Reports Table */}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: 'grey.50' }}>
+              <TableCell><strong>Geschäft</strong></TableCell>
+              <TableCell><strong>Zeitraum</strong></TableCell>
+              <TableCell align="right"><strong>Umsatz</strong></TableCell>
+              <TableCell align="right"><strong>Geschäftsanteil</strong></TableCell>
+              <TableCell align="center"><strong>Rechnung</strong></TableCell>
+              <TableCell align="center"><strong>Aktion</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredReports.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <Typography color="text.secondary">
+                    Keine Berichte gefunden
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredReports
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((report) => {
+                  const invoice = getInvoiceForReport(report._id);
+                  const hasInvoice = !!invoice;
+                  
+                  return (
+                    <TableRow key={report._id} hover>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <BusinessIcon fontSize="small" color="action" />
+                          <Typography variant="body2" fontWeight={500}>
+                            {report.businessSnapshot?.businessName || 'Unbekannt'}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <CalendarIcon fontSize="small" color="action" />
+                          <Typography variant="body2">
+                            {monthNames[report.month - 1]} {report.year}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight={500}>
+                          {formatCurrency(report.financials?.totalRevenue || 0)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight={600} color="success.main">
+                          {formatCurrency(report.financials?.businessRevenue || 0)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        {hasInvoice ? (
+                          <Chip
+                            icon={<PaidIcon fontSize="small" />}
+                            label={invoice.rechnungsnummer}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                          />
+                        ) : (
+                          <Chip
+                            icon={<PendingIcon fontSize="small" />}
+                            label="Ausstehend"
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title={hasInvoice ? "Rechnung anzeigen & PDF" : "Rechnung erstellen"}>
+                          <IconButton
+                            color={hasInvoice ? "success" : "primary"}
+                            onClick={() => handleViewInvoice(report)}
+                            disabled={creating}
+                          >
+                            {hasInvoice ? <DownloadIcon /> : <InvoiceIcon />}
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+            )}
+          </TableBody>
+        </Table>
+        <TablePagination
+          component="div"
+          count={filteredReports.length}
+          page={page}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[10, 25, 50]}
+          labelRowsPerPage="Pro Seite:"
+        />
+      </TableContainer>
+
+      {/* Invoice Dialog */}
+      <Dialog 
+        open={invoiceDialogOpen} 
+        onClose={() => setInvoiceDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <InvoiceIcon color="primary" />
+            <Typography variant="h6">Rechnung</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {selectedReport && (
+            <Box>
+              {(() => {
+                const invoice = getInvoiceForReport(selectedReport._id);
+                
+                if (!invoice) {
+                  return (
+                    <Alert severity="info">
+                      Rechnung wird erstellt...
+                    </Alert>
+                  );
+                }
+                
+                return (
+                  <Stack spacing={2}>
+                    <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Rechnungsnummer</Typography>
+                          <Typography variant="body1" fontWeight={600}>{invoice.rechnungsnummer}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Status</Typography>
+                          <Box>
+                            <Chip 
+                              label={invoice.status} 
+                              size="small" 
+                              color={invoice.status === 'bezahlt' ? 'success' : 'warning'}
+                            />
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                    
+                    <Divider />
+                    
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>Geschäft</Typography>
+                      <Typography variant="body2">{invoice.rechnungsempfaenger?.firmenname}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {invoice.rechnungsempfaenger?.strasse}, {invoice.rechnungsempfaenger?.plz} {invoice.rechnungsempfaenger?.ort}
+                      </Typography>
+                    </Box>
+                    
+                    <Divider />
+                    
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom>Leistungszeitraum</Typography>
+                      <Typography variant="body2">
+                        {monthNames[selectedReport.month - 1]} {selectedReport.year}
+                      </Typography>
+                    </Box>
+                    
+                    <Divider />
+                    
+                    <Box sx={{ bgcolor: 'primary.50', p: 2, borderRadius: 1 }}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="text.secondary">Netto</Typography>
+                          <Typography variant="body1">{formatCurrency(invoice.summen?.nettobetrag)}</Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="text.secondary">MwSt (19%)</Typography>
+                          <Typography variant="body1">{formatCurrency(invoice.summen?.mehrwertsteuer?.betrag)}</Typography>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Typography variant="caption" color="text.secondary">Gesamt</Typography>
+                          <Typography variant="h6" fontWeight={700} color="primary.main">
+                            {formatCurrency(invoice.summen?.bruttobetrag)}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  </Stack>
+                );
+              })()}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setInvoiceDialogOpen(false)}>
+            Schließen
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={downloading ? <CircularProgress size={20} /> : <DownloadIcon />}
+            onClick={handleDownloadPDF}
+            disabled={downloading || !getInvoiceForReport(selectedReport?._id)}
+          >
+            PDF Herunterladen
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Creating indicator */}
+      {creating && (
+        <Box 
+          sx={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            bgcolor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}
+        >
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography>Rechnung wird erstellt...</Typography>
+          </Paper>
+        </Box>
+      )}
     </Box>
   );
 };
 
 export default FinanzmanagementPage;
-
