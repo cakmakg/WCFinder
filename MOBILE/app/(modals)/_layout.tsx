@@ -8,18 +8,18 @@ import { Stack } from 'expo-router';
 
 export default function ModalLayout() {
   return (
-    <Stack screenOptions={{ presentation: 'modal' }}>
-      <Stack.Screen 
-        name="business-detail" 
-        options={{ title: 'Business Details' }} 
+    <Stack screenOptions={{ presentation: 'modal', headerShown: false }}>
+      <Stack.Screen
+        name="business-detail"
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="payment" 
-        options={{ title: 'Payment' }} 
+      <Stack.Screen
+        name="payment"
+        options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="scan-qr" 
-        options={{ title: 'Scan QR Code' }} 
+      <Stack.Screen
+        name="scan-qr"
+        options={{ headerShown: false }}
       />
     </Stack>
   );

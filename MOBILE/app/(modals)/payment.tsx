@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, Alert, TextInput } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -20,8 +20,19 @@ import {
 } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
+// Conditional Stripe import (may not work in Expo Go)
+let useStripe: any = null;
+let CardField: any = null;
+try {
+  const stripeModule = require('@stripe/stripe-react-native');
+  useStripe = stripeModule.useStripe;
+  CardField = stripeModule.CardField;
+} catch (error) {
+  console.warn('Stripe React Native not available:', error);
+}
 import { BookingData } from '../../src/components/business/BookingPanel';
 import api from '../../src/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PaymentScreen() {
   const theme = useTheme();
@@ -35,6 +46,11 @@ export default function PaymentScreen() {
   const [error, setError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
+  const [cardDetails, setCardDetails] = useState<any>(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  
+  const stripe = useStripe ? useStripe() : null;
+  const confirmPayment = stripe?.confirmPayment;
 
   // Parse booking data from params
   useEffect(() => {
@@ -51,14 +67,85 @@ export default function PaymentScreen() {
 
   // Check authentication
   useEffect(() => {
-    if (!token && !currentUser) {
-      router.replace('/(auth)/login');
-    }
+    const checkAuth = async () => {
+      const storedToken = await AsyncStorage.getItem('token');
+      console.log('[Payment] Auth check:', {
+        hasToken: !!token,
+        hasStoredToken: !!storedToken,
+        hasCurrentUser: !!currentUser
+      });
+
+      if (!token && !storedToken && !currentUser) {
+        console.log('[Payment] No auth found, redirecting to login');
+        router.replace('/(auth)/login');
+      }
+    };
+
+    checkAuth();
   }, [token, currentUser]);
+
+  // Handle card payment confirmation
+  const handleCardPayment = async () => {
+    if (!clientSecret || !cardDetails?.complete) {
+      setError('Please enter valid card details');
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+      setError(null);
+
+      console.log('[Payment] Confirming card payment...');
+
+      const { error: confirmError, paymentIntent } = await confirmPayment(clientSecret, {
+        paymentMethodType: 'Card',
+      });
+
+      if (confirmError) {
+        console.error('[Payment] Card payment error:', confirmError);
+        setError(confirmError.message || 'Payment failed');
+        return;
+      }
+
+      if (paymentIntent?.status === 'Succeeded') {
+        console.log('[Payment] Payment succeeded:', paymentIntent.id);
+        Alert.alert(
+          'Payment Successful',
+          'Your payment has been processed successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate to bookings or home
+                router.replace('/(tabs)' as any);
+              },
+            },
+          ]
+        );
+      }
+    } catch (err: any) {
+      console.error('[Payment] Card payment error:', err);
+      setError(err.message || 'Payment failed');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
 
   // Create Stripe payment intent
   const createStripePaymentIntent = async () => {
     if (!bookingData) return;
+
+    // Prevent double submission
+    if (loading || clientSecret) {
+      return;
+    }
+
+    // Check authentication
+    if (!token) {
+      setError('Please login to continue with payment');
+      router.replace('/(auth)/login');
+      return;
+    }
 
     try {
       setLoading(true);
@@ -73,8 +160,18 @@ export default function PaymentScreen() {
         totalAmount: bookingData.pricing.total,
       };
 
+      console.log('[Payment] Creating Stripe payment intent...', {
+        businessId: bookingDataForPayment.businessId,
+        hasToken: !!token,
+      });
+
       const response = await api.post('/payments/stripe/create', {
         bookingData: bookingDataForPayment,
+      });
+
+      console.log('[Payment] Stripe payment intent response:', {
+        hasClientSecret: !!response.data?.result?.clientSecret,
+        hasPaymentId: !!response.data?.result?.paymentId,
       });
 
       if (response.data?.result?.clientSecret) {
@@ -84,8 +181,21 @@ export default function PaymentScreen() {
         throw new Error('Invalid response from server');
       }
     } catch (err: any) {
-      console.error('Stripe payment error:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to create payment');
+      console.error('[Payment] Stripe payment error:', err);
+      
+      // Handle 401 Unauthorized
+      if (err.response?.status === 401) {
+        setError('Authentication failed. Please login again.');
+        // Clear storage and redirect to login
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 2000);
+      } else if (err.response?.status === 409) {
+        // Handle duplicate payment (409 Conflict)
+        setError('A payment for this booking already exists. Please check your bookings.');
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to create payment');
+      }
     } finally {
       setLoading(false);
     }
@@ -219,19 +329,15 @@ export default function PaymentScreen() {
             >
               <List.Item
                 title="Credit/Debit Card"
-                left={(props) => <List.Icon {...props} icon="credit-card" />}
-                right={(props) => (
-                  <RadioButton {...props} value="card" />
-                )}
+                left={() => <List.Icon icon="credit-card-outline" />}
+                right={() => <RadioButton value="card" />}
                 onPress={() => setPaymentMethod('card')}
               />
 
               <List.Item
                 title="PayPal"
-                left={(props) => <List.Icon {...props} icon="paypal" />}
-                right={(props) => (
-                  <RadioButton {...props} value="paypal" />
-                )}
+                left={() => <List.Icon icon="wallet-outline" />}
+                right={() => <RadioButton value="paypal" />}
                 onPress={() => setPaymentMethod('paypal')}
               />
             </RadioButton.Group>
@@ -246,18 +352,108 @@ export default function PaymentScreen() {
           </Card>
         )}
 
+        {/* Card Payment Form - Show when card is selected and clientSecret exists */}
+        {clientSecret && paymentMethod === 'card' && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Card Payment
+              </Text>
+              
+              {CardField && stripe ? (
+                <>
+                  <CardField
+                    postalCodeEnabled={false}
+                    placeholders={{
+                      number: '4242 4242 4242 4242',
+                    }}
+                    cardStyle={{
+                      backgroundColor: '#FFFFFF',
+                      textColor: '#000000',
+                      borderWidth: 1,
+                      borderColor: '#E0E0E0',
+                      borderRadius: 8,
+                    }}
+                    style={styles.cardField}
+                    onCardChange={(cardDetails: any) => {
+                      setCardDetails(cardDetails);
+                      // CardField doesn't expose error in Details type, handle validation separately
+                      if (!cardDetails.complete && cardDetails.number) {
+                        // Card is incomplete but user has started typing
+                        setError(null);
+                      } else if (cardDetails.complete) {
+                        setError(null);
+                      }
+                    }}
+                  />
+
+                  {error && (
+                    <Text style={styles.cardError}>{error}</Text>
+                  )}
+
+                  <Button
+                    mode="contained"
+                    onPress={handleCardPayment}
+                    style={styles.confirmButton}
+                    contentStyle={styles.confirmButtonContent}
+                    loading={processingPayment}
+                    disabled={!cardDetails?.complete || processingPayment}
+                    icon="lock"
+                  >
+                    {processingPayment ? 'Processing...' : 'Pay €' + bookingData.pricing.total.toFixed(2)}
+                  </Button>
+                </>
+              ) : (
+                <View>
+                  <Text variant="bodyMedium" style={styles.infoText}>
+                    Card payment requires a development build. Please use PayPal or contact support.
+                  </Text>
+                  <Text variant="bodySmall" style={styles.infoSubtext}>
+                    Stripe card payment is not available in Expo Go. Please build the app with EAS Build to use card payments.
+                  </Text>
+                </View>
+              )}
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* PayPal Payment Info - Show when PayPal is selected and clientSecret exists */}
+        {clientSecret && paymentMethod === 'paypal' && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                PayPal Payment
+              </Text>
+              <Text variant="bodyMedium" style={styles.infoText}>
+                PayPal payment integration is in development. Please contact support to complete your booking.
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+
         {/* Payment Button */}
-        <Button
-          mode="contained"
-          onPress={createStripePaymentIntent}
-          style={styles.payButton}
-          contentStyle={styles.payButtonContent}
-          loading={loading}
-          disabled={loading || !!clientSecret}
-          icon="lock"
-        >
-          {loading ? 'Processing...' : clientSecret ? 'Payment Ready' : 'Continue to Payment'}
-        </Button>
+        {!clientSecret ? (
+          <Button
+            mode="contained"
+            onPress={createStripePaymentIntent}
+            style={styles.payButton}
+            contentStyle={styles.payButtonContent}
+            loading={loading}
+            disabled={loading}
+            icon="lock"
+          >
+            {loading ? 'Processing...' : 'Continue to Payment'}
+          </Button>
+        ) : (
+          <View style={styles.paymentReadyContainer}>
+            <Text variant="bodyMedium" style={[styles.paymentReadyText, { color: theme.colors.primary }]}>
+              ✓ Payment intent created successfully
+            </Text>
+            <Text variant="bodySmall" style={styles.paymentReadySubtext}>
+              Please select a payment method above to proceed
+            </Text>
+          </View>
+        )}
 
         {/* Security Badge */}
         <View style={styles.securityBadge}>
@@ -367,6 +563,46 @@ const styles = StyleSheet.create({
   },
   securityText: {
     fontWeight: '600',
+  },
+  infoText: {
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  infoSubtext: {
+    marginTop: 4,
+    opacity: 0.6,
+    fontStyle: 'italic',
+  },
+  paymentReadyContainer: {
+    backgroundColor: '#f0f9ff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  paymentReadyText: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  paymentReadySubtext: {
+    opacity: 0.7,
+    textAlign: 'center',
+  },
+  cardField: {
+    width: '100%',
+    height: 50,
+    marginVertical: 16,
+  },
+  cardError: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  confirmButton: {
+    marginTop: 16,
+  },
+  confirmButtonContent: {
+    paddingVertical: 8,
   },
 });
 

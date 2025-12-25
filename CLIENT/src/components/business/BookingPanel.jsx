@@ -56,7 +56,8 @@ export const BookingPanel = ({ business, toilets }) => {
   }
 
   const basePrice = toilets[0]?.fee || 1.00;
-  const serviceFee = 0.75;
+  const SERVICE_FEE_PER_PERSON = 0.75;
+  const serviceFee = SERVICE_FEE_PER_PERSON * personCount; // 0.75€ per person
   const total = (basePrice * personCount) + serviceFee;
 
   const handleReservation = async () => {
@@ -264,7 +265,7 @@ export const BookingPanel = ({ business, toilets }) => {
         </Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
           <Typography variant="body2" sx={{ color: '#64748b' }}>
-            {t('bookingPanel.serviceFee')}
+            {t('bookingPanel.serviceFee')} (€{SERVICE_FEE_PER_PERSON.toFixed(2)} × {personCount})
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             € {serviceFee.toFixed(2)}

@@ -57,11 +57,11 @@ const UsageSchema = new mongoose.Schema({
         required: true,
     },
 
-    // ✅ YENİ: Servis ücreti
+    // ✅ YENİ: Servis ücreti (kişi başına 0.75€ × personCount)
     serviceFee: {
         type: Number,
         required: true,
-        default: 0.75,
+        // Default removed - should be calculated as 0.75 * personCount
     },
 
     // Toplam ücret

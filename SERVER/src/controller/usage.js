@@ -142,12 +142,14 @@ module.exports = {
         try {
         // Calculate fees using constants (DRY principle)
         const basePrice = toilet.fee || FEE_CONFIG.DEFAULT_TOILET_FEE;
-        const serviceFee = FEE_CONFIG.SERVICE_FEE;
         const finalPersonCount = personCount || 1;
+        // Service fee is per person (0.75€ × personCount)
+        const serviceFee = FEE_CONFIG.SERVICE_FEE * finalPersonCount;
         const totalFee = (basePrice * finalPersonCount) + serviceFee;
 
         logger.debug('Calculating fees', { 
             basePrice, 
+            serviceFeePerPerson: FEE_CONFIG.SERVICE_FEE,
             serviceFee, 
             personCount: finalPersonCount, 
             totalFee 

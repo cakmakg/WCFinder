@@ -1,17 +1,18 @@
 /**
  * Auth Slice for React Native
- * 
+ *
  * Manages authentication state and user data
- * Uses AsyncStorage for persistence
- * 
+ * Uses expo-secure-store for encrypted token storage
+ * Uses AsyncStorage for non-sensitive user data
+ *
  * Security:
+ * - Tokens stored in SecureStore (hardware-backed encryption)
  * - Never stores passwords or sensitive data
  * - Only stores minimal user data (id, username, role)
  */
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { getUserData, storeUserData, removeUserData } from '../../utils/userStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage, userStorage, clearAllStorage } from '../../utils/secureStorage';
 
 interface User {
   _id: string;
@@ -30,20 +31,20 @@ interface AuthState {
   token: string | null;
 }
 
-// Async function to get initial token
+// Async function to get initial token from SecureStore
 const getInitialToken = async (): Promise<string | null> => {
   try {
-    const token = await AsyncStorage.getItem('token');
+    const token = await tokenStorage.getAccessToken();
     return token;
   } catch (error) {
-    console.error('Error reading token from AsyncStorage:', error);
+    console.error('Error reading token from SecureStore:', error);
     return null;
   }
 };
 
 // Async function to get initial user
 const getInitialUser = async (): Promise<User | null> => {
-  return await getUserData();
+  return await userStorage.get();
 };
 
 // Initial state - will be updated after async operations
@@ -66,7 +67,7 @@ const authSlice = createSlice({
     registerSuccess: (state, action: PayloadAction<any>) => {
       const userData = action.payload?.user || action.payload?.data?.user;
       const tokenData = action.payload?.bearer?.accessToken || action.payload?.token;
-      
+
       // Security: Sanitize user data
       const sanitizedUser: User | null = userData ? {
         _id: userData._id,
@@ -77,24 +78,24 @@ const authSlice = createSlice({
         firstName: userData.firstName,
         lastName: userData.lastName,
       } : null;
-      
+
       state.currentUser = sanitizedUser;
       state.token = tokenData;
       state.loading = false;
-      
-      // Store in AsyncStorage (async operations)
+
+      // Store in SecureStore (async operations)
       if (tokenData) {
-        AsyncStorage.setItem('token', tokenData).catch(console.error);
+        tokenStorage.saveAccessToken(tokenData).catch(console.error);
       }
       if (sanitizedUser) {
-        storeUserData(sanitizedUser).catch(console.error);
+        userStorage.save(sanitizedUser).catch(console.error);
       }
     },
 
     loginSuccess: (state, action: PayloadAction<any>) => {
       const userData = action.payload?.user || action.payload?.data?.user;
       const tokenData = action.payload?.bearer?.accessToken || action.payload?.token;
-      
+
       // Security: Sanitize user data
       const sanitizedUser: User | null = userData ? {
         _id: userData._id,
@@ -105,17 +106,17 @@ const authSlice = createSlice({
         firstName: userData.firstName,
         lastName: userData.lastName,
       } : null;
-      
+
       state.currentUser = sanitizedUser;
       state.token = tokenData;
       state.loading = false;
-      
-      // Store in AsyncStorage (async operations)
+
+      // Store in SecureStore (async operations)
       if (tokenData) {
-        AsyncStorage.setItem('token', tokenData).catch(console.error);
+        tokenStorage.saveAccessToken(tokenData).catch(console.error);
       }
       if (sanitizedUser) {
-        storeUserData(sanitizedUser).catch(console.error);
+        userStorage.save(sanitizedUser).catch(console.error);
       }
     },
 
@@ -123,15 +124,14 @@ const authSlice = createSlice({
       state.currentUser = null;
       state.token = null;
       state.loading = false;
-      
-      // Remove from AsyncStorage (async operations)
-      AsyncStorage.removeItem('token').catch(console.error);
-      removeUserData().catch(console.error);
+
+      // Remove from SecureStore (async operations)
+      clearAllStorage().catch(console.error);
     },
 
     userUpdateSuccess: (state, action: PayloadAction<any>) => {
       const userData = action.payload?.user || action.payload?.data?.user;
-      
+
       // Security: Sanitize user data
       const sanitizedUser: User | null = userData ? {
         _id: userData._id,
@@ -142,12 +142,12 @@ const authSlice = createSlice({
         firstName: userData.firstName,
         lastName: userData.lastName,
       } : null;
-      
+
       state.currentUser = sanitizedUser;
       state.loading = false;
-      
+
       if (sanitizedUser) {
-        storeUserData(sanitizedUser).catch(console.error);
+        userStorage.save(sanitizedUser).catch(console.error);
       }
     },
 
@@ -160,10 +160,9 @@ const authSlice = createSlice({
       state.currentUser = null;
       state.token = null;
       state.loading = false;
-      
-      // Remove from AsyncStorage (async operations)
-      AsyncStorage.removeItem('token').catch(console.error);
-      removeUserData().catch(console.error);
+
+      // Remove from SecureStore (async operations)
+      clearAllStorage().catch(console.error);
     },
 
     setInitialAuth: (state, action: PayloadAction<{ token: string | null; user: any }>) => {

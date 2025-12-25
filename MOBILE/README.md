@@ -2,6 +2,14 @@
 
 React Native mobile application for WCFinder using Expo Router and TypeScript.
 
+## 🔒 Security Features
+
+- **Encrypted Token Storage**: Uses `expo-secure-store` for hardware-backed encryption
+- **Secure API Communication**: Automatic token injection with request/response interceptors
+- **Error Boundaries**: Graceful error handling to prevent app crashes
+- **Offline Support**: Network status monitoring with offline indicators
+- **Auto-logout on 401**: Automatic session cleanup on authentication failures
+
 ## 📋 Prerequisites
 
 - Node.js (v18 or higher)
@@ -53,49 +61,113 @@ Then:
 
 ```
 mobile/
-├── app/                    # Expo Router pages
-│   ├── _layout.tsx        # Root layout with Redux Provider
-│   ├── index.tsx          # Entry point (redirects to login/home)
-│   ├── login.tsx          # Login screen
-│   └── (tabs)/            # Tab navigation
-│       ├── _layout.tsx    # Tab layout
-│       └── index.tsx      # Home screen
+├── app/                          # Expo Router pages
+│   ├── _layout.tsx              # Root layout with ErrorBoundary & OfflineBanner
+│   ├── index.tsx                # Entry point (redirects to login/home)
+│   ├── (auth)/                  # Auth screens
+│   │   └── login.tsx            # Login screen
+│   ├── (tabs)/                  # Tab navigation (protected)
+│   │   ├── _layout.tsx          # Tab layout
+│   │   ├── index.tsx            # Home screen
+│   │   ├── profile.tsx          # Profile screen
+│   │   └── bookings.tsx         # Bookings screen
+│   └── (modals)/                # Modal screens
+│       ├── business-detail.tsx  # Business details
+│       ├── payment.tsx          # Payment screen
+│       └── scan-qr.tsx          # QR scanner
 ├── src/
-│   ├── hooks/             # Custom hooks
-│   │   ├── useAxios.ts    # Axios instance with token
-│   │   ├── useApiCall.ts  # Generic API call hook
-│   │   └── useAuthCall.ts # Auth-specific API calls
-│   ├── store/             # Redux store
-│   │   ├── store.ts       # Store configuration
-│   │   └── slices/        # Redux slices
-│   │       └── authSlice.ts
-│   ├── services/          # API services
-│   │   └── api.ts         # Axios instance
-│   ├── utils/             # Utility functions
-│   │   └── userStorage.ts # AsyncStorage helpers
-│   └── helper/            # Helper functions
-│       └── toastNotify.ts # Toast notifications
+│   ├── components/              # Reusable components
+│   │   ├── common/              # Common components
+│   │   │   ├── ErrorBoundary.tsx  # Error boundary wrapper
+│   │   │   └── OfflineBanner.tsx  # Offline indicator
+│   │   ├── business/            # Business components
+│   │   │   └── BookingPanel.tsx   # Booking form
+│   │   └── ...
+│   ├── hooks/                   # Custom hooks
+│   │   ├── useApiCall.ts        # Generic API call hook
+│   │   ├── useAuthCall.ts       # Auth-specific API calls
+│   │   └── useNetworkStatus.ts  # Network connectivity hook
+│   ├── store/                   # Redux store
+│   │   ├── store.ts             # Store configuration
+│   │   └── slices/
+│   │       └── authSlice.ts     # Auth state management
+│   ├── services/                # API services
+│   │   └── api.ts               # Axios instance with interceptors
+│   ├── utils/                   # Utility functions
+│   │   ├── secureStorage.ts     # SecureStore token management
+│   │   └── userStorage.ts       # User data helpers
+│   ├── config/                  # Configuration
+│   │   └── api.ts               # API configuration
+│   └── helper/                  # Helper functions
+│       └── toastNotify.ts       # Toast notifications
 └── package.json
 ```
 
 ## 🔑 Key Features
 
 - **Redux State Management**: Centralized state with Redux Toolkit
-- **AsyncStorage**: Persistent storage for tokens and user data
-- **TypeScript**: Full type safety
-- **Expo Router**: File-based routing
-- **React Native Paper**: Material Design components
+- **SecureStore**: Hardware-backed encrypted storage for tokens (iOS Keychain / Android Keystore)
+- **AsyncStorage**: Persistent storage for non-sensitive user data
+- **TypeScript**: Full type safety throughout the app
+- **Expo Router**: File-based routing with type-safe navigation
+- **React Native Paper**: Material Design UI components
 - **Formik + Yup**: Form validation
-- **Axios**: HTTP client with interceptors
+- **Axios**: HTTP client with request/response interceptors
+- **Error Boundaries**: Crash prevention and graceful error handling
+- **Offline Support**: Network status monitoring with visual indicators
+- **Stripe Integration**: Secure payment processing
 
 ## 🔐 Authentication Flow
 
 1. User enters credentials on login screen
 2. `useAuthCall` hook calls `/auth/login` endpoint
-3. Token and user data stored in AsyncStorage
-4. Redux store updated with auth state
-5. User redirected to home screen
-6. Token automatically added to all API requests
+3. **Access token stored in SecureStore** (encrypted)
+4. User data stored in AsyncStorage (sanitized, no sensitive data)
+5. Redux store updated with auth state
+6. User redirected to home screen
+7. Token automatically injected into all API requests via interceptor
+8. On 401 error: auto-logout, clear all storage, redirect to login
+
+## 🛡️ Security Best Practices
+
+### Token Storage
+```typescript
+// ✅ CORRECT - Use SecureStore for tokens
+import { tokenStorage } from '../utils/secureStorage';
+
+await tokenStorage.saveAccessToken(token);
+const token = await tokenStorage.getAccessToken();
+```
+
+```typescript
+// ❌ WRONG - Don't use AsyncStorage for tokens
+await AsyncStorage.setItem('token', token); // Not encrypted!
+```
+
+### API Calls
+```typescript
+// Tokens are automatically added by interceptor
+const response = await api.get('/protected-endpoint');
+// No need to manually add Authorization header
+```
+
+### Error Handling
+```typescript
+// Wrap components in ErrorBoundary
+<ErrorBoundary>
+  <YourComponent />
+</ErrorBoundary>
+```
+
+### Network Status
+```typescript
+import { useIsOnline } from '../hooks/useNetworkStatus';
+
+const isOnline = useIsOnline();
+if (!isOnline) {
+  // Show cached data or offline message
+}
+```
 
 ## 📱 Available Screens
 
@@ -128,17 +200,32 @@ mobile/
 ## 🐛 Troubleshooting
 
 ### Token not persisting
-- Check AsyncStorage permissions
-- Verify token is being saved in `authSlice`
+- ✅ Tokens are now stored in SecureStore (hardware-encrypted)
+- Check console logs: `[SecureStorage] Access token saved successfully`
+- Verify `expo-secure-store` is installed
+- On iOS: Check Keychain permissions
+- On Android: Check KeyStore availability
 
-### API calls failing
-- Check API URL in `app.json` or `.env`
-- Verify CORS settings on backend
-- Check network connectivity
+### API calls failing with 401
+- Token might be expired or invalid
+- Check console: `[API] Request interceptor` logs show token status
+- App will auto-logout and clear storage on 401 errors
+- Verify backend accepts the Bearer token format
+
+### Offline errors
+- Check network status with `useIsOnline()` hook
+- OfflineBanner automatically shows when disconnected
+- Implement offline data caching for better UX
+
+### App crashes
+- Check ErrorBoundary logs in console
+- Error details shown in development mode
+- Production builds should report to error tracking service (Sentry, Bugsnag)
 
 ### Navigation issues
 - Ensure routes are defined in `_layout.tsx`
 - Check Expo Router version compatibility
+- Clear Metro bundler cache: `npx expo start -c`
 
 ## 📦 Build for Production
 
@@ -157,13 +244,54 @@ eas build --platform android
 ## 🔗 Related Documentation
 
 - [Expo Router Docs](https://docs.expo.dev/router/introduction/)
+- [Expo SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) - Encrypted token storage
+- [React Native NetInfo](https://github.com/react-native-netinfo/react-native-netinfo) - Network status
 - [React Native Paper](https://callstack.github.io/react-native-paper/)
 - [Redux Toolkit](https://redux-toolkit.js.org/)
-- [Expo AsyncStorage](https://react-native-async-storage.github.io/async-storage/)
+- [Stripe React Native](https://stripe.com/docs/mobile/react-native)
 
-## 📝 Notes
+## 📝 Security Notes
 
-- API URL should point to your backend server
-- Make sure backend CORS allows requests from mobile app
-- Token is stored securely in AsyncStorage
-- User data is sanitized before storage (passwords never stored)
+- ✅ **Tokens encrypted**: Access tokens stored in SecureStore with hardware-backed encryption
+- ✅ **No sensitive data**: User passwords never stored locally
+- ✅ **Auto-logout**: 401 errors trigger automatic session cleanup
+- ✅ **HTTPS only**: All API calls use secure connections
+- ✅ **Token injection**: Automatic Authorization header via interceptors
+- ⚠️ **Production checklist**:
+  - Enable SSL pinning for API calls
+  - Implement token refresh mechanism
+  - Add biometric authentication (Face ID / Touch ID)
+  - Set up error reporting (Sentry, Bugsnag)
+  - Configure app transport security (iOS)
+
+## 🚀 Production Deployment
+
+### Pre-deployment Checklist
+
+1. **Security**
+   - [ ] Change Stripe keys to production keys
+   - [ ] Update API URL to production backend
+   - [ ] Enable SSL certificate pinning
+   - [ ] Configure token expiration handling
+   - [ ] Set up error tracking service
+
+2. **Performance**
+   - [ ] Enable Hermes engine (faster startup)
+   - [ ] Optimize images and assets
+   - [ ] Implement lazy loading for heavy components
+   - [ ] Add proper loading states
+
+3. **User Experience**
+   - [ ] Test offline functionality
+   - [ ] Verify error boundaries catch all errors
+   - [ ] Test on real devices (iOS and Android)
+   - [ ] Ensure proper keyboard handling
+
+### Environment Variables
+
+Create `.env.production`:
+```bash
+EXPO_PUBLIC_API_URL=https://your-production-api.com
+EXPO_PUBLIC_STRIPE_KEY=pk_live_your_stripe_key
+EXPO_PUBLIC_ENV=production
+```

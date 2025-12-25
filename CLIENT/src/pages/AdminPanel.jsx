@@ -420,6 +420,38 @@ const AdminPanel = () => {
 
       {activeTab === 0 && (
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 2.5, width: "100%", maxWidth: "100%", p: 0 }}>
+          {/* Pending Business Alert */}
+          {stats.pendingBusinesses > 0 && (
+            <Alert 
+              severity="warning" 
+              sx={{ 
+                borderRadius: 2,
+                border: '1px solid #f59e0b',
+                backgroundColor: '#fef3c7',
+                '& .MuiAlert-icon': {
+                  color: '#f59e0b'
+                }
+              }}
+              action={
+                <Button 
+                  color="inherit" 
+                  size="small" 
+                  onClick={() => setActiveTab(2)}
+                  sx={{ fontWeight: 600 }}
+                >
+                  İşletmeleri Görüntüle
+                </Button>
+              }
+            >
+              <Typography variant="body1" fontWeight={600}>
+                ⚠️ {stats.pendingBusinesses} işletme onay bekliyor!
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5 }}>
+                Yeni partner kayıtları admin onayı bekliyor. Lütfen "İşletmeler" sekmesinden kontrol edin.
+              </Typography>
+            </Alert>
+          )}
+
           {/* Header with Date Range & Export */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
             <Box>

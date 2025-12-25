@@ -42,10 +42,11 @@ export const adminService = {
     return response.data;
   },
 
-  // Update business approval status
-  updateBusinessApproval: async (businessId, approvalStatus) => {
+  // Update business approval status (approve/reject)
+  updateBusinessApproval: async (businessId, action) => {
+    // action: 'approve' or 'reject'
     const response = await apiClient.patch(`/business/${businessId}/approve`, {
-      approvalStatus,
+      action,
     });
     return response.data;
   },

@@ -34,6 +34,9 @@ import {
   TrendingUp,
   People,
   AccountBalanceWallet,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material";
 // Using native date input for now - can be upgraded to MUI DatePicker if needed
 import {
@@ -49,6 +52,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { adminService } from "../services/adminService";
+import { toastSuccessNotify, toastErrorNotify } from "../../../helper/ToastNotify";
 
 const BusinessesTab = () => {
   const [businesses, setBusinesses] = useState([]);
@@ -224,6 +228,37 @@ const BusinessesTab = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  // Handle business approval/rejection
+  const handleApproveBusiness = async (businessId) => {
+    if (!window.confirm('Möchten Sie dieses Unternehmen wirklich genehmigen?')) {
+      return;
+    }
+
+    try {
+      await adminService.updateBusinessApproval(businessId, 'approve');
+      toastSuccessNotify('Unternehmen wurde erfolgreich genehmigt');
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error('Error approving business:', error);
+      toastErrorNotify(error.response?.data?.message || 'Fehler beim Genehmigen des Unternehmens');
+    }
+  };
+
+  const handleRejectBusiness = async (businessId) => {
+    if (!window.confirm('Möchten Sie dieses Unternehmen wirklich ablehnen?')) {
+      return;
+    }
+
+    try {
+      await adminService.updateBusinessApproval(businessId, 'reject');
+      toastSuccessNotify('Unternehmen wurde abgelehnt');
+      fetchData(); // Refresh data
+    } catch (error) {
+      console.error('Error rejecting business:', error);
+      toastErrorNotify(error.response?.data?.message || 'Fehler beim Ablehnen des Unternehmens');
+    }
   };
 
   const formatCurrency = (value) => {
@@ -472,7 +507,7 @@ const BusinessesTab = () => {
                   <TableCell align="right">Gesamtumsatz</TableCell>
                   <TableCell align="right">Gesamtkunden</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell align="center">Rechnung</TableCell>
+                  <TableCell align="center">Aktionen</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -509,17 +544,57 @@ const BusinessesTab = () => {
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <MuiTooltip title="Rechnungen über 'Rechnungen' Seite verwalten">
-                        <span>
-                          <IconButton
-                            color="primary"
-                            size="small"
-                            disabled
-                          >
-                            <PdfIcon />
-                          </IconButton>
-                        </span>
-                      </MuiTooltip>
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                        {business.status === "Ausstehend" && (
+                          <>
+                            <MuiTooltip title="Unternehmen genehmigen">
+                              <IconButton
+                                color="success"
+                                size="small"
+                                onClick={() => {
+                                  const businessObj = businesses.find(b => 
+                                    (b._id?.toString() || b._id) === business.id
+                                  );
+                                  if (businessObj) {
+                                    handleApproveBusiness(businessObj._id || businessObj.id);
+                                  }
+                                }}
+                              >
+                                <CheckCircleIcon />
+                              </IconButton>
+                            </MuiTooltip>
+                            <MuiTooltip title="Unternehmen ablehnen">
+                              <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => {
+                                  const businessObj = businesses.find(b => 
+                                    (b._id?.toString() || b._id) === business.id
+                                  );
+                                  if (businessObj) {
+                                    handleRejectBusiness(businessObj._id || businessObj.id);
+                                  }
+                                }}
+                              >
+                                <CancelIcon />
+                              </IconButton>
+                            </MuiTooltip>
+                          </>
+                        )}
+                        {business.status === "Aktiv" && (
+                          <MuiTooltip title="Rechnungen über 'Rechnungen' Seite verwalten">
+                            <span>
+                              <IconButton
+                                color="primary"
+                                size="small"
+                                disabled
+                              >
+                                <PdfIcon />
+                              </IconButton>
+                            </span>
+                          </MuiTooltip>
+                        )}
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}

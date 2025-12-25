@@ -31,9 +31,10 @@ class PaymentService {
    * @param {number} totalAmount - Total payment amount in EUR
    * @returns {Object} { platformFee: number, businessFee: number }
    */
-  calculateFees(totalAmount) {
+  calculateFees(totalAmount, personCount = 1) {
     // SECURITY: Use constant from environment/config (prevents hardcoded fees)
-    const platformFee = FEE_CONFIG.SERVICE_FEE || 0.75; // Default to SERVICE_FEE constant
+    // Service fee is per person (0.75€ × personCount)
+    const platformFee = (FEE_CONFIG.SERVICE_FEE || 0.75) * personCount;
     const businessFee = totalAmount - platformFee;
 
     return {
@@ -147,8 +148,8 @@ class PaymentService {
       throw new Error("Business not found for this usage");
     }
 
-    // Komisyon hesapla
-    const fees = this.calculateFees(usage.totalFee);
+    // Komisyon hesapla (personCount ile)
+    const fees = this.calculateFees(usage.totalFee, usage.personCount);
 
     // Stripe PaymentIntent oluştur
     const stripe = getStripe();
@@ -276,8 +277,8 @@ class PaymentService {
       throw new Error("Business not found");
     }
 
-    // Komisyon hesapla
-    const fees = this.calculateFees(totalAmount);
+    // Komisyon hesapla (personCount ile)
+    const fees = this.calculateFees(totalAmount, personCount || 1);
 
     // ✅ VALIDATION: Amount kontrolü
     if (!totalAmount || totalAmount <= 0) {
@@ -514,8 +515,8 @@ class PaymentService {
       throw new Error("Business not found for this usage");
     }
 
-    // Komisyon hesapla
-    const fees = this.calculateFees(usage.totalFee);
+    // Komisyon hesapla (personCount ile)
+    const fees = this.calculateFees(usage.totalFee, usage.personCount);
 
     // Payment kaydı oluştur
     const payment = await paymentRepository.create({
@@ -607,8 +608,8 @@ class PaymentService {
       throw paypalError;
     }
 
-    // Komisyon hesapla
-    const fees = this.calculateFees(totalAmount);
+    // Komisyon hesapla (personCount ile)
+    const fees = this.calculateFees(totalAmount, personCount || 1);
 
     // Payment kaydı oluştur (usageId olmadan - ödeme sonrası eklenecek)
     // Booking bilgilerini metadata olarak sakla
@@ -702,15 +703,18 @@ class PaymentService {
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
       const metadata = payment.metadata || {};
+      const personCount = parseInt(metadata.personCount) || 1;
+      // Service fee is per person (0.75€ × personCount)
+      const serviceFee = FEE_CONFIG.SERVICE_FEE * personCount;
       const usage = await usageRepository.create({
         userId: payment.userId,
         businessId: payment.businessId,
         toiletId: metadata.toiletId,
-        personCount: parseInt(metadata.personCount) || 1,
+        personCount: personCount,
         startTime: new Date(metadata.startTime),
         genderPreference: metadata.genderPreference,
-        basePrice: payment.amount - FEE_CONFIG.SERVICE_FEE, // Service fee'yi çıkar (using constant)
-        serviceFee: FEE_CONFIG.SERVICE_FEE,
+        basePrice: payment.amount - serviceFee, // Service fee'yi çıkar
+        serviceFee: serviceFee,
         totalFee: payment.amount,
         status: 'pending',
         paymentStatus: 'paid',
@@ -849,22 +853,27 @@ class PaymentService {
         throw new Error(`Invalid startTime: ${metadata.startTime}`);
       }
 
+      const usagePersonCount = parseInt(metadata.personCount) || 1;
+      // Service fee is per person (0.75€ × personCount)
+      const usageServiceFee = FEE_CONFIG.SERVICE_FEE * usagePersonCount;
+
       console.log("📝 Creating usage from payment metadata:", {
         toiletId: toiletIdObj,
         startTime: startTimeObj,
-        personCount: metadata.personCount,
+        personCount: usagePersonCount,
         genderPreference: metadata.genderPreference,
+        serviceFee: usageServiceFee,
       });
 
       const usage = await usageRepository.create({
         userId: payment.userId,
         businessId: payment.businessId,
         toiletId: toiletIdObj,
-        personCount: parseInt(metadata.personCount) || 1,
+        personCount: usagePersonCount,
         startTime: startTimeObj,
         genderPreference: metadata.genderPreference,
-        basePrice: payment.amount - FEE_CONFIG.SERVICE_FEE, // Service fee'yi çıkar (using constant)
-        serviceFee: FEE_CONFIG.SERVICE_FEE,
+        basePrice: payment.amount - usageServiceFee, // Service fee'yi çıkar
+        serviceFee: usageServiceFee,
         totalFee: payment.amount,
         status: 'pending',
         paymentStatus: 'paid',
@@ -1047,15 +1056,18 @@ class PaymentService {
         // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
         if (!payment.usageId) {
           const metadata = payment.metadata || paymentIntent.metadata || {};
+          const webhookPersonCount = parseInt(metadata.personCount) || 1;
+          // Service fee is per person (0.75€ × personCount)
+          const webhookServiceFee = FEE_CONFIG.SERVICE_FEE * webhookPersonCount;
           const usage = await usageRepository.create({
             userId: payment.userId,
             businessId: payment.businessId,
             toiletId: metadata.toiletId,
-            personCount: parseInt(metadata.personCount) || 1,
+            personCount: webhookPersonCount,
             startTime: new Date(metadata.startTime),
             genderPreference: metadata.genderPreference,
-            basePrice: payment.amount - FEE_CONFIG.SERVICE_FEE, // Service fee'yi çıkar (using constant)
-            serviceFee: FEE_CONFIG.SERVICE_FEE,
+            basePrice: payment.amount - webhookServiceFee, // Service fee'yi çıkar
+            serviceFee: webhookServiceFee,
             totalFee: payment.amount,
             status: 'pending',
             paymentStatus: 'paid',

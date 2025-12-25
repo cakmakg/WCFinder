@@ -22,8 +22,9 @@
  */
 const FEE_CONFIG = {
     /**
-     * Service fee (platform commission) in EUR
-     * Default: 0.75 EUR
+     * Service fee (platform commission) PER PERSON in EUR
+     * Default: 0.75 EUR per person
+     * Total service fee = SERVICE_FEE × personCount
      * Can be overridden by SERVICE_FEE environment variable
      */
     SERVICE_FEE: parseFloat(process.env.SERVICE_FEE) || 0.75,

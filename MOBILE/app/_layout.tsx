@@ -1,8 +1,14 @@
 /**
  * Root Layout
- * 
+ *
  * Main app layout with Redux Provider and navigation
  * Handles initial auth state and routing
+ *
+ * Features:
+ * - Error Boundary for crash prevention
+ * - Offline Banner for network status
+ * - SecureStore for token management
+ * - Stripe integration
  */
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -17,26 +23,42 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { store } from '../src/store/store';
 import { setInitialAuth } from '../src/store/slices/authSlice';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUserData } from '../src/utils/userStorage';
+import { tokenStorage, userStorage } from '../src/utils/secureStorage';
+import ErrorBoundary from '../src/components/common/ErrorBoundary';
+import { OfflineBanner } from '../src/components/common/OfflineBanner';
+import Constants from 'expo-constants';
+
+// Conditional Stripe import (may not work in Expo Go)
+let StripeProvider: any = null;
+try {
+  const stripeModule = require('@stripe/stripe-react-native');
+  StripeProvider = stripeModule.StripeProvider;
+} catch (error) {
+  console.warn('Stripe React Native not available:', error);
+}
 
 export const unstable_settings = {
   initialRouteName: 'index',
 };
 
-// Initialize auth state from AsyncStorage (non-blocking)
+// Initialize auth state from SecureStore (non-blocking)
 const initializeAuth = async () => {
   try {
     const [token, user] = await Promise.all([
-      AsyncStorage.getItem('token'),
-      getUserData(),
+      tokenStorage.getAccessToken(),
+      userStorage.get(),
     ]);
-    
+
+    console.log('[RootLayout] Initializing auth:', {
+      hasToken: !!token,
+      hasUser: !!user,
+    });
+
     if (token && user) {
       store.dispatch(setInitialAuth({ token, user }));
     }
   } catch (error) {
-    console.error('Error initializing auth:', error);
+    console.error('[RootLayout] Error initializing auth:', error);
   }
 };
 
@@ -62,14 +84,29 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const stripePublishableKey = Constants.expoConfig?.extra?.stripePublishableKey || '';
+
+  const content = (
+    <ErrorBoundary>
+      <PaperProvider>
+        <Portal.Host>
+          <OfflineBanner />
+          <RootLayoutNav />
+        </Portal.Host>
+      </PaperProvider>
+    </ErrorBoundary>
+  );
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
-        <PaperProvider>
-          <Portal.Host>
-            <RootLayoutNav />
-          </Portal.Host>
-        </PaperProvider>
+        {StripeProvider && stripePublishableKey ? (
+          <StripeProvider publishableKey={stripePublishableKey}>
+            {content}
+          </StripeProvider>
+        ) : (
+          content
+        )}
       </Provider>
     </GestureHandlerRootView>
   );
