@@ -83,9 +83,10 @@ export const useAuth = () => {
     try {
       // Call logout endpoint (optional, backend may not require it)
       try {
-        await api.post('/auth/logout');
+        // Server implements logout as GET /auth/logout
+        await api.get('/auth/logout');
       } catch (error) {
-        // Ignore logout API errors
+        // Ignore logout API errors (some backends don't have logout endpoint)
         console.log('Logout API call failed (non-critical):', error);
       }
 

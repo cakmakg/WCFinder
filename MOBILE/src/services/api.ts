@@ -52,6 +52,20 @@ api.interceptors.request.use(
 );
 
 // Response interceptor - Handle errors and token refresh
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (error?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => {
     console.log('[API] Response success:', {
@@ -69,19 +83,123 @@ api.interceptors.response.use(
       message: error.response?.data?.message || error.message
     });
 
-    // 401 Unauthorized - Clear tokens and force re-login
+    // If it's a 401 and the request hasn't been retried yet, attempt refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
+      console.log('[API] 401 received. originalRequest._retry =', originalRequest?._retry, 'isRefreshing =', isRefreshing, 'url =', originalRequest?.url);
+
+      // Avoid trying to refresh if the original request was the refresh endpoint
+      if (originalRequest.url && originalRequest.url.includes('/auth/refresh')) {
+        try {
+          console.log('[API] Refresh endpoint returned 401 - clearing storage');
+          await clearAllStorage();
+          // Dispatch logout to update app state
+          try {
+            const { store } = await import('../store/store');
+            const { logoutSuccess } = await import('../store/slices/authSlice');
+            store.dispatch(logoutSuccess());
+          } catch (dispatchErr) {
+            console.warn('[API] Failed to dispatch logoutSuccess after refresh 401:', dispatchErr);
+          }
+        } catch (clearError) {
+          console.error('[API] Failed to clear storage after refresh 401:', clearError);
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        console.log('[API] Refresh already in progress - queueing request');
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (token && originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
-        console.log('[API] 401 Unauthorized - Clearing all storage');
-        await clearAllStorage();
+        const refreshToken = await tokenStorage.getRefreshToken();
+        console.log('[API] Refresh token present:', !!refreshToken);
+        if (!refreshToken) {
+          console.log('[API] No refresh token available - clearing storage and logging out');
+          await clearAllStorage();
+          try {
+            const { store } = await import('../store/store');
+            const { logoutSuccess } = await import('../store/slices/authSlice');
+            store.dispatch(logoutSuccess());
+          } catch (dispatchErr) {
+            console.warn('[API] Failed to dispatch logoutSuccess when no refresh token:', dispatchErr);
+          }
+          processQueue(new Error('No refresh token'), null);
+          isRefreshing = false;
+          return Promise.reject(error);
+        }
 
-        // Notify the app to redirect to login
-        // This will be handled by the auth state management
-        console.log('[API] Storage cleared - User should be redirected to login');
-      } catch (clearError) {
-        console.error('[API] Failed to clear storage:', clearError);
+        console.log('[API] Attempting token refresh');
+        // Use plain axios to avoid interceptor loops
+        const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+
+        const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.data?.token || refreshResponse.data?.bearer?.accessToken;
+        const newUser = refreshResponse.data?.user || refreshResponse.data?.result || null;
+
+        if (newAccessToken) {
+          await tokenStorage.saveAccessToken(newAccessToken);
+
+          // Update Redux store (lazy import to avoid circular deps)
+          try {
+            const { store } = await import('../store/store');
+            const { setInitialAuth } = await import('../store/slices/authSlice');
+            store.dispatch(setInitialAuth({ token: newAccessToken, user: newUser }));
+          } catch (storeErr) {
+            console.warn('[API] Failed to dispatch setInitialAuth:', storeErr);
+          }
+
+          processQueue(null, newAccessToken);
+          isRefreshing = false;
+
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          }
+
+          return api(originalRequest);
+        }
+
+        // If refresh did not return new token, clear storage
+        console.log('[API] Refresh did not return new token - clearing storage and logging out');
+        await clearAllStorage();
+        try {
+          const { store } = await import('../store/store');
+          const { logoutSuccess } = await import('../store/slices/authSlice');
+          store.dispatch(logoutSuccess());
+        } catch (dispatchErr) {
+          console.warn('[API] Failed to dispatch logoutSuccess after failed refresh:', dispatchErr);
+        }
+        processQueue(new Error('No new access token'), null);
+        isRefreshing = false;
+        return Promise.reject(error);
+      } catch (refreshError) {
+        console.error('[API] Token refresh failed:', refreshError);
+        try {
+          await clearAllStorage();
+        } catch (clearError) {
+          console.error('[API] Failed to clear storage after refresh failure:', clearError);
+        }
+        try {
+          const { store } = await import('../store/store');
+          const { logoutSuccess } = await import('../store/slices/authSlice');
+          store.dispatch(logoutSuccess());
+        } catch (dispatchErr) {
+          console.warn('[API] Failed to dispatch logoutSuccess after refresh error:', dispatchErr);
+        }
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        return Promise.reject(refreshError);
       }
     }
 

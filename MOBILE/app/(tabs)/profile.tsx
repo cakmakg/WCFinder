@@ -6,7 +6,8 @@
 
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, Divider } from 'react-native-paper';
+import { Text, Card, Button, Divider, List } from 'react-native-paper';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/hooks/useAuth';
 
 export default function ProfileScreen() {
@@ -21,6 +22,25 @@ export default function ProfileScreen() {
       isAuthenticated,
     });
   }, [currentUser, token, isInitializing, isAuthenticated]);
+
+  const router = useRouter();
+
+  const openMyBookings = () => {
+    console.log('[Profile] Open MyBookings pressed', { isInitializing, isAuthenticated, hasUser: !!currentUser });
+    if (isInitializing) {
+      console.log('[Profile] Still initializing auth, skipping navigation to my-bookings');
+      return;
+    }
+
+    if (!isAuthenticated) {
+      console.log('[Profile] Not authenticated, redirecting to login instead');
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    // Navigate to the My Bookings modal
+    router.push('/(modals)/my-bookings');
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -62,6 +82,20 @@ export default function ProfileScreen() {
             <Text style={styles.value}>{currentUser?.role}</Text>
           </View>
         </Card.Content>
+      </Card>
+
+      <Divider style={styles.divider} />
+
+      {/* My Bookings Button */}
+      <Card style={styles.card}>
+        <List.Item
+          title="Meine Buchungen"
+          description="Ihre Reservierungen anzeigen"
+          left={(props) => <List.Icon {...props} icon="bookmark-multiple" color="#0891b2" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={openMyBookings}
+          style={styles.listItem}
+        />
       </Card>
 
       <Divider style={styles.divider} />
@@ -114,6 +148,9 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: 20,
+  },
+  listItem: {
+    paddingVertical: 8,
   },
   logoutButton: {
     marginTop: 10,

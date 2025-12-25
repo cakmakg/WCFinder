@@ -8,6 +8,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useMemo, useEffect, useState } from 'react';
 import axios from 'axios';
+import api from '../services/api';
 import { tokenStorage, clearAllStorage } from '../utils/secureStorage';
 import { logoutSuccess } from '../store/slices/authSlice';
 import { API_URL, API_TIMEOUT, MAX_RETRIES, RETRY_DELAY } from '../config/api';
@@ -49,65 +50,8 @@ const useAxios = () => {
   // Use centralized API URL
   const BASE_URL = API_URL;
 
-  // Axios instance with token
-  const axiosWithToken = useMemo(() => {
-    const instance = axios.create({
-      baseURL: BASE_URL,
-      timeout: API_TIMEOUT,
-    });
-
-    // Request interceptor - Add token dynamically
-    instance.interceptors.request.use(
-      async (config) => {
-        // Get token from secure storage for each request (in case it changed)
-        const token = await tokenStorage.getAccessToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        
-        const fullURL = `${config.baseURL}${config.url}`;
-        console.log("📤 [WithToken] Request:", {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          baseURL: config.baseURL,
-          fullURL: fullURL,
-        });
-        return config;
-      },
-      (error) => {
-        console.error("❌ [WithToken] Request error:", error);
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor
-    instance.interceptors.response.use(
-      (response) => {
-        console.log("✅ [WithToken] Response:", response.status, response.config.url);
-        return response;
-      },
-      async (error) => {
-        console.error("❌ [WithToken] Response error:", {
-          status: error.response?.status,
-          url: error.config?.url,
-          message: error.response?.data?.message || error.message,
-        });
-        
-        if (error.response?.status === 401) {
-          // Token expired - clear secure storage and update auth state
-          await clearAllStorage();
-          dispatch(logoutSuccess());
-          // Navigation will be handled by the component
-        }
-        
-        return Promise.reject(error);
-      }
-    );
-
-
-
-    return instance;
-  }, [BASE_URL]);
+  // Use centralized API instance which includes refresh-and-retry logic
+  const axiosWithToken = api;
 
   // Public axios instance (no token)
   const axiosPublic = useMemo(() => {
