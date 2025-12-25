@@ -19,7 +19,7 @@ import {
 } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage, clearAllStorage } from '../../src/utils/secureStorage';
 import { useAuth } from '../../src/hooks/useAuth';
 import useAxios from '../../src/hooks/useAxios';
 
@@ -62,8 +62,8 @@ export default function MyBookingsScreen() {
     try {
       setError(null);
       
-      // Double check token from AsyncStorage
-      const storedToken = await AsyncStorage.getItem('token');
+      // Double check token from secure storage
+      const storedToken = await tokenStorage.getAccessToken();
       console.log('[MyBookings] Fetching bookings...', {
         hasReduxToken: !!token,
         hasStoredToken: !!storedToken,
@@ -103,10 +103,9 @@ export default function MyBookingsScreen() {
       // Handle 401 specifically
       if (err.response?.status === 401) {
         setError('Sitzung abgelaufen. Bitte melden Sie sich erneut an.');
-        // Clear storage and redirect to login after a short delay
+        // Clear secure storage and redirect to login after a short delay
         try {
-          await AsyncStorage.removeItem('token');
-          await AsyncStorage.removeItem('user');
+          await clearAllStorage();
         } catch (clearError) {
           console.error('[MyBookings] Error clearing storage:', clearError);
         }
@@ -130,8 +129,8 @@ export default function MyBookingsScreen() {
         return;
       }
       
-      // Check AsyncStorage directly for token
-      const storedToken = await AsyncStorage.getItem('token');
+      // Check secure storage directly for token
+      const storedToken = await tokenStorage.getAccessToken();
       
       console.log('[MyBookings] Auth initialized, checking auth state...', {
         isAuthenticated,

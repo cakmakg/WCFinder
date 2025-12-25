@@ -5,10 +5,11 @@
  * Uses AsyncStorage for token persistence
  */
 
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useMemo, useEffect, useState } from 'react';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage, clearAllStorage } from '../utils/secureStorage';
+import { logoutSuccess } from '../store/slices/authSlice';
 import { API_URL, API_TIMEOUT, MAX_RETRIES, RETRY_DELAY } from '../config/api';
 
 /**
@@ -35,12 +36,14 @@ const useAxios = () => {
   const { token } = useSelector((state: any) => state.auth);
   const [asyncToken, setAsyncToken] = useState<string | null>(null);
 
-  // Get token from AsyncStorage on mount
+  const dispatch = useDispatch();
+
+  // Get token from secure storage on mount
   useEffect(() => {
-    AsyncStorage.getItem('token').then(setAsyncToken).catch(console.error);
+    tokenStorage.getAccessToken().then(setAsyncToken).catch(console.error);
   }, []);
 
-  // Use token from Redux or AsyncStorage
+  // Use token from Redux or secure storage
   const currentToken = token || asyncToken;
 
   // Use centralized API URL
@@ -56,8 +59,8 @@ const useAxios = () => {
     // Request interceptor - Add token dynamically
     instance.interceptors.request.use(
       async (config) => {
-        // Get token from AsyncStorage for each request (in case it changed)
-        const token = await AsyncStorage.getItem('token');
+        // Get token from secure storage for each request (in case it changed)
+        const token = await tokenStorage.getAccessToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -91,15 +94,17 @@ const useAxios = () => {
         });
         
         if (error.response?.status === 401) {
-          // Token expired - clear storage
-          await AsyncStorage.removeItem('token');
-          await AsyncStorage.removeItem('user');
+          // Token expired - clear secure storage and update auth state
+          await clearAllStorage();
+          dispatch(logoutSuccess());
           // Navigation will be handled by the component
         }
         
         return Promise.reject(error);
       }
     );
+
+
 
     return instance;
   }, [BASE_URL]);

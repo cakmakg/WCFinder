@@ -6,10 +6,10 @@
  */
 
 import { useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 import { setInitialAuth } from '../store/slices/authSlice';
 import { store } from '../store/store';
+import { tokenStorage, clearAllStorage } from '../utils/secureStorage';
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -43,8 +43,8 @@ export const useTokenRefresh = () => {
     setIsRefreshingToken(true);
 
     try {
-      // Try to get refresh token from storage
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      // Try to get refresh token from secure storage
+      const refreshToken = await tokenStorage.getRefreshToken();
       
       if (!refreshToken) {
         // No refresh token, user needs to login again
@@ -59,8 +59,8 @@ export const useTokenRefresh = () => {
       const { accessToken, user } = response.data;
 
       if (accessToken) {
-        // Store new token
-        await AsyncStorage.setItem('token', accessToken);
+        // Store new token securely
+        await tokenStorage.saveAccessToken(accessToken);
         
         // Update Redux store
         store.dispatch(setInitialAuth({ token: accessToken, user }));
@@ -73,10 +73,8 @@ export const useTokenRefresh = () => {
 
       throw new Error('No access token in refresh response');
     } catch (error: any) {
-      // Refresh failed, clear storage and redirect to login
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('refreshToken');
-      await AsyncStorage.removeItem('user');
+      // Refresh failed, clear secure storage
+      await clearAllStorage();
       
       // Process queued requests with error
       processQueue(error, null);

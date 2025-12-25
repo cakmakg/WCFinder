@@ -18,6 +18,11 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  // Common SF symbol mappings used in tabs
+  'map.fill': 'map',
+  'list.bullet': 'list',
+  'heart.fill': 'favorite',
+  'person.fill': 'person',
 } as IconMapping;
 
 /**

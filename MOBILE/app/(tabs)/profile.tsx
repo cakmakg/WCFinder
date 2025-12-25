@@ -4,15 +4,23 @@
  * User profile, payment history, settings, logout
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button, Divider } from 'react-native-paper';
-import { useSelector } from 'react-redux';
 import { useAuth } from '../../src/hooks/useAuth';
 
 export default function ProfileScreen() {
-  const { currentUser } = useSelector((state: any) => state.auth);
-  const { logout } = useAuth();
+  const { currentUser, token, isInitializing, isAuthenticated, logout } = useAuth();
+
+  useEffect(() => {
+    console.log('[Profile] state:', {
+      hasUser: !!currentUser,
+      user: currentUser,
+      hasToken: !!token,
+      isInitializing,
+      isAuthenticated,
+    });
+  }, [currentUser, token, isInitializing, isAuthenticated]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

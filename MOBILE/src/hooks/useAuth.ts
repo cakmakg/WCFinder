@@ -8,10 +8,9 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logoutSuccess, setInitialAuth } from '../store/slices/authSlice';
 import api from '../services/api';
-import { getUserData } from '../utils/userStorage';
+import { tokenStorage, userStorage, clearAllStorage } from '../utils/secureStorage';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -48,26 +47,32 @@ export const useAuth = () => {
     }
   };
 
-  // Initialize auth from AsyncStorage
+  // Initialize auth from secure storage if Redux doesn't already have it
   const initializeAuth = async () => {
     try {
       setIsInitializing(true);
+
+      // If we already have auth in Redux, don't re-initialize or redirect from here.
+      if (currentUser && token) {
+        return;
+      }
+
       const [storedToken, storedUser] = await Promise.all([
-        AsyncStorage.getItem('token'),
-        getUserData(),
+        tokenStorage.getAccessToken(),
+        userStorage.get(),
       ]);
 
       if (storedToken && storedUser) {
-        // Set initial auth state from storage
-        // Token will be validated on next API call if invalid
+        // Set initial auth state from secure storage; validation happens on next API call
         dispatch(setInitialAuth({ token: storedToken, user: storedUser }));
       } else {
-        // No token, redirect to login
-        router.replace('/(auth)/login');
+        // Do NOT redirect here — routing decisions should be handled by root/index screens.
+        // Avoid causing navigation side-effects when a component mounts (e.g., Profile screen).
+        console.debug('[useAuth] No stored auth found in secure storage; skipping redirect in hook.');
       }
     } catch (error) {
       console.error('Auth initialization error:', error);
-      router.replace('/(auth)/login');
+      // Don't redirect here to avoid unexpected navigation while components mount
     } finally {
       setIsInitializing(false);
     }
@@ -84,13 +89,12 @@ export const useAuth = () => {
         console.log('Logout API call failed (non-critical):', error);
       }
 
-      // Clear local storage
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
-      
+      // Clear secure storage
+      await clearAllStorage();
+
       // Update Redux state
       dispatch(logoutSuccess());
-      
+
       // Navigate to login
       router.replace('/(auth)/login');
     } catch (error) {

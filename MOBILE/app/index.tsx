@@ -8,8 +8,7 @@ import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUserData } from '../src/utils/userStorage';
+import { tokenStorage, userStorage } from '../src/utils/secureStorage';
 
 export default function IndexScreen() {
   const router = useRouter();
@@ -19,10 +18,10 @@ export default function IndexScreen() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if we have token and user in storage
+        // Check if we have token and user in secure storage
         const [storedToken, storedUser] = await Promise.all([
-          AsyncStorage.getItem('token'),
-          getUserData(),
+          tokenStorage.getAccessToken(),
+          userStorage.get(),
         ]);
 
         // Small delay to ensure Redux state is updated

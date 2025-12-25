@@ -6,19 +6,36 @@
  */
 
 import { Tabs, Redirect } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { tokenStorage } from '../../src/utils/secureStorage';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { currentUser } = useSelector((state: any) => state.auth);
+  const [checked, setChecked] = useState(false);
 
-  // Redirect to auth if not authenticated
+  // Check secure storage once to avoid transient redirects while auth initializes
+  useEffect(() => {
+    let mounted = true;
+    tokenStorage.getAccessToken().then(() => {
+      if (mounted) setChecked(true);
+    }).catch(() => {
+      if (mounted) setChecked(true);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  // Redirect to auth if not authenticated and initial check finished
   if (!currentUser) {
+    if (!checked) {
+      // Still verifying stored token, avoid redirect yet
+      return null;
+    }
     return <Redirect href="/(auth)/login" />;
   }
 

@@ -32,7 +32,7 @@ try {
 }
 import { BookingData } from '../../src/components/business/BookingPanel';
 import api from '../../src/services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStorage } from '../../src/utils/secureStorage';
 
 export default function PaymentScreen() {
   const theme = useTheme();
@@ -68,7 +68,7 @@ export default function PaymentScreen() {
   // Check authentication
   useEffect(() => {
     const checkAuth = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
+      const storedToken = await tokenStorage.getAccessToken();
       console.log('[Payment] Auth check:', {
         hasToken: !!token,
         hasStoredToken: !!storedToken,
