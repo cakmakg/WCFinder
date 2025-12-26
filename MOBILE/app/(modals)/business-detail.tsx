@@ -1,17 +1,26 @@
 /**
- * Business Detail Screen
- * 
- * Shows detailed information about a business/toilet
- * Similar to CLIENT BusinessDetail page
+ * Business Detail Screen - Modern Compact Design
+ *
+ * Uber/Delivery app inspired single-flow booking page
+ * Clean, compact, and modern layout
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Linking, Platform } from 'react-native';
-import { Text, Card, Button, Chip, Divider, ActivityIndicator, useTheme, IconButton, Menu } from 'react-native-paper';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Platform, Image, TouchableOpacity } from 'react-native';
+import {
+  Text,
+  Button,
+  ActivityIndicator,
+  useTheme,
+  IconButton,
+  Surface,
+  Divider,
+  Chip
+} from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useBusinessDetail } from '../../src/hooks/useBusiness';
-import { BusinessMap } from '../../src/components/map/BusinessMap';
-import { ToiletList } from '../../src/components/business/ToiletList';
 import { BookingPanel, BookingData } from '../../src/components/business/BookingPanel';
 import toiletService, { Toilet } from '../../src/services/toiletService';
 
@@ -22,9 +31,22 @@ export default function BusinessDetailScreen() {
   const { business, loading, error } = useBusinessDetail(id || null);
   const [toilets, setToilets] = useState<Toilet[]>([]);
   const [toiletsLoading, setToiletsLoading] = useState(false);
-  const [toiletsError, setToiletsError] = useState<string | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingFormData, setBookingFormData] = useState<{
+    userGender: string;
+    date: Date;
+    personCount: number;
+  } | null>(null);
+
+  // Memoize the form change callback to prevent infinite loops
+  const handleFormChange = useCallback((formData: {
+    userGender: string;
+    date: Date;
+    personCount: number;
+  }) => {
+    setBookingFormData(formData);
+  }, []);
 
   // Fetch toilets for this business
   useEffect(() => {
@@ -33,12 +55,10 @@ export default function BusinessDetailScreen() {
     const fetchToilets = async () => {
       try {
         setToiletsLoading(true);
-        setToiletsError(null);
         const data = await toiletService.getByBusiness(id);
         setToilets(data);
       } catch (err: any) {
         console.error('Error fetching toilets:', err);
-        setToiletsError(err.message || 'Failed to fetch toilets');
       } finally {
         setToiletsLoading(false);
       }
@@ -47,19 +67,11 @@ export default function BusinessDetailScreen() {
     fetchToilets();
   }, [id]);
 
-  const formatFee = (fee?: number): string => {
-    if (fee === undefined || fee === null) return 'N/A';
-    if (fee === 0) return 'Free';
-    return `€${fee.toFixed(2)}`;
-  };
-
   const handleBookingSubmit = async (bookingData: BookingData) => {
     try {
       setBookingLoading(true);
       setBookingError(null);
 
-      // Navigate to payment page with booking data
-      // We'll pass the data as JSON string in params (Expo Router limitation)
       router.push({
         pathname: '/(modals)/payment',
         params: {
@@ -74,26 +86,18 @@ export default function BusinessDetailScreen() {
     }
   };
 
-  const handleCallPress = () => {
-    if (business?.phone) {
-      Linking.openURL(`tel:${business.phone}`);
-    }
-  };
-
-  const handleWebsitePress = () => {
-    if (business?.website) {
-      Linking.openURL(business.website);
-    }
-  };
-
   const handleBackPress = () => {
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -102,8 +106,9 @@ export default function BusinessDetailScreen() {
   if (error || !business) {
     return (
       <View style={styles.errorContainer}>
+        <MaterialCommunityIcons name="alert-circle" size={64} color="#EF4444" />
         <Text style={styles.errorText}>{error || 'Business not found'}</Text>
-        <Button onPress={handleBackPress} mode="outlined">
+        <Button onPress={handleBackPress} mode="contained">
           Go Back
         </Button>
       </View>
@@ -111,213 +116,235 @@ export default function BusinessDetailScreen() {
   }
 
   const coordinates = business.location?.coordinates;
-  const mapLocation = coordinates
-    ? { latitude: coordinates[1], longitude: coordinates[0] }
-    : null;
+  const address = typeof business.address === 'string'
+    ? business.address
+    : `${business.address?.street || ''}, ${business.address?.city || ''}`.trim();
+
+  const mapRegion = coordinates && coordinates.length >= 2 ? {
+    latitude: coordinates[1] || 0,
+    longitude: coordinates[0] || 0,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  } : null;
+
 
   return (
     <View style={styles.container}>
-      {/* Header with back button */}
-      <View style={styles.header}>
-        <IconButton
-          icon="arrow-left"
-          size={24}
-          onPress={handleBackPress}
-          style={styles.backButton}
-        />
-      </View>
+      {/* Large Map Section */}
+      {mapRegion && (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            provider={PROVIDER_GOOGLE}
+            initialRegion={mapRegion}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
+            toolbarEnabled={false}
+          >
+            <Marker
+              coordinate={{
+                latitude: coordinates[1] || 0,
+                longitude: coordinates[0] || 0,
+              }}
+            >
+              <MaterialCommunityIcons name="toilet" size={40} color={theme.colors.primary} />
+            </Marker>
+          </MapView>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Business Header */}
-        <Card style={styles.headerCard}>
-          <Card.Content>
-            <View style={styles.titleRow}>
-              <Text variant="headlineSmall" style={styles.title}>
-                {business.name || business.businessName || 'Business'}
+          {/* Map Overlay Buttons */}
+          <View style={styles.mapOverlay}>
+            <TouchableOpacity
+              style={styles.mapButton}
+              onPress={handleBackPress}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.mapButton}
+              onPress={() => {}}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="share-variant" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Scrollable Content Panel */}
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Location Name and Rating */}
+        <View style={styles.locationHeader}>
+          <Text variant="headlineSmall" style={styles.locationName}>
+            {business.name || business.businessName}
+          </Text>
+          {business.rating && (
+            <View style={styles.ratingContainer}>
+              <Text variant="titleMedium" style={styles.ratingValue}>
+                {business.rating.toFixed(2)}
               </Text>
-              {business.approvalStatus === 'approved' && (
-                <Chip icon="check-circle" style={styles.verifiedChip} compact>
-                  Verified
-                </Chip>
-              )}
+              <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <MaterialCommunityIcons
+                    key={star}
+                    name="star"
+                    size={16}
+                    color={star <= Math.round(business.rating || 0) ? "#FFD700" : "#E0E0E0"}
+                  />
+                ))}
+              </View>
             </View>
+          )}
+        </View>
 
-            {/* Business Type and Status */}
-            <View style={styles.chipRow}>
-              <Chip 
-                icon="store" 
-                style={styles.chip}
-                mode="outlined"
-              >
-                {business.businessType || 'Business'}
-              </Chip>
-              {business.approvalStatus && (
-                <Chip 
-                  style={[
-                    styles.chip,
-                    business.approvalStatus === 'approved' 
-                      ? { backgroundColor: theme.colors.primaryContainer }
-                      : { backgroundColor: theme.colors.errorContainer }
-                  ]}
-                  compact
-                >
-                  {business.approvalStatus === 'approved' ? 'Approved' : 'Pending'}
-                </Chip>
-              )}
+        {/* Location Section */}
+        {address && (
+          <View style={styles.infoSection}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Location</Text>
+            <View style={styles.infoItem}>
+              <MaterialCommunityIcons name="map-marker" size={20} color="#666" />
+              <Text variant="bodyMedium" style={styles.infoText}>
+                {address}
+              </Text>
             </View>
+          </View>
+        )}
 
-            {/* Opening Hours and Toilet Count */}
-            <View style={styles.infoRow}>
-              {business.openingHours && (
-                <View style={styles.infoItem}>
-                  <Text variant="bodySmall" style={styles.infoLabel}>
-                    🕐 {business.openingHours}
+        {/* Opening Hours Section */}
+        {business.openingHours && (
+          <View style={styles.infoSection}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Opening Hours</Text>
+            <View style={styles.infoItem}>
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
+              <Text variant="bodyMedium" style={styles.infoText}>
+                {business.openingHours}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Facilities Section */}
+        {toiletsLoading ? (
+          <View style={styles.centerContent}>
+            <ActivityIndicator size="small" />
+          </View>
+        ) : toilets.length > 0 && (
+          <View style={styles.infoSection}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Facilities</Text>
+            <View style={styles.facilitiesGrid}>
+              <View style={styles.facilityItem}>
+                <MaterialCommunityIcons name="counter" size={24} color={theme.colors.primary} />
+                <Text variant="bodySmall" style={styles.facilityText}>
+                  {toilets.length} {toilets.length === 1 ? 'Toilet' : 'Toilets'}
+                </Text>
+              </View>
+              <View style={styles.facilityItem}>
+                <MaterialCommunityIcons name="currency-eur" size={24} color={theme.colors.primary} />
+                <Text variant="bodySmall" style={styles.facilityText}>
+                  €{toilets[0]?.fee?.toFixed(2) || '0.00'}
+                </Text>
+              </View>
+              {toilets.some(t => t.features?.isAccessible) && (
+                <View style={styles.facilityItem}>
+                  <MaterialCommunityIcons name="wheelchair-accessibility" size={24} color={theme.colors.primary} />
+                  <Text variant="bodySmall" style={styles.facilityText}>
+                    Accessible
                   </Text>
                 </View>
               )}
-              <View style={styles.infoItem}>
-                <Text variant="bodySmall" style={styles.infoLabel}>
-                  🚽 {toilets.length} {toilets.length === 1 ? 'Toilet' : 'Toilets'}
-                </Text>
-              </View>
+              {toilets.some(t => t.features?.hasBabyChangingStation) && (
+                <View style={styles.facilityItem}>
+                  <MaterialCommunityIcons name="baby-carriage" size={24} color={theme.colors.primary} />
+                  <Text variant="bodySmall" style={styles.facilityText}>
+                    Baby Care
+                  </Text>
+                </View>
+              )}
             </View>
-
-            {/* Address */}
-            {business.address && (
-              <View style={styles.addressRow}>
-                <Text variant="bodySmall" style={styles.address}>
-                  📍 {typeof business.address === 'string' 
-                    ? business.address 
-                    : `${business.address.street || ''}, ${business.address.postalCode || ''} ${business.address.city || ''}`.trim()}
-                </Text>
-              </View>
-            )}
-
-            {/* Rating */}
-            {business.rating && (
-              <View style={styles.ratingContainer}>
-                <Text variant="bodyMedium" style={styles.rating}>
-                  ⭐ {business.rating.toFixed(1)}
-                  {business.reviewCount && ` (${business.reviewCount} reviews)`}
-                </Text>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
-
-        {/* Map */}
-        {mapLocation && (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Location
-              </Text>
-              <View style={styles.mapContainer}>
-                <BusinessMap
-                  businesses={[business]}
-                  selectedBusiness={business}
-                  userLocation={mapLocation}
-                />
-              </View>
-            </Card.Content>
-          </Card>
+          </View>
         )}
 
-        {/* Toilet List */}
-        {toiletsLoading ? (
-          <Card style={styles.card}>
-            <Card.Content>
-              <ActivityIndicator size="small" />
-              <Text style={styles.loadingText}>Loading toilets...</Text>
-            </Card.Content>
-          </Card>
-        ) : toiletsError ? (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text style={styles.errorText}>{toiletsError}</Text>
-            </Card.Content>
-          </Card>
-        ) : toilets.length > 0 ? (
-          <ToiletList toilets={toilets} />
-        ) : (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="bodyMedium" style={styles.noToiletsText}>
-                No toilets available at this location.
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Contact Info */}
-        {(business.phone || business.email || business.website) && (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Contact
-              </Text>
-              {business.phone && (
-                <Button
-                  icon="phone"
-                  mode="text"
-                  onPress={handleCallPress}
-                  style={styles.contactButton}
-                >
-                  {business.phone}
-                </Button>
-              )}
-              {business.email && (
-                <Text variant="bodyMedium" style={styles.contactText}>
-                  ✉️ {business.email}
-                </Text>
-              )}
-              {business.website && (
-                <Button
-                  icon="web"
-                  mode="text"
-                  onPress={handleWebsitePress}
-                  style={styles.contactButton}
-                >
-                  Visit Website
-                </Button>
-              )}
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Description */}
+        {/* Description Section */}
         {business.description && (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Description
-              </Text>
-              <Text variant="bodyMedium">{business.description}</Text>
-            </Card.Content>
-          </Card>
+          <View style={styles.infoSection}>
+            <Text variant="titleMedium" style={styles.sectionTitle}>About</Text>
+            <Text variant="bodyMedium" style={styles.descriptionText}>
+              {business.description}
+            </Text>
+          </View>
         )}
 
-        <Divider style={styles.divider} />
-
-        {/* Booking Panel */}
-        {toilets.length > 0 ? (
-          <BookingPanel
-            business={business}
-            toilets={toilets}
-            onBookingSubmit={handleBookingSubmit}
-            loading={bookingLoading}
-            error={bookingError}
-          />
-        ) : (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="bodyMedium" style={styles.noToiletsText}>
-                Reservation not possible - No toilets available
-              </Text>
-            </Card.Content>
-          </Card>
+        {/* Booking Panel - Visible */}
+        {toilets.length > 0 && (
+          <View style={styles.bookingPanelContainer}>
+            <BookingPanel
+              business={business}
+              toilets={toilets}
+              onBookingSubmit={handleBookingSubmit}
+              onFormChange={handleFormChange}
+              loading={bookingLoading}
+              error={bookingError}
+            />
+          </View>
         )}
       </ScrollView>
+
+      {/* Fixed Bottom Booking Bar */}
+      {toilets.length > 0 && (
+        <Surface style={styles.bottomBar} elevation={4}>
+          <View style={styles.bottomBarContent}>
+            <View style={styles.priceInfo}>
+              <Text variant="titleMedium" style={styles.priceText}>
+                € {toilets[0]?.fee?.toFixed(2) || '0.00'} / Day
+              </Text>
+            </View>
+            <Button
+              mode="contained"
+              onPress={() => {
+                if (toilets.length > 0 && bookingFormData) {
+                  const basePrice = toilets[0]?.fee || 1.00;
+                  const serviceFee = 0.75;
+                  const total = (basePrice * bookingFormData.personCount) + serviceFee;
+                  
+                  const bookingData: BookingData = {
+                    business: {
+                      id: business._id,
+                      name: business.name || business.businessName || '',
+                      address: business.address,
+                      location: business.location
+                    },
+                    toilet: {
+                      id: toilets[0]._id,
+                      name: toilets[0].name,
+                      fee: toilets[0].fee
+                    },
+                    userGender: bookingFormData.userGender,
+                    date: bookingFormData.date.toISOString().split('T')[0],
+                    personCount: bookingFormData.personCount,
+                    pricing: {
+                      basePrice,
+                      serviceFee,
+                      total
+                    }
+                  };
+                  handleBookingSubmit(bookingData);
+                }
+              }}
+              style={[styles.bookButton, { backgroundColor: theme.colors.primary }]}
+              contentStyle={styles.bookButtonContent}
+              loading={bookingLoading}
+              disabled={bookingLoading || !bookingFormData || !bookingFormData.userGender}
+              labelStyle={styles.bookButtonLabel}
+            >
+              JETZT BUCHEN
+            </Button>
+          </View>
+        </Surface>
+      )}
     </View>
   );
 }
@@ -327,28 +354,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingHorizontal: 8,
+  mapContainer: {
+    height: '45%',
+    width: '100%',
+    position: 'relative',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  mapOverlay: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 20,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
     zIndex: 1,
   },
-  backButton: {
-    marginLeft: 0,
+  mapButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingTop: 8,
+    padding: 20,
+    paddingBottom: 100, // Space for fixed bottom bar
+    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F5F5F5',
   },
   loadingText: {
     marginTop: 12,
@@ -358,97 +403,123 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 24,
+    backgroundColor: '#F5F5F5',
   },
   errorText: {
-    color: '#d32f2f',
-    marginBottom: 16,
+    color: '#EF4444',
+    marginTop: 16,
+    marginBottom: 24,
     textAlign: 'center',
+    fontSize: 16,
   },
-  headerCard: {
+  locationHeader: {
     marginBottom: 16,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    flexWrap: 'wrap',
-  },
-  title: {
+  locationName: {
     fontWeight: 'bold',
-    flex: 1,
-    marginRight: 8,
-  },
-  verifiedChip: {
-    backgroundColor: '#e8f5e9',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     marginBottom: 12,
-    gap: 8,
-  },
-  chip: {
-    marginRight: 8,
-    marginBottom: 4,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-    gap: 16,
-  },
-  infoItem: {
-    marginRight: 16,
-  },
-  infoLabel: {
-    opacity: 0.7,
-  },
-  addressRow: {
-    marginBottom: 8,
-  },
-  address: {
-    opacity: 0.7,
+    fontSize: 24,
   },
   ratingContainer: {
-    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  rating: {
-    fontWeight: '600',
-    color: '#FFA500',
+  ratingValue: {
+    fontWeight: 'bold',
+    fontSize: 18,
   },
-  card: {
-    marginBottom: 16,
+  starsContainer: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewsCount: {
+    color: '#666',
+    marginLeft: 4,
+  },
+  infoSection: {
+    marginBottom: 24,
   },
   sectionTitle: {
     fontWeight: 'bold',
     marginBottom: 12,
+    fontSize: 18,
   },
-  mapContainer: {
-    height: 250,
-    borderRadius: 8,
-    overflow: 'hidden',
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  infoText: {
+    flex: 1,
+    color: '#424242',
+  },
+  bookingPanelContainer: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  facilitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
     marginTop: 8,
   },
-  contactButton: {
-    marginBottom: 8,
-    justifyContent: 'flex-start',
+  facilityItem: {
+    alignItems: 'center',
+    minWidth: 80,
+    gap: 4,
   },
-  contactText: {
-    marginBottom: 8,
+  facilityText: {
+    textAlign: 'center',
+    fontWeight: '500',
+    fontSize: 12,
   },
-  divider: {
-    marginVertical: 16,
+  descriptionText: {
+    color: '#424242',
+    lineHeight: 22,
+    marginTop: 8,
+  },
+  centerContent: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 12,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  bottomBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  priceInfo: {
+    flex: 1,
+  },
+  priceText: {
+    fontWeight: 'bold',
+    fontSize: 18,
   },
   bookButton: {
-    marginTop: 8,
-    marginBottom: 32,
+    flex: 1,
+    borderRadius: 12,
   },
   bookButtonContent: {
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
-  noToiletsText: {
-    opacity: 0.7,
-    textAlign: 'center',
+  bookButtonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });

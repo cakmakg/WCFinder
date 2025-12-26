@@ -628,9 +628,70 @@ The application follows security best practices and is ready for production depl
 
 ---
 
-**Last Updated:** 2024
+---
+
+## 20. Mobile App Security
+
+### ✅ Token Storage Security
+
+**Implementation:**
+- **File:** `MOBILE/src/utils/secureStorage.ts`
+- **Package:** `expo-secure-store`
+
+**Security Status:** ✅ **SECURE**
+- Hardware-backed encryption (iOS Keychain / Android KeyStore)
+- Access tokens and refresh tokens stored securely
+- No sensitive data in AsyncStorage
+- Automatic encryption/decryption
+
+**Key Features:**
+```typescript
+// All tokens stored in hardware-backed secure storage
+await tokenStorage.saveAccessToken(token);
+await tokenStorage.saveRefreshToken(token);
+await tokenStorage.clearTokens(); // Secure cleanup
+```
+
+### ✅ Location Privacy
+
+**Implementation:**
+- **File:** `MOBILE/app/(tabs)/index.tsx`
+- **Package:** `expo-location`
+
+**Security Status:** ✅ **SECURE**
+- Permission-based access to user location
+- Clear user prompts with rationale
+- Graceful fallback when permission denied
+- No location tracking without consent
+- Settings navigation for permission management
+
+**Permission Handling:**
+- Checks permission status before requesting
+- Shows clear explanation of why location is needed
+- Provides direct link to device settings
+- Falls back to default location (Berlin) if denied
+- Detects Expo Go vs standalone app for correct settings navigation
+
+### ✅ Network Security
+
+**Implementation:**
+- **File:** `MOBILE/src/services/api.ts`
+
+**Security Status:** ✅ **SECURE**
+- Token automatically added to all authenticated requests
+- Token refresh on 401 responses
+- Request retry queue to prevent data loss
+- All API calls use HTTPS
+- No sensitive data in console logs (production)
+
+---
+
+**Last Updated:** 2025-12-26
 **Review Status:** ✅ Complete
 **Next Review:** Recommended quarterly or after major changes
+
+
+
 
 
 

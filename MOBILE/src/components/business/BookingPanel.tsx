@@ -1,22 +1,23 @@
 /**
- * Booking Panel Component
- * 
- * Similar to CLIENT BookingPanel
- * Allows users to select gender, date, and person count before booking
+ * Modern Booking Panel Component
+ *
+ * Clean, simple booking interface with modern design
+ * Uber/Delivery app inspired layout
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Platform, TouchableOpacity, ScrollView as RNScrollView } from 'react-native';
-import { 
-  Card, 
-  Text, 
-  Button, 
-  Divider, 
-  ActivityIndicator, 
+import React, { useState } from 'react';
+import { View, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import {
+  Card,
+  Text,
+  Button,
+  Divider,
   useTheme,
-  Dialog,
-  RadioButton
+  IconButton,
+  Surface,
+  Chip
 } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Business } from '../../services/businessService';
 import { Toilet } from '../../services/toiletService';
 
@@ -34,6 +35,7 @@ interface BookingPanelProps {
   business: Business;
   toilets: Toilet[];
   onBookingSubmit: (bookingData: BookingData) => void;
+  onFormChange?: (formData: { userGender: string; date: Date; personCount: number }) => void;
   loading?: boolean;
   error?: string | null;
 }
@@ -60,32 +62,27 @@ export interface BookingData {
   };
 }
 
-const genders = ['Male', 'Female'];
-const peopleOptions = Array.from({ length: 10 }, (_, i) => i + 1);
-
-export const BookingPanel: React.FC<BookingPanelProps> = ({ 
-  business, 
-  toilets, 
+export const BookingPanel: React.FC<BookingPanelProps> = ({
+  business,
+  toilets,
   onBookingSubmit,
+  onFormChange,
   loading = false,
-  error 
+  error
 }) => {
   const theme = useTheme();
   const [userGender, setUserGender] = useState<string>('');
   const [date, setDate] = useState<Date>(new Date());
   const [personCount, setPersonCount] = useState<number>(1);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showGenderDialog, setShowGenderDialog] = useState(false);
-  const [showPersonDialog, setShowPersonDialog] = useState(false);
 
-  // Debug: Track dialog state changes
-  useEffect(() => {
-    console.log('[BookingPanel] Gender dialog state changed:', showGenderDialog);
-  }, [showGenderDialog]);
-
-  useEffect(() => {
-    console.log('[BookingPanel] People dialog state changed:', showPersonDialog);
-  }, [showPersonDialog]);
+  // Notify parent of form changes
+  React.useEffect(() => {
+    if (onFormChange) {
+      onFormChange({ userGender, date, personCount });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userGender, date, personCount]);
 
   if (!toilets || toilets.length === 0) {
     return (
@@ -104,10 +101,6 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
   const total = (basePrice * personCount) + serviceFee;
 
   const handleReservation = () => {
-    if (!userGender || !date) {
-      return;
-    }
-
     if (!business?._id) {
       return;
     }
@@ -138,11 +131,12 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
   };
 
   const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = days[date.getDay()];
+    const month = months[date.getMonth()];
+    const dayNum = date.getDate();
+    return `${day}, ${dayNum} ${month}`;
   };
 
   const minDate = new Date();
@@ -151,290 +145,214 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
   return (
     <>
       <Card style={styles.card}>
+        <Card.Content style={styles.cardContent}>
+          {/* Date Selection */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <MaterialCommunityIcons name="calendar" size={20} color={theme.colors.primary} />
+          <Text variant="titleMedium" style={styles.sectionTitle}>Date</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+          activeOpacity={0.7}
+        >
+          <Text variant="bodyLarge" style={styles.dateText}>
+            {formatDate(date)}
+          </Text>
+          <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Gender Selection */}
+      <View style={styles.section}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>Gender</Text>
+        <View style={styles.genderContainer}>
+          <Chip
+            selected={userGender === 'Male'}
+            onPress={() => setUserGender('Male')}
+            style={[
+              styles.genderChip,
+              userGender === 'Male' && styles.genderChipSelected
+            ]}
+            textStyle={[
+              styles.genderChipText,
+              userGender === 'Male' && styles.genderChipTextSelected
+            ]}
+          >
+            Male
+          </Chip>
+          <Chip
+            selected={userGender === 'Female'}
+            onPress={() => setUserGender('Female')}
+            style={[
+              styles.genderChip,
+              userGender === 'Female' && styles.genderChipSelected
+            ]}
+            textStyle={[
+              styles.genderChipText,
+              userGender === 'Female' && styles.genderChipTextSelected
+            ]}
+          >
+            Female
+          </Chip>
+        </View>
+      </View>
+
+      {/* Number of People */}
+      <View style={styles.section}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>Number of People</Text>
+        <View style={styles.peopleContainer}>
+          <IconButton
+            icon="minus"
+            size={24}
+            onPress={() => setPersonCount(Math.max(1, personCount - 1))}
+            disabled={personCount <= 1}
+            style={styles.peopleButton}
+          />
+          <Text variant="headlineMedium" style={styles.peopleCount}>
+            {personCount}
+          </Text>
+          <IconButton
+            icon="plus"
+            size={24}
+            onPress={() => setPersonCount(Math.min(10, personCount + 1))}
+            disabled={personCount >= 10}
+            style={styles.peopleButton}
+          />
+        </View>
+      </View>
+
+      {/* Price Details Card */}
+      <Card style={styles.priceCard}>
         <Card.Content>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text variant="titleLarge" style={styles.title}>
-              Booking
+          <View style={styles.priceRow}>
+            <Text variant="bodyMedium" style={styles.priceLabel}>
+              € {basePrice.toFixed(2)} × {personCount}
             </Text>
-            <Text variant="bodySmall" style={styles.subtitle}>
-              Select your preferences to continue
+            <Text variant="bodyMedium" style={styles.priceValue}>
+              € {(basePrice * personCount).toFixed(2)}
             </Text>
           </View>
+          <View style={styles.priceRow}>
+            <Text variant="bodyMedium" style={styles.priceLabel}>
+              Service Fee
+            </Text>
+            <Text variant="bodyMedium" style={styles.priceValue}>
+              € {serviceFee.toFixed(2)}
+            </Text>
+          </View>
+          <Divider style={styles.divider} />
+          <View style={styles.totalRow}>
+            <Text variant="titleLarge" style={styles.totalLabel}>
+              Total
+            </Text>
+            <Text variant="titleLarge" style={[styles.totalValue, { color: theme.colors.primary }]}>
+              € {total.toFixed(2)}
+            </Text>
+          </View>
+        </Card.Content>
+      </Card>
 
           {error && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
-
-          {/* Gender Selection */}
-          <View style={styles.inputContainer}>
-            <Text variant="bodyMedium" style={styles.label}>
-              Gender
-            </Text>
-          <Button
-            mode="outlined"
-            onPress={() => {
-              console.log('[BookingPanel] Gender button pressed');
-              console.log('[BookingPanel] Current showGenderDialog state:', showGenderDialog);
-              setShowGenderDialog(true);
-              console.log('[BookingPanel] setShowGenderDialog(true) called');
-            }}
-            style={styles.selectButton}
-            contentStyle={styles.selectButtonContent}
-            icon="account"
-          >
-            {userGender ? userGender : 'Select Gender'}
-          </Button>
-          </View>
-
-          {/* Date Selection */}
-          <View style={styles.inputContainer}>
-            <Text variant="bodyMedium" style={styles.label}>
-              Date
-            </Text>
-            <Button
-              mode="outlined"
-              onPress={() => setShowDatePicker(true)}
-              style={styles.selectButton}
-              contentStyle={styles.selectButtonContent}
-              icon="calendar"
-            >
-              {formatDate(date)}
-            </Button>
-            {showDatePicker && Platform.OS !== 'web' && DateTimePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                minimumDate={minDate}
-              onChange={(event: any, selectedDate?: Date) => {
-                if (Platform.OS === 'android') {
-                  setShowDatePicker(false);
-                }
-                if (selectedDate) {
-                  setDate(selectedDate);
-                  if (Platform.OS === 'ios') {
-                    setShowDatePicker(false);
-                  }
-                }
-              }}
-              />
-            )}
-          </View>
-
-          {/* Person Count */}
-          <View style={styles.inputContainer}>
-            <Text variant="bodyMedium" style={styles.label}>
-              Number of People
-            </Text>
-          <Button
-            mode="outlined"
-            onPress={() => {
-              console.log('[BookingPanel] People button pressed');
-              console.log('[BookingPanel] Current showPersonDialog state:', showPersonDialog);
-              setShowPersonDialog(true);
-              console.log('[BookingPanel] setShowPersonDialog(true) called');
-            }}
-            style={styles.selectButton}
-            contentStyle={styles.selectButtonContent}
-            icon="account-group"
-          >
-            {personCount ? `People: ${personCount}` : 'Number of People'}
-          </Button>
-          </View>
-
-          {/* Price Breakdown */}
-          <View style={styles.priceContainer}>
-            <View style={styles.priceRow}>
-              <Text variant="bodyMedium" style={styles.priceLabel}>
-                € {basePrice.toFixed(2)} × {personCount} {personCount === 1 ? 'Person' : 'People'}
-              </Text>
-              <Text variant="bodyMedium" style={styles.priceValue}>
-                € {(basePrice * personCount).toFixed(2)}
-              </Text>
-            </View>
-            <View style={styles.priceRow}>
-              <Text variant="bodyMedium" style={styles.priceLabel}>
-                Service Fee
-              </Text>
-              <Text variant="bodyMedium" style={styles.priceValue}>
-                € {serviceFee.toFixed(2)}
-              </Text>
-            </View>
-            <Divider style={styles.divider} />
-            <View style={styles.totalRow}>
-              <Text variant="titleLarge" style={styles.totalLabel}>
-                Total
-              </Text>
-              <Text variant="titleLarge" style={[styles.totalValue, { color: theme.colors.primary }]}>
-                € {total.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Booking Button */}
-          <Button
-            mode="contained"
-            onPress={handleReservation}
-            disabled={!userGender || !date || loading}
-            style={styles.bookButton}
-            contentStyle={styles.bookButtonContent}
-            loading={loading}
-            icon="lock"
-          >
-            {loading ? 'Processing...' : 'Continue to Payment'}
-          </Button>
-
-          {/* Security Badge */}
-          <View style={styles.securityBadge}>
-            <Text variant="bodySmall" style={[styles.securityText, { color: theme.colors.primary }]}>
-              🔒 Secure Payment
-            </Text>
-          </View>
         </Card.Content>
       </Card>
 
-      {/* Gender Dialog - Direct Dialog without Portal for modal compatibility */}
-      <Dialog
-        visible={showGenderDialog}
-        onDismiss={() => {
-          console.log('[BookingPanel] Gender dialog dismissed');
-          setShowGenderDialog(false);
-        }}
-        dismissable={true}
-        dismissableBackButton={true}
-        style={styles.dialog}
-      >
-        <Dialog.Title>Select Gender</Dialog.Title>
-        <Dialog.Content>
-          <RadioButton.Group
-            onValueChange={(value) => {
-              console.log('Gender selected via RadioButton:', value);
-              setUserGender(value);
-              setShowGenderDialog(false);
-            }}
-            value={userGender}
-          >
-            {genders.map((g) => (
-              <TouchableOpacity
-                key={g}
-                style={styles.optionRow}
-                onPress={() => {
-                  console.log('Gender option pressed:', g);
-                  setUserGender(g);
-                  setShowGenderDialog(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <RadioButton value={g} />
-                <Text variant="bodyLarge" style={styles.optionText}>{g}</Text>
-              </TouchableOpacity>
-            ))}
-          </RadioButton.Group>
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => {
-            console.log('Cancel pressed');
-            setShowGenderDialog(false);
-          }}>Cancel</Button>
-        </Dialog.Actions>
-      </Dialog>
-
-      {/* Person Count Dialog - Direct Dialog without Portal for modal compatibility */}
-      <Dialog
-        visible={showPersonDialog}
-        onDismiss={() => {
-          console.log('[BookingPanel] People dialog dismissed');
-          setShowPersonDialog(false);
-        }}
-        dismissable={true}
-        dismissableBackButton={true}
-        style={styles.dialog}
-      >
-        <Dialog.Title>Number of People</Dialog.Title>
-        <Dialog.Content>
-          <RNScrollView style={styles.dialogScrollView}>
-            <RadioButton.Group
-              onValueChange={(value) => {
-                const num = Number(value);
-                console.log('People selected via RadioButton:', num);
-                setPersonCount(num);
-                setShowPersonDialog(false);
-              }}
-              value={personCount.toString()}
-            >
-              {peopleOptions.map((n) => (
-                <TouchableOpacity
-                  key={n}
-                  style={styles.optionRow}
-                  onPress={() => {
-                    console.log('People option pressed:', n);
-                    setPersonCount(n);
-                    setShowPersonDialog(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <RadioButton value={n.toString()} />
-                  <Text variant="bodyLarge" style={styles.optionText}>{n}</Text>
-                </TouchableOpacity>
-              ))}
-            </RadioButton.Group>
-          </RNScrollView>
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => {
-            console.log('Cancel pressed');
-            setShowPersonDialog(false);
-          }}>Cancel</Button>
-        </Dialog.Actions>
-      </Dialog>
+      {/* Date Picker */}
+      {showDatePicker && Platform.OS !== 'web' && DateTimePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          minimumDate={minDate}
+          onChange={(event: any, selectedDate?: Date) => {
+            if (Platform.OS === 'android') {
+              setShowDatePicker(false);
+            }
+            if (selectedDate) {
+              setDate(selectedDate);
+              if (Platform.OS === 'ios') {
+                setShowDatePicker(false);
+              }
+            }
+          }}
+        />
+      )}
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    marginBottom: 16,
-  },
-  header: {
+  section: {
     marginBottom: 24,
   },
-  title: {
-    fontWeight: 'bold',
-    marginBottom: 4,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
   },
-  subtitle: {
-    opacity: 0.7,
-  },
-  errorContainer: {
-    backgroundColor: '#fee2e2',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#ef4444',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    marginBottom: 8,
+  sectionTitle: {
     fontWeight: '600',
   },
-  selectButton: {
-    marginTop: 4,
+  dateButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
-  selectButtonContent: {
+  dateText: {
+    fontWeight: '600',
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  genderChip: {
+    flex: 1,
+    height: 48,
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  genderChipSelected: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#2196F3',
+  },
+  genderChipText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  genderChipTextSelected: {
+    color: '#2196F3',
+  },
+  peopleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
     paddingVertical: 8,
   },
-  priceContainer: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
+  peopleButton: {
+    margin: 0,
+  },
+  peopleCount: {
+    fontWeight: 'bold',
+    minWidth: 60,
+    textAlign: 'center',
+  },
+  priceCard: {
+    backgroundColor: '#F8F9FA',
+    marginBottom: 24,
   },
   priceRow: {
     flexDirection: 'row',
@@ -454,6 +372,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 8,
   },
   totalLabel: {
     fontWeight: 'bold',
@@ -461,44 +380,25 @@ const styles = StyleSheet.create({
   totalValue: {
     fontWeight: 'bold',
   },
-  bookButton: {
-    marginTop: 8,
-  },
-  bookButtonContent: {
-    paddingVertical: 8,
-  },
-  securityBadge: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 16,
-    padding: 8,
+  errorContainer: {
+    backgroundColor: '#fee2e2',
+    padding: 12,
     borderRadius: 8,
-    backgroundColor: '#f0f9ff',
+    marginBottom: 16,
   },
-  securityText: {
-    fontWeight: '600',
+  errorText: {
+    color: '#ef4444',
   },
   warningText: {
     opacity: 0.7,
     textAlign: 'center',
   },
-  dialogScrollView: {
-    maxHeight: 300,
+  card: {
+    marginBottom: 16,
+    borderRadius: 16,
+    backgroundColor: '#fff',
   },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    minHeight: 48,
-    paddingHorizontal: 4,
-  },
-  optionText: {
-    marginLeft: 8,
-    flex: 1,
-  },
-  dialog: {
-    zIndex: 9999,
-    elevation: 9999,
+  cardContent: {
+    padding: 20,
   },
 });

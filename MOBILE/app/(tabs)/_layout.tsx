@@ -1,21 +1,19 @@
 /**
  * Tab Navigation Layout
- * 
- * Main app navigation with bottom tabs
+ *
+ * Modern bottom tab navigation (Uber/Delivery app style)
+ * 3 main tabs: Map (Home), Favorites, Profile
  * Only accessible when authenticated
  */
 
 import { Tabs, Redirect } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { tokenStorage } from '../../src/utils/secureStorage';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const { currentUser } = useSelector((state: any) => state.auth);
   const [checked, setChecked] = useState(false);
 
@@ -42,36 +40,73 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#6200EE', // Modern purple color
+        tabBarInactiveTintColor: '#9E9E9E',
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E0E0E0',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
       }}>
+      {/* Map Screen (Home) */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Map',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? 'map' : 'map-outline'}
+              size={28}
+              color={color}
+            />
+          ),
         }}
       />
+
+      {/* List Screen */}
       <Tabs.Screen
         name="list"
         options={{
           title: 'List',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? 'format-list-bulleted' : 'format-list-bulleted'}
+              size={28}
+              color={color}
+            />
+          ),
         }}
       />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
-        }}
-      />
+
+      {/* Profile Screen */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? 'account' : 'account-outline'}
+              size={28}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* Hide Favorites Screen */}
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          href: null, // Hide from tabs
         }}
       />
     </Tabs>
