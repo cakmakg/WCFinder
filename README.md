@@ -60,7 +60,8 @@ Geschäftsinhaber können ihre Toiletten listen und so zusätzliche Einnahmen er
 ### DevOps & Infrastruktur
 
 - **MongoDB Atlas** – gehostete MongoDB
-- **Railway** – Deployment von Backend & Frontend
+- **Render** – Backend-Deployment  
+- **Vercel** – Frontend-Deployment
 - **Swagger / ReDoc** – API-Dokumentation
 
 ---
@@ -214,7 +215,8 @@ Die meisten detaillierten Dokumente (`*.md`) werden per `.gitignore` **nicht** z
 - `RECHNUNG_SYSTEM_COMPLETE.md` – deutsches Rechnungssystem (XRechnung / EN 16931)
 - `SECURITY_REVIEW.md` – ausführlicher Security-Review
 - `CLEAN_CODE_IMPROVEMENTS.md` – Clean-Code- & Sicherheitsverbesserungen
-- `DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md`, `RAILWAY_DEPLOYMENT.md` – Deployment-Guides
+- `RENDER_VERCEL_DEPLOYMENT.md` – Backend (Render) + Frontend (Vercel)  
+- `DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md` – weitere Deployment-Guides
 
 Alle diese Dateien sind für die Entwicklung wichtig, werden aber nicht veröffentlicht.
 
@@ -230,7 +232,7 @@ Details siehe `SECURITY_REVIEW.md` (lokal).
 - CORS-Konfiguration abhängig von Umgebung
 - HTTP-Sicherheitsheader (Helmet)
 - Sichere Logging-Strategie (keine Passwörter / Tokens im Log)
-- HTTPS im Produktivbetrieb (Railway)
+- HTTPS im Produktivbetrieb (Render/Vercel)
 - Mobile:
   - Tokens nur in `expo-secure-store` (kein AsyncStorage)
   - Network-Status-Handling & Fehleranzeigen
@@ -256,21 +258,21 @@ npm run lint
 
 ## 🚢 Deployment (Überblick)
 
-Die vollständigen Anleitungen liegen lokal in:
+**Empfohlene Umgebung:** Backend auf **Render**, Frontend auf **Vercel**.
 
-- `PRODUCTION_DEPLOYMENT.md`
-- `DEPLOYMENT_CHECKLIST.md`
-- `RAILWAY_DEPLOYMENT.md`
-- `RAILWAY_ENV_VARIABLES.md`
+Lokale Anleitungen (nicht auf GitHub):
 
-**Typischer Flow:**
+- **`RENDER_VERCEL_DEPLOYMENT.md`** – Schritt-für-Schritt: Backend (Render) + Frontend (Vercel)
+- `DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md`
+
+**Typischer Ablauf:**
 
 1. MongoDB Atlas einrichten (oder lokale MongoDB)
-2. Backend auf Railway deployen (Root: `SERVER`)
-3. Web-Frontend auf Railway (Root: `CLIENT`)
-4. Domain / SSL konfigurieren
-5. CORS & Environment-Variablen setzen
-6. API-URL in `CLIENT` und `MOBILE` auf die Produktiv-Backend-URL stellen
+2. **Backend** auf **Render** deployen (Root: `SERVER`, siehe `render.yaml`)
+3. **Frontend** auf **Vercel** deployen (Root: `CLIENT`, siehe `CLIENT/vercel.json`)
+4. CORS auf Render: `CORS_ORIGIN` = Vercel-URL (z. B. `https://xxx.vercel.app`)
+5. Vercel-Env: `VITE_BASE_URL` = Render-Backend-URL
+6. Optional: eigene Domain & SSL für Backend/Frontend
 
 ---
 
