@@ -10,3 +10,7 @@ vite.config.*.timestamp-*
 
 # Testing
 coverage/
+
+# Markdown dokümanlarını Git'e gönderme (sadece README.md hariç)
+*.md
+!README.md

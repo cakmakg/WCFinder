@@ -41,3 +41,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Markdown dokümanlarını Git'e gönderme (sadece README.md hariç)
+*.md
+!README.md

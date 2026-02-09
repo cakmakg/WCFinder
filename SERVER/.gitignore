@@ -15,3 +15,7 @@ public/rechnungen/*
 # Swagger generated files (if any)
 swagger-output.json
 swagger.json
+
+# Markdown dokümanlarını Git'e gönderme (sadece README.md hariç)
+*.md
+!README.md
