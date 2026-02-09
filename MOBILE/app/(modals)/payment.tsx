@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, Alert, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
 import { 
   Text, 
   Card, 
@@ -16,7 +16,8 @@ import {
   useTheme,
   IconButton,
   RadioButton,
-  List
+  List,
+  TextInput
 } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
@@ -48,6 +49,9 @@ export default function PaymentScreen() {
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState<any>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [cardholderName, setCardholderName] = useState('');
+  const [cardholderSurname, setCardholderSurname] = useState('');
+  const [billingEmail, setBillingEmail] = useState('');
   
   const stripe = useStripe ? useStripe() : null;
   const confirmPayment = stripe?.confirmPayment;
@@ -95,10 +99,28 @@ export default function PaymentScreen() {
       setProcessingPayment(true);
       setError(null);
 
+      // Validate billing details
+      if (!cardholderName.trim()) {
+        setError('Please enter your first name');
+        return;
+      }
+      if (!cardholderSurname.trim()) {
+        setError('Please enter your last name');
+        return;
+      }
+      if (!billingEmail.trim() || !billingEmail.includes('@')) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
       console.log('[Payment] Confirming card payment...');
 
       const { error: confirmError, paymentIntent } = await confirmPayment(clientSecret, {
         paymentMethodType: 'Card',
+        billingDetails: {
+          name: `${cardholderName.trim()} ${cardholderSurname.trim()}`.trim(),
+          email: billingEmail.trim(),
+        },
       });
 
       if (confirmError) {
@@ -109,19 +131,19 @@ export default function PaymentScreen() {
 
       if (paymentIntent?.status === 'Succeeded') {
         console.log('[Payment] Payment succeeded:', paymentIntent.id);
-        Alert.alert(
-          'Payment Successful',
-          'Your payment has been processed successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Navigate to bookings or home
-                router.replace('/(tabs)' as any);
-              },
-            },
-          ]
-        );
+        
+        // Navigate to payment success with booking data and payment info
+        router.replace({
+          pathname: '/(modals)/payment-success',
+          params: {
+            paymentData: JSON.stringify({
+              paymentIntentId: paymentIntent.id,
+              paymentId: paymentId,
+              bookingData: bookingData,
+              paymentMethod: 'card',
+            }),
+          },
+        });
       }
     } catch (err: any) {
       console.error('[Payment] Card payment error:', err);
@@ -151,17 +173,39 @@ export default function PaymentScreen() {
       setLoading(true);
       setError(null);
 
+      // Ensure date is properly formatted
+      let startTime: string;
+      if (bookingData.date instanceof Date) {
+        startTime = bookingData.date.toISOString();
+      } else if (typeof bookingData.date === 'string') {
+        // If it's already an ISO string, use it directly
+        startTime = bookingData.date.includes('T') ? bookingData.date : new Date(bookingData.date).toISOString();
+      } else {
+        startTime = new Date().toISOString();
+      }
+
+      // Ensure totalAmount is a number
+      const totalAmount = typeof bookingData.pricing.total === 'string' 
+        ? parseFloat(bookingData.pricing.total) 
+        : Number(bookingData.pricing.total);
+
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        throw new Error(`Invalid total amount: ${bookingData.pricing.total}`);
+      }
+
       const bookingDataForPayment = {
         businessId: bookingData.business.id,
         toiletId: bookingData.toilet.id,
-        personCount: bookingData.personCount,
-        startTime: new Date(bookingData.date).toISOString(),
-        genderPreference: bookingData.userGender,
-        totalAmount: bookingData.pricing.total,
+        personCount: bookingData.personCount || 1,
+        startTime,
+        genderPreference: bookingData.userGender || 'Male',
+        totalAmount,
       };
 
       console.log('[Payment] Creating Stripe payment intent...', {
         businessId: bookingDataForPayment.businessId,
+        totalAmount: bookingDataForPayment.totalAmount,
+        startTime: bookingDataForPayment.startTime,
         hasToken: !!token,
       });
 
@@ -193,6 +237,13 @@ export default function PaymentScreen() {
       } else if (err.response?.status === 409) {
         // Handle duplicate payment (409 Conflict)
         setError('A payment for this booking already exists. Please check your bookings.');
+      } else if (err.response?.status === 502) {
+        // Handle Bad Gateway (backend not responding)
+        setError('Payment service is temporarily unavailable. Please try again later or use PayPal.');
+      } else if (err.response?.status === 500) {
+        // Handle Internal Server Error
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Server error occurred';
+        setError(`Payment failed: ${errorMessage}. Please try again or contact support.`);
       } else {
         setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to create payment');
       }
@@ -362,6 +413,38 @@ export default function PaymentScreen() {
               
               {CardField && stripe ? (
                 <>
+                  {/* Cardholder Name */}
+                  <TextInput
+                    style={styles.textInput}
+                    label="First Name"
+                    value={cardholderName}
+                    onChangeText={setCardholderName}
+                    mode="outlined"
+                    autoCapitalize="words"
+                  />
+
+                  {/* Cardholder Surname */}
+                  <TextInput
+                    style={styles.textInput}
+                    label="Last Name"
+                    value={cardholderSurname}
+                    onChangeText={setCardholderSurname}
+                    mode="outlined"
+                    autoCapitalize="words"
+                  />
+
+                  {/* Billing Email */}
+                  <TextInput
+                    style={styles.textInput}
+                    label="Email"
+                    value={billingEmail}
+                    onChangeText={setBillingEmail}
+                    mode="outlined"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+
                   <CardField
                     postalCodeEnabled={false}
                     placeholders={{
@@ -397,7 +480,7 @@ export default function PaymentScreen() {
                     style={styles.confirmButton}
                     contentStyle={styles.confirmButtonContent}
                     loading={processingPayment}
-                    disabled={!cardDetails?.complete || processingPayment}
+                    disabled={!cardDetails?.complete || !cardholderName.trim() || !cardholderSurname.trim() || !billingEmail.trim() || processingPayment}
                     icon="lock"
                   >
                     {processingPayment ? 'Processing...' : 'Pay €' + bookingData.pricing.total.toFixed(2)}
@@ -435,14 +518,145 @@ export default function PaymentScreen() {
         {!clientSecret ? (
           <Button
             mode="contained"
-            onPress={createStripePaymentIntent}
+            onPress={async () => {
+              // Route to proper payment flow depending on selected payment method
+              if (paymentMethod === 'card') {
+                await createStripePaymentIntent();
+              } else if (paymentMethod === 'paypal') {
+                // If PayPal is selected, call PayPal create endpoint instead of Stripe
+                try {
+                  setLoading(true);
+                  setError(null);
+
+                  if (!token) {
+                    setError('Please login to continue with payment');
+                    router.replace('/(auth)/login');
+                    return;
+                  }
+
+                  // Ensure date is properly formatted
+                  let startTime: string;
+                  if (bookingData.date instanceof Date) {
+                    startTime = bookingData.date.toISOString();
+                  } else if (typeof bookingData.date === 'string') {
+                    // If it's already an ISO string, use it directly
+                    startTime = bookingData.date.includes('T') ? bookingData.date : new Date(bookingData.date).toISOString();
+                  } else {
+                    startTime = new Date().toISOString();
+                  }
+
+                  // Ensure totalAmount is a number
+                  const totalAmount = typeof bookingData.pricing.total === 'string' 
+                    ? parseFloat(bookingData.pricing.total) 
+                    : Number(bookingData.pricing.total);
+
+                  if (isNaN(totalAmount) || totalAmount <= 0) {
+                    setError(`Invalid total amount: ${bookingData.pricing.total}`);
+                    setLoading(false);
+                    return;
+                  }
+
+                  const bookingDataForPayment = {
+                    businessId: bookingData.business.id,
+                    toiletId: bookingData.toilet.id,
+                    personCount: bookingData.personCount || 1,
+                    startTime,
+                    genderPreference: bookingData.userGender || 'Male',
+                    totalAmount,
+                  };
+
+                  console.log('[Payment] Creating PayPal order...', { 
+                    businessId: bookingDataForPayment.businessId, 
+                    totalAmount: bookingDataForPayment.totalAmount,
+                    startTime: bookingDataForPayment.startTime,
+                    hasToken: !!token 
+                  });
+
+                  const response = await api.post('/payments/paypal/create', {
+                    bookingData: bookingDataForPayment,
+                  });
+
+                  console.log('[Payment] PayPal order response:', response.data);
+
+                const orderId = response.data?.result?.orderId || response.data?.result?.orderId;
+                const paypalPaymentId = response.data?.result?.paymentId;
+
+                if (orderId) {
+                  // Navigate to payment success with booking data and PayPal info
+                  router.replace({
+                    pathname: '/(modals)/payment-success',
+                    params: {
+                      paymentData: JSON.stringify({
+                        orderId: orderId,
+                        paymentId: paypalPaymentId,
+                        bookingData: bookingData,
+                        paymentMethod: 'paypal',
+                      }),
+                    },
+                  });
+                } else {
+                  throw new Error('Invalid response from server');
+                }
+                } catch (err: any) {
+                  console.error('[Payment] PayPal payment error:', err);
+                  console.error('[Payment] PayPal error response:', {
+                    status: err.response?.status,
+                    data: err.response?.data,
+                    message: err.message,
+                  });
+                  
+                  if (err.response?.status === 401) {
+                    setError('Authentication failed. Please login again.');
+                    setTimeout(() => {
+                      router.replace('/(auth)/login');
+                    }, 2000);
+                  } else if (err.response?.status === 500) {
+                    // Handle Internal Server Error with more details
+                    const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Server error occurred';
+                    const errorDetails = err.response?.data?.details;
+                    
+                    console.error('[Payment] PayPal 500 error details:', {
+                      message: errorMessage,
+                      details: errorDetails,
+                      fullData: err.response?.data,
+                    });
+                    
+                    // Show user-friendly error message
+                    let userMessage = `PayPal payment failed: ${errorMessage}`;
+                    
+                    // Add specific guidance based on error message
+                    if (errorMessage.includes('PayPal configuration') || errorMessage.includes('PAYPAL_CLIENT_ID')) {
+                      userMessage += '\n\nPlease contact support. PayPal is not properly configured.';
+                    } else if (errorMessage.includes('Business not found')) {
+                      userMessage += '\n\nThe selected business could not be found. Please try again.';
+                    } else if (errorMessage.includes('Invalid totalAmount')) {
+                      userMessage += '\n\nInvalid payment amount. Please try again.';
+                    } else {
+                      userMessage += '\n\nPlease try again or contact support if the problem persists.';
+                    }
+                    
+                    setError(userMessage);
+                  } else if (err.response?.status === 502) {
+                    setError('Payment service is temporarily unavailable. Please try again later.');
+                  } else {
+                    setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to create PayPal order');
+                  }
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
             style={styles.payButton}
             contentStyle={styles.payButtonContent}
             loading={loading}
             disabled={loading}
-            icon="lock"
+            icon={paymentMethod === 'paypal' ? 'wallet' : 'credit-card'}
           >
-            {loading ? 'Processing...' : 'Continue to Payment'}
+            {loading 
+              ? 'Processing...' 
+              : paymentMethod === 'paypal' 
+                ? `Pay with PayPal - €${bookingData.pricing.total.toFixed(2)}`
+                : 'Continue to Payment'}
           </Button>
         ) : (
           <View style={styles.paymentReadyContainer}>
@@ -603,6 +817,9 @@ const styles = StyleSheet.create({
   },
   confirmButtonContent: {
     paddingVertical: 8,
+  },
+  textInput: {
+    marginBottom: 16,
   },
 });
 

@@ -3,7 +3,7 @@
  *
  * Full-screen map with toilet locations
  * Uber/Delivery app style with bottom sheet for details
- *
+ * 
  * Features:
  * - Real-time user location
  * - Custom toilet markers
@@ -13,22 +13,25 @@
  */
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, StyleSheet, Platform, Alert, Keyboard, Linking, Text } from 'react-native';
+import { View, StyleSheet, Platform, Alert, Keyboard, Linking, Text, FlatList, RefreshControl } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import { Searchbar, FAB, IconButton, useTheme, ActivityIndicator } from 'react-native-paper';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { Searchbar, FAB, IconButton, useTheme, ActivityIndicator, Text as PaperText } from 'react-native-paper';
+import BottomSheet, { BottomSheetView, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Location from 'expo-location';
 import * as IntentLauncher from 'expo-intent-launcher';
 import Constants from 'expo-constants';
 import { useSelector } from 'react-redux';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 import { ToiletMarker } from '../../src/components/map/ToiletMarker';
 import { ToiletDetailsSheet } from '../../src/components/map/ToiletDetailsSheet';
+import { BusinessCard } from '../../src/components/business/BusinessCard';
 import { useToilets } from '../../src/hooks/useToilets';
+import { useBusiness } from '../../src/hooks/useBusiness';
 import { useLocation } from '../../src/hooks/useLocation';
 import { searchLocationSuggestions, searchLocation, GeocodingSuggestion } from '../../src/services/geocoding';
+import { Business } from '../../src/services/businessService';
 
 interface UserLocation {
   latitude: number;
@@ -41,8 +44,10 @@ export default function MapScreen() {
   const theme = useTheme();
   const mapRef = useRef<MapView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const businessListSheetRef = useRef<BottomSheet>(null);
   const { currentUser } = useSelector((state: any) => state.auth);
-  const { location, getCurrentLocation } = useLocation();
+  const { location, getCurrentLocation, calculateDistance } = useLocation();
+  const params = useLocalSearchParams<{ search?: string }>();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +58,41 @@ export default function MapScreen() {
   const [searchedLocation, setSearchedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Handle search parameter from StartPage
+  useEffect(() => {
+    if (params.search) {
+      const searchText = decodeURIComponent(params.search);
+      setSearchQuery(searchText);
+      // Perform location search
+      handleSearchFromParam(searchText);
+    }
+  }, [params.search]);
+
+  const handleSearchFromParam = async (searchText: string) => {
+    if (!searchText.trim()) return;
+
+    setIsSearchingLocation(true);
+    try {
+      const result = await searchLocation(searchText);
+      if (result) {
+        setSearchedLocation({ lat: result.lat, lng: result.lng });
+        
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            latitude: result.lat,
+            longitude: result.lng,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error('Error searching location:', error);
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
 
   // Get toilets from API based on location
   const toiletParams = useMemo(() => {
@@ -98,6 +138,59 @@ export default function MapScreen() {
 
   // Bottom sheet snap points
   const snapPoints = useMemo(() => ['25%', '50%', '90%'], []);
+  // Bottom sheet snap points - keep map visible at 50% height
+  const businessListSnapPoints = useMemo(() => ['30%', '50%'], []);
+
+  // Get businesses for list
+  const businessParams = useMemo(() => {
+    if (location) {
+      return {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radius: 10, // 10km radius
+        search: searchQuery || undefined,
+      };
+    }
+    return {
+      search: searchQuery || undefined,
+    };
+  }, [location?.latitude, location?.longitude, searchQuery]);
+
+  const { businesses, loading: businessesLoading, error: businessesError, refreshing: businessesRefreshing, refresh: refreshBusinesses } = useBusiness(businessParams);
+
+  // Calculate distance for each business
+  const businessesWithDistance = useMemo(() => {
+    if (!businesses || !Array.isArray(businesses)) return [];
+    if (!location) return businesses.map(b => ({ business: b }));
+    
+    return businesses.map((business) => {
+      if (!business.location?.coordinates) {
+        return { business };
+      }
+      
+      const [longitude, latitude] = business.location.coordinates;
+      const distance = calculateDistance(
+        location.latitude,
+        location.longitude,
+        latitude,
+        longitude
+      );
+      
+      return { business, distance };
+    }).sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+  }, [businesses, location]);
+
+  const handleBusinessPress = (business: Business) => {
+    router.push({
+      pathname: '/(modals)/business-detail',
+      params: { id: business._id },
+    });
+  };
+
+  const handleRefreshBusinesses = () => {
+    getCurrentLocation();
+    refreshBusinesses();
+  };
 
   /**
    * Request location permissions and get current location
@@ -194,7 +287,7 @@ export default function MapScreen() {
    */
   const handleMarkerPress = useCallback((toilet: any) => {
     console.log('[MapScreen] Toilet marker pressed:', toilet.name);
-    
+
     // Get business ID from toilet
     const businessId = toilet.business?._id || toilet.businessId;
     
@@ -213,7 +306,7 @@ export default function MapScreen() {
       params: { id: businessId },
     });
   }, [router]);
-
+    
   /**
    * Handle booking button from bottom sheet
    */
@@ -286,8 +379,8 @@ export default function MapScreen() {
           mapRef.current.animateToRegion(userLocation, 1000);
         }
         return;
-      }
-
+    }
+    
       // If permission is not determined yet, request it
       if (currentStatus === 'undetermined') {
         console.log('[MapScreen] Requesting permission...');
@@ -364,7 +457,7 @@ export default function MapScreen() {
         }
       } catch (directError: any) {
         console.warn('[MapScreen] Direct location API failed:', directError.message);
-        
+
         // Try useLocation hook as fallback
         try {
           console.log('[MapScreen] Trying useLocation hook...');
@@ -415,7 +508,7 @@ export default function MapScreen() {
       if (userLocation && mapRef.current) {
         console.log('[MapScreen] Using cached location due to error');
         mapRef.current.animateToRegion(userLocation, 1000);
-      } else {
+    } else {
         Alert.alert(
           'Konum Bulunamadı',
           'Konumunuz alınamadı. Lütfen GPS\'inizin açık olduğundan ve konum izni verdiğinizden emin olun.',
@@ -432,7 +525,7 @@ export default function MapScreen() {
     if (!searchQuery.trim()) {
       console.log('[MapScreen] filteredToilets (no search):', toilets.length);
       return toilets;
-    }
+      }
 
     const query = searchQuery.toLowerCase();
     const filtered = toilets.filter((toilet: any) => {
@@ -567,7 +660,7 @@ export default function MapScreen() {
                 toilet={toilet}
                 onPress={() => handleMarkerPress(toilet)}
                 isSelected={selectedToilet?._id === toilet._id}
-              />
+      />
             );
           })
         ) : (
@@ -607,7 +700,7 @@ export default function MapScreen() {
         style={styles.locationFab}
         onPress={centerOnUser}
         size="medium"
-      />
+        />
 
       {/* Bottom Sheet for Toilet Details */}
       <BottomSheet
@@ -627,6 +720,66 @@ export default function MapScreen() {
             />
           )}
         </BottomSheetView>
+      </BottomSheet>
+
+      {/* Bottom Sheet for Business List - Always visible at 50% max */}
+      <BottomSheet
+        ref={businessListSheetRef}
+        index={1}
+        snapPoints={businessListSnapPoints}
+        enablePanDownToClose={false}
+        enableOverDrag={false}
+        backgroundStyle={styles.bottomSheet}
+        handleIndicatorStyle={styles.bottomSheetIndicator}
+        animateOnMount={true}
+      >
+        <BottomSheetFlatList
+          data={businessesWithDistance}
+          keyExtractor={(item: { business: Business; distance?: number }) => item.business._id}
+          renderItem={({ item }: { item: { business: Business; distance?: number } }) => (
+            <BusinessCard
+              business={item.business}
+              distance={item.distance}
+              onPress={handleBusinessPress}
+            />
+          )}
+          contentContainerStyle={styles.businessListContent}
+          ListHeaderComponent={
+            <View style={styles.businessListHeader}>
+              <PaperText variant="headlineSmall" style={styles.businessListTitle}>
+                Yakındaki Tuvaletler
+              </PaperText>
+              {businessesLoading && businesses.length === 0 && (
+                <ActivityIndicator size="small" style={styles.businessListLoading} />
+              )}
+            </View>
+          }
+          ListEmptyComponent={
+            businessesLoading ? (
+              <View style={styles.businessListEmpty}>
+                <ActivityIndicator size="large" />
+                <Text style={styles.businessListEmptyText}>Tuvaletler yükleniyor...</Text>
+              </View>
+            ) : businessesError ? (
+              <View style={styles.businessListEmpty}>
+                <Text style={styles.businessListErrorText}>{businessesError}</Text>
+              </View>
+            ) : (
+              <View style={styles.businessListEmpty}>
+                <Text style={styles.businessListEmptyText}>Tuvalet bulunamadı</Text>
+                {searchQuery && (
+                  <Text style={styles.businessListEmptySubtext}>Farklı bir arama terimi deneyin</Text>
+                )}
+              </View>
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={businessesRefreshing}
+              onRefresh={handleRefreshBusinesses}
+            />
+          }
+        />
       </BottomSheet>
     </GestureHandlerRootView>
   );
@@ -682,5 +835,42 @@ const styles = StyleSheet.create({
   bottomSheetContent: {
     flex: 1,
     padding: 16,
+  },
+  businessListContent: {
+    padding: 16,
+  },
+  businessListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  businessListTitle: {
+    fontWeight: 'bold',
+  },
+  businessListLoading: {
+    marginLeft: 8,
+  },
+  businessListEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  businessListEmptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    opacity: 0.7,
+    marginTop: 12,
+  },
+  businessListEmptySubtext: {
+    opacity: 0.5,
+    marginTop: 8,
+  },
+  businessListErrorText: {
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginTop: 12,
   },
 });

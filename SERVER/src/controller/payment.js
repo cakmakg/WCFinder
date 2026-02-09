@@ -132,6 +132,13 @@ module.exports = {
     try {
       const { usageId, bookingData } = req.body;
 
+      logger.debug('createPayPalOrder called', {
+        userId: req.user._id,
+        hasUsageId: !!usageId,
+        hasBookingData: !!bookingData,
+        bookingDataKeys: bookingData ? Object.keys(bookingData) : null,
+      });
+
       let result;
       if (usageId) {
         // Mevcut usage için payment oluştur
@@ -141,6 +148,10 @@ module.exports = {
         );
       } else if (bookingData) {
         // ✅ YENİ: Booking bilgilerinden payment oluştur (ödeme sonrası usage oluşturulacak)
+        logger.debug('Creating PayPal order from booking data', {
+          businessId: bookingData.businessId,
+          totalAmount: bookingData.totalAmount,
+        });
         result = await paymentService.createPayPalOrderFromBooking(
           bookingData,
           req.user._id
@@ -161,7 +172,24 @@ module.exports = {
         result,
       });
     } catch (error) {
-      throw error;
+      logger.error('PayPal order creation failed', error, {
+        userId: req.user?._id,
+        hasBookingData: !!req.body.bookingData,
+        hasUsageId: !!req.body.usageId,
+        bookingDataKeys: req.body.bookingData ? Object.keys(req.body.bookingData) : null,
+        errorMessage: error.message,
+        errorStack: error.stack,
+      });
+      
+      // Return more detailed error message
+      const errorMessage = error.message || 'Failed to create PayPal order';
+      const statusCode = error.statusCode || 500;
+      
+      res.status(statusCode).send({
+        error: true,
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      });
     }
   },
 

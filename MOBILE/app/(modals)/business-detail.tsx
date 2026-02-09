@@ -20,6 +20,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { useSelector } from 'react-redux';
 import { useBusinessDetail } from '../../src/hooks/useBusiness';
 import { BookingPanel, BookingData } from '../../src/components/business/BookingPanel';
 import toiletService, { Toilet } from '../../src/services/toiletService';
@@ -29,6 +30,7 @@ export default function BusinessDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { business, loading, error } = useBusinessDetail(id || null);
+  const { currentUser, token } = useSelector((state: any) => state.auth);
   const [toilets, setToilets] = useState<Toilet[]>([]);
   const [toiletsLoading, setToiletsLoading] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -68,10 +70,18 @@ export default function BusinessDetailScreen() {
   }, [id]);
 
   const handleBookingSubmit = async (bookingData: BookingData) => {
+    // Check if user is logged in FIRST (before any loading state)
+    if (!currentUser || !token) {
+      // User not logged in, redirect to login
+      router.push('/(auth)/login');
+      return;
+    }
+
     try {
       setBookingLoading(true);
       setBookingError(null);
 
+      // User is logged in, proceed to payment
       router.push({
         pathname: '/(modals)/payment',
         params: {

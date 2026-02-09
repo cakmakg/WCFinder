@@ -50,11 +50,11 @@ class PaymentService {
     const { toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
     
     return {
-      toiletId: toiletId?.toString() || toiletId,
-      personCount: personCount?.toString() || personCount?.toString(),
-      startTime: startTime instanceof Date ? startTime.toISOString() : startTime,
+      toiletId: toiletId ? toiletId.toString() : null,
+      personCount: personCount ? parseInt(personCount) : null,
+      startTime: startTime instanceof Date ? startTime.toISOString() : (typeof startTime === 'string' ? startTime : null),
       genderPreference: genderPreference || null,
-      totalAmount: totalAmount?.toString() || totalAmount,
+      totalAmount: totalAmount ? parseFloat(totalAmount) : null,
     };
   }
 
@@ -545,138 +545,182 @@ class PaymentService {
    * ✅ YENİ: PayPal ödeme başlat (booking bilgileri ile - ödeme sonrası usage oluşturulacak)
    */
   async createPayPalOrderFromBooking(bookingData, userId) {
-    const { businessId, toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
-
-    // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
-    const existingPayment = await this.findDuplicatePaymentByBooking({
-      userId,
-      businessId,
-      bookingData,
-      paymentProvider: "paypal",
-    });
-
-    // Eğer duplicate payment varsa ve geçerli bir paypalOrderId'si varsa, onu kullan
-    if (existingPayment?.paypalOrderId) {
-      console.log("✅ Using existing PayPal order:", existingPayment.paypalOrderId);
-      return {
-        paymentId: existingPayment._id,
-        orderId: existingPayment.paypalOrderId,
-        amount: existingPayment.amount,
-        currency: existingPayment.currency || "EUR",
-      };
-    }
-
-    // Business kontrolü
-    const business = await businessRepository.findById(businessId);
-    if (!business) {
-      throw new Error("Business not found");
-    }
-
-    // PayPal Order oluştur
-    let paypalClient;
     try {
-      paypalClient = getPayPalClient();
-    } catch (paypalConfigError) {
-      console.error('❌ PayPal client error:', paypalConfigError.message);
-      throw new Error(`PayPal configuration error: ${paypalConfigError.message}. Please check your PayPal credentials in .env file.`);
-    }
-    
-    const request = new paypal.orders.OrdersCreateRequest();
-    request.prefer("return=representation");
-    request.requestBody({
-      intent: "CAPTURE",
-      purchase_units: [
-        {
-          amount: {
-            currency_code: "EUR",
-            value: totalAmount.toFixed(2),
-          },
-          description: `Payment for booking at ${business.businessName}`,
-        },
-      ],
-    });
-
-    let order;
-    try {
-      order = await paypalClient.execute(request);
-    } catch (paypalError) {
-      console.error('❌ PayPal order creation error:', paypalError);
-      // PayPal hatasını daha anlaşılır hale getir
-      if (paypalError.message && paypalError.message.includes('invalid_client')) {
-        throw new Error('PayPal authentication failed. Please check your PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in .env file.');
-      }
-      throw paypalError;
-    }
-
-    // Komisyon hesapla (personCount ile)
-    const fees = this.calculateFees(totalAmount, personCount || 1);
-
-    // Payment kaydı oluştur (usageId olmadan - ödeme sonrası eklenecek)
-    // Booking bilgilerini metadata olarak sakla
-    const normalizedMetadata = this.normalizeBookingMetadata(bookingData);
-    let payment;
-
-    if (existingPayment) {
-      // Mevcut payment'i güncelle
-      payment = await paymentRepository.findByIdAndUpdate(existingPayment._id, {
-        paypalOrderId: order.result.id,
-        amount: totalAmount,
-        platformFee: fees.platformFee,
-        businessFee: fees.businessFee,
-        status: "pending",
-        metadata: normalizedMetadata,
+      console.log('[PayPal] createPayPalOrderFromBooking started with userId:', userId);
+      
+      const { businessId, toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
+      
+      console.log('[PayPal] Input data:', {
+        businessId,
+        totalAmount,
+        personCount,
+        hasToiletId: !!toiletId,
       });
-      console.log("✅ Updated existing PayPal payment:", payment._id);
-    } else {
-      // Yeni payment oluştur
+      
+      // Validate and convert totalAmount to number
+      const amount = typeof totalAmount === 'string' ? parseFloat(totalAmount) : Number(totalAmount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error(`Invalid totalAmount: ${totalAmount}. Must be a positive number.`);
+      }
+
+      // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
+      const existingPayment = await this.findDuplicatePaymentByBooking({
+        userId,
+        businessId,
+        bookingData,
+        paymentProvider: "paypal",
+      });
+
+      // Eğer duplicate payment varsa ve geçerli bir paypalOrderId'si varsa, onu kullan
+      if (existingPayment?.paypalOrderId) {
+        console.log("✅ Using existing PayPal order:", existingPayment.paypalOrderId);
+        return {
+          paymentId: existingPayment._id,
+          orderId: existingPayment.paypalOrderId,
+          amount: existingPayment.amount,
+          currency: existingPayment.currency || "EUR",
+        };
+      }
+
+      // Business kontrolü
+      console.log('[PayPal] Looking up business with ID:', businessId);
+      const business = await businessRepository.findById(businessId);
+      if (!business) {
+        console.error('[PayPal] ❌ Business not found for ID:', businessId);
+        throw new Error("Business not found");
+      }
+      console.log('[PayPal] ✅ Business found:', business._id, business.businessName);
+
+      // PayPal Order oluştur
+      let paypalClient;
       try {
-        payment = await paymentRepository.create({
-          userId,
-          businessId,
-          amount: totalAmount,
+        console.log('[PayPal] Initializing PayPal client...');
+        paypalClient = getPayPalClient();
+        console.log('[PayPal] ✅ PayPal client initialized');
+      } catch (paypalConfigError) {
+        console.error('❌ PayPal client error:', paypalConfigError.message);
+        throw new Error(`PayPal configuration error: ${paypalConfigError.message}. Please check your PayPal credentials in .env file.`);
+      }
+      
+      const request = new paypal.orders.OrdersCreateRequest();
+      request.prefer("return=representation");
+      request.requestBody({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            amount: {
+              currency_code: "EUR",
+              value: amount.toFixed(2),
+            },
+            description: `Payment for booking at ${business.businessName}`,
+          },
+        ],
+      });
+
+      let order;
+      try {
+        console.log('[PayPal] Creating PayPal order for amount:', amount.toFixed(2), 'EUR');
+        order = await paypalClient.execute(request);
+        console.log('✅ PayPal order created successfully:', order?.result?.id || 'unknown');
+      } catch (paypalError) {
+        console.error('❌ PayPal order creation error:', paypalError.message);
+        // PayPal hatasını daha anlaşılır hale getir
+        if (paypalError.message && paypalError.message.includes('invalid_client')) {
+          throw new Error('PayPal authentication failed. Please check your PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in .env file.');
+        }
+        throw paypalError;
+      }
+
+      // Validate PayPal order response
+      if (!order || !order.result || !order.result.id) {
+        console.error('❌ Invalid PayPal order response:', JSON.stringify(order, null, 2));
+        throw new Error('PayPal order creation failed: Invalid response structure');
+      }
+
+      // Komisyon hesapla (personCount ile) - use validated 'amount' not 'totalAmount'
+      const fees = this.calculateFees(amount, personCount || 1);
+      console.log('[PayPal] Fees calculated:', fees);
+
+      // Payment kaydı oluştur (usageId olmadan - ödeme sonrası eklenecek)
+      // Booking bilgilerini metadata olarak sakla
+      const normalizedMetadata = this.normalizeBookingMetadata(bookingData);
+      console.log('[PayPal] Metadata normalized:', normalizedMetadata);
+      
+      let payment;
+
+      if (existingPayment) {
+        // Mevcut payment'i güncelle
+        console.log('[PayPal] Updating existing payment:', existingPayment._id);
+        payment = await paymentRepository.findByIdAndUpdate(existingPayment._id, {
+          paypalOrderId: order.result.id,
+          amount: amount,
           platformFee: fees.platformFee,
           businessFee: fees.businessFee,
-          currency: "EUR",
           status: "pending",
-          paymentMethod: "paypal",
-          paymentProvider: "paypal",
-          paypalOrderId: order.result.id,
           metadata: normalizedMetadata,
         });
-        console.log("✅ PayPal payment created with ID:", payment._id);
-      } catch (createError) {
-        console.error("❌ PayPal payment creation error:", createError);
-        
-        // Eğer duplicate hatası alırsak (paypalOrderId unique constraint), mevcut payment'i bul
-        if (createError.code === 11000 && createError.keyPattern?.paypalOrderId) {
-          const duplicatePayment = await paymentRepository.findOne({
+        console.log("✅ Updated existing PayPal payment:", payment._id);
+      } else {
+        // Yeni payment oluştur
+        try {
+          console.log('[PayPal] Creating new payment with:', {
+            userId,
+            businessId,
+            amount,
             paypalOrderId: order.result.id,
           });
+          payment = await paymentRepository.create({
+            userId,
+            businessId,
+            amount: amount,
+            platformFee: fees.platformFee,
+            businessFee: fees.businessFee,
+            currency: "EUR",
+            status: "pending",
+            paymentMethod: "paypal",
+            paymentProvider: "paypal",
+            paypalOrderId: order.result.id,
+            metadata: normalizedMetadata,
+          });
+          console.log("✅ PayPal payment created with ID:", payment._id);
+        } catch (createError) {
+          console.error("❌ PayPal payment creation error:", createError.message);
           
-          if (duplicatePayment) {
-            console.log("✅ Found duplicate PayPal payment by orderId, updating...");
-            payment = await paymentRepository.findByIdAndUpdate(duplicatePayment._id, {
-              amount: totalAmount,
-              platformFee: fees.platformFee,
-              businessFee: fees.businessFee,
-              status: "pending",
-              metadata: normalizedMetadata,
+          // Eğer duplicate hatası alırsak (paypalOrderId unique constraint), mevcut payment'i bul
+          if (createError.code === 11000 && createError.keyPattern?.paypalOrderId) {
+            const duplicatePayment = await paymentRepository.findOne({
+              paypalOrderId: order.result.id,
             });
+            
+            if (duplicatePayment) {
+              console.log("✅ Found duplicate PayPal payment by orderId, updating...");
+              payment = await paymentRepository.findByIdAndUpdate(duplicatePayment._id, {
+                amount: amount,
+                platformFee: fees.platformFee,
+                businessFee: fees.businessFee,
+                status: "pending",
+                metadata: normalizedMetadata,
+              });
+            } else {
+              throw createError;
+            }
           } else {
             throw createError;
           }
-        } else {
-          throw createError;
         }
       }
-    }
 
-    return {
-      paymentId: payment._id,
-      orderId: order.result.id,
-      amount: totalAmount,
-      currency: "EUR",
-    };
+      console.log('[PayPal] ✅ createPayPalOrderFromBooking completed successfully');
+      return {
+        paymentId: payment._id,
+        orderId: order.result.id,
+        amount: amount,
+        currency: "EUR",
+      };
+    } catch (err) {
+      console.error('[PayPal] ❌ createPayPalOrderFromBooking error:', err.message || err);
+      throw err;
+    }
   }
 
   /**

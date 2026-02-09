@@ -3,39 +3,22 @@
  *
  * Modern bottom tab navigation (Uber/Delivery app style)
  * 3 main tabs: Map (Home), Favorites, Profile
- * Only accessible when authenticated
+ * Map and List are public (no auth required)
+ * Profile requires authentication
  */
 
-import { Tabs, Redirect } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { Tabs, useRouter } from 'expo-router';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { HapticTab } from '@/components/haptic-tab';
-import { tokenStorage } from '../../src/utils/secureStorage';
 
 export default function TabLayout() {
   const { currentUser } = useSelector((state: any) => state.auth);
-  const [checked, setChecked] = useState(false);
+  const router = useRouter();
 
-  // Check secure storage once to avoid transient redirects while auth initializes
-  useEffect(() => {
-    let mounted = true;
-    tokenStorage.getAccessToken().then(() => {
-      if (mounted) setChecked(true);
-    }).catch(() => {
-      if (mounted) setChecked(true);
-    });
-    return () => { mounted = false; };
-  }, []);
-
-  // Redirect to auth if not authenticated and initial check finished
-  if (!currentUser) {
-    if (!checked) {
-      // Still verifying stored token, avoid redirect yet
-      return null;
-    }
-    return <Redirect href="/(auth)/login" />;
-  }
+  // Map and List are public - no auth required
+  // Profile requires authentication (handled in listeners)
 
   return (
     <Tabs
@@ -87,7 +70,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Profile Screen */}
+      {/* Profile Screen - Requires Auth */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -99,6 +82,16 @@ export default function TabLayout() {
               color={color}
             />
           ),
+        }}
+        listeners={{
+          tabPress: (e) => {
+            // Check if user is logged in before navigating to profile
+            if (!currentUser) {
+              e.preventDefault();
+              // Redirect to login instead
+              router.push('/(auth)/login');
+            }
+          },
         }}
       />
 

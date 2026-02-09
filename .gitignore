@@ -66,6 +66,10 @@ jspm_packages/
 web_modules/
 pm2/
 
+# Markdown dokümanlarını Git'e gönderme (sadece README.md hariç)
+*.md
+!README.md
+
 # Windows reserved names (prevent accidental creation)
 nul
 NUL

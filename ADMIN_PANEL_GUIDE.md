@@ -494,7 +494,7 @@ OpenStreetMap Nominatim API kullanılır:
 ## 📚 İlgili Dokümantasyon
 
 - **[Admin Kullanıcısı Oluşturma](CREATE_ADMIN_USER.md)** - İlk admin oluşturma
-- **[Clean Code Improvements](SERVER/CLEAN_CODE_IMPROVEMENTS.md)** - Kod iyileştirmeleri
+- **[Clean Code Improvements](CLEAN_CODE_IMPROVEMENTS.md)** - Kod iyileştirmeleri
 - **[API Dokümantasyonu](http://localhost:8000/documents/swagger)** - Swagger API docs
 
 ---

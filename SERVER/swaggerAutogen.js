@@ -37,7 +37,7 @@ const document = {
 };
 
 const routes = ['./index.js']
-const outputFile = './src/configs/swagger.json'
+const outputFile = './src/config/swagger.json'
 
 // Create JSON file:
 swaggerAutogen(outputFile, routes, document)

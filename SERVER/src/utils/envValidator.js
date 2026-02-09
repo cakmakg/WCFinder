@@ -21,10 +21,11 @@ const logger = require('./logger');
  * Required environment variables by environment
  */
 const REQUIRED_ENV_VARS = {
-    // Common (all environments)
+    // Common (all environments) - auth uses ACCESS_KEY + REFRESH_KEY
     common: [
         'MONGODB',
-        'JWT_SECRET',
+        'ACCESS_KEY',
+        'REFRESH_KEY',
         'NODE_ENV'
     ],
     
@@ -88,9 +89,13 @@ const ENV_VAR_RULES = {
         pattern: /^mongodb(\+srv)?:\/\//,
         errorMessage: 'MongoDB connection string must be a valid MongoDB URI'
     },
-    JWT_SECRET: {
+    ACCESS_KEY: {
         minLength: 32,
-        errorMessage: 'JWT_SECRET must be at least 32 characters for security'
+        errorMessage: 'ACCESS_KEY (JWT access token secret) must be at least 32 characters'
+    },
+    REFRESH_KEY: {
+        minLength: 32,
+        errorMessage: 'REFRESH_KEY (JWT refresh token secret) must be at least 32 characters'
     },
     STRIPE_SECRET_KEY: {
         startsWith: 'sk_',

@@ -41,8 +41,9 @@ const dbConnection = function () {
         console.error('❌ MongoDB bağlantı hatası:', err.message);
         console.error('💡 Connection string\'i kontrol edin:');
         console.error('   - Username ve password doğru mu?');
-        console.error('   - Cluster URL doğru mu?');
+        console.error('   - Cluster URL doğru mu? (ENOTFOUND = DNS/cluster adı veya internet)');
         console.error('   - Network Access ayarları doğru mu? (0.0.0.0/0)');
+        console.error('   - Lokal geliştirme için: MONGODB=mongodb://localhost:27017/wcfinder');
         process.exit(1);
     });
 }

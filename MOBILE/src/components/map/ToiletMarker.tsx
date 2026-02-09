@@ -6,9 +6,8 @@
  */
 
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface ToiletMarkerProps {
   toilet: any;
@@ -67,11 +66,9 @@ export const ToiletMarker: React.FC<ToiletMarkerProps> = ({
             borderRadius: markerSize / 2,
           }
         ]}>
-          <MaterialCommunityIcons
-            name="toilet"
-            size={iconSize}
-            color="#fff"
-          />
+      <Text style={{ fontSize: iconSize, color: '#fff', lineHeight: iconSize }}>
+        🚻
+      </Text>
         </View>
       </View>
     </Marker>

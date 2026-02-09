@@ -139,47 +139,47 @@ export const BusinessCard: React.FC<BusinessCardProps> = ({ business, onPress, d
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 8,
-    borderRadius: 12,
+    marginBottom: 6,
+    borderRadius: 10,
   },
   cardContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   typeContainer: {
-    marginRight: 12,
+    marginRight: 8,
     alignItems: 'center',
   },
   typeIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 2,
   },
   typeIconText: {
-    fontSize: 18,
+    fontSize: 14,
   },
   typeText: {
-    fontSize: 10,
+    fontSize: 9,
     opacity: 0.7,
     textAlign: 'center',
   },
   titleContainer: {
     flex: 1,
-    marginRight: 8,
+    marginRight: 6,
   },
   title: {
     fontWeight: 'bold',
-    marginBottom: 2,
-    fontSize: 15,
+    marginBottom: 1,
+    fontSize: 14,
   },
   ratingContainer: {
     alignItems: 'flex-end',
@@ -187,13 +187,14 @@ const styles = StyleSheet.create({
   rating: {
     fontWeight: '600',
     color: '#FFA500',
+    fontSize: 11,
   },
   hoursContainer: {
-    marginBottom: 4,
+    marginBottom: 3,
   },
   hoursText: {
     opacity: 0.7,
-    fontSize: 13,
+    fontSize: 11,
   },
   hours24Text: {
     color: '#4CAF50',
@@ -201,36 +202,37 @@ const styles = StyleSheet.create({
   },
   address: {
     opacity: 0.6,
-    marginBottom: 6,
-    fontSize: 12,
+    marginBottom: 4,
+    fontSize: 11,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
   footerLeft: {
     flex: 1,
   },
   price: {
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: 2,
+    fontSize: 13,
   },
   distance: {
     opacity: 0.6,
-    fontSize: 11,
+    fontSize: 10,
   },
   actionButton: {
-    marginLeft: 12,
-    borderRadius: 8,
+    marginLeft: 8,
+    borderRadius: 6,
   },
   actionButtonContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   actionButtonLabel: {
-    fontSize: 12,
+    fontSize: 11,
   },
 });
 
