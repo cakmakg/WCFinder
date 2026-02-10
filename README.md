@@ -10,10 +10,13 @@
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe)
 ![PayPal](https://img.shields.io/badge/PayPal-Payments-00457C?style=for-the-badge&logo=paypal)
 
+<!-- Hero / Screenshot (Bild hier ablegen, Pfad anpassen) -->
+![WCFinder UI](CLIENT/dist/assets/Screenshot%202026-02-10%20113119.png)
+
 **Plattform für die Suche, Reservierung und Bezahlung von öffentlichen und privaten Toiletten.**  
 Modernes Fullstack-Setup mit sicherer Zahlungsabwicklung, Rollenverwaltung und Multi-Client-Support (Web & Mobile).
 
-[📋 Projektüberblick](#-projektüberblick) · [🚀 Schnellstart](#-schnellstart-lokal) · [🛠️ Tech-Stack](#-tech-stack) · [🚢 Deployment](#-deployment-kurzüberblick)
+[🌐 Live Demo](https://wc-finder-wheat.vercel.app) · [📋 Projektüberblick](#-projektüberblick) · [🚀 Schnellstart](#-schnellstart-lokal) · [🛠️ Tech-Stack](#-tech-stack) · [🚢 Deployment](#-deployment-kurzüberblick)
 
 ---
 
