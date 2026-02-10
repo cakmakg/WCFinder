@@ -11,7 +11,7 @@
 ![PayPal](https://img.shields.io/badge/PayPal-Payments-00457C?style=for-the-badge&logo=paypal)
 
 <!-- Hero / Screenshot (Bild hier ablegen, Pfad anpassen) -->
-![WCFinder UI](CLIENT/dist/assets/Screenshot%202026-02-10%20113119.png)
+![WCFinder UI](CLIENT/dist/assets/wcfinder.png)
 
 **Plattform für die Suche, Reservierung und Bezahlung von öffentlichen und privaten Toiletten.**  
 Modernes Fullstack-Setup mit sicherer Zahlungsabwicklung, Rollenverwaltung und Multi-Client-Support (Web & Mobile).
