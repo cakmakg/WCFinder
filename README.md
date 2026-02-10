@@ -1,9 +1,19 @@
-## WCFinder – WC-Finder und Reservierungsplattform
+# 🚻 WCFinder
 
-**Version:** 1.0.0  
-**Status:** Production Ready  
-**Pilotregion:** Bonn, Deutschland  
-**Backend:** Render · **Frontend:** Vercel · **Datenbank:** MongoDB Atlas
+### WC-Finder und Reservierungsplattform für Städte und Reisen
+
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+![React Native](https://img.shields.io/badge/React_Native-Mobile-61DAFB?style=for-the-badge&logo=react)
+![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas_&_Mongoose-47A248?style=for-the-badge&logo=mongodb)
+![Expo](https://img.shields.io/badge/Expo-React_Native-000000?style=for-the-badge&logo=expo)
+![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe)
+![PayPal](https://img.shields.io/badge/PayPal-Payments-00457C?style=for-the-badge&logo=paypal)
+
+**Plattform für die Suche, Reservierung und Bezahlung von öffentlichen und privaten Toiletten.**  
+Modernes Fullstack-Setup mit sicherer Zahlungsabwicklung, Rollenverwaltung und Multi-Client-Support (Web & Mobile).
+
+[📋 Projektüberblick](#-projektüberblick) · [🚀 Schnellstart](#-schnellstart-lokal) · [🛠️ Tech-Stack](#-tech-stack) · [🚢 Deployment](#-deployment-kurzüberblick)
 
 ---
 
