@@ -11,6 +11,7 @@
 ![PayPal](https://img.shields.io/badge/PayPal-Payments-00457C?style=for-the-badge&logo=paypal)
 
 <!-- Hero-Video: Lege deine Datei unter ./assets/wcfinder-demo.mp4 ab -->
+[🎥 WCFinder Demo-Video ansehen](CLIENT/assets/video.mp4)
 
 <p align="center">
   <video src="CLIENT/assets/video.mp4" controls width="720">
