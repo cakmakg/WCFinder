@@ -1,30 +1,30 @@
-WCFinder – WC-Finder und Reservierungsplattform
-===============================================
+## WCFinder – WC-Finder und Reservierungsplattform
 
 **Version:** 1.0.0  
 **Status:** Production Ready  
-**Pilotregion:** Bonn, Deutschland
+**Pilotregion:** Bonn, Deutschland  
+**Backend:** Render · **Frontend:** Vercel · **Datenbank:** MongoDB Atlas
 
 ---
 
 ## 📋 Projektüberblick
 
-WCFinder ist eine Plattform, mit der Nutzer in der Stadt oder auf Reisen schnell und einfach **öffentliche / private Toiletten** finden, reservieren und per **Stripe / PayPal** bezahlen können.  
+WCFinder ist eine Plattform, mit der Nutzer in der Stadt oder auf Reisen schnell und einfach **öffentliche und private Toiletten** finden, reservieren und per **Stripe / PayPal** bezahlen können.  
 Geschäftsinhaber können ihre Toiletten listen und so zusätzliche Einnahmen erzielen.
 
-### Hauptfunktionen
+### 🎯 Hauptfunktionen
 
-- 🗺️ **Interaktive Karte** – Toiletten-Suche nach Standort  
-  - Web: Leaflet  
+- **Interaktive Karte**
+  - Web: Leaflet
   - Mobile: React Native Maps
-- 📱 **Mobile App** – Expo / React Native für iOS & Android
-- 📅 **Reservierungssystem** – Datum, Uhrzeit und Personenzahl
-- 💳 **Zahlungsabwicklung** – Stripe & PayPal (Test- & Live-Modus)
-- 🎫 **QR-Code-Verifizierung** – Einlass / Nutzung über QR-Code
-- ⭐ **Bewertungen** – Bewertungen & Rezensionen für Toiletten
-- 📊 **Business-Panel** – Reservierungen & Umsätze für Betreiber
-- 🔐 **Admin-Panel** – Freigabe von Businesses, Monitoring, Auswertungen
-- 🧾 **Rechnungssystem (Rechnung)** – XRechnung / EN 16931 kompatible Rechnungen für Auszahlungen an Betreiber
+- **Mobile App** – Expo / React Native für iOS & Android
+- **Reservierungssystem** – Datum, Uhrzeit und Personenzahl
+- **Zahlungsabwicklung** – Stripe & PayPal (Test- & Live-Modus)
+- **QR-Code-Verifizierung** – Einlass / Nutzung über QR-Code
+- **Bewertungen** – Ratings & Reviews für Toiletten
+- **Business-Panel** – Reservierungen & Umsätze für Betreiber
+- **Admin-Panel** – Freigabe von Businesses, Monitoring, Auswertungen
+- **Rechnungssystem** – XRechnung / EN 16931 kompatible Auszahlungen an Betreiber
 
 ---
 
@@ -32,12 +32,12 @@ Geschäftsinhaber können ihre Toiletten listen und so zusätzliche Einnahmen er
 
 ### Web Frontend (`CLIENT`)
 
-- **React** 19.x
-- **Material-UI (MUI)** 7.x
+- **React** 19
+- **Material-UI (MUI)** 7
 - **Redux Toolkit** – State-Management
 - **React Router** – Routing
-- **Leaflet** – Karten
-- **Vite** – Build-Tool
+- **Leaflet** – Kartenanzeige
+- **Vite** – Dev-Server & Build
 
 ### Mobile App (`MOBILE`)
 
@@ -46,7 +46,7 @@ Geschäftsinhaber können ihre Toiletten listen und so zusätzliche Einnahmen er
 - **Expo Router** – File-based Routing
 - **React Native Paper** – UI-Komponenten
 - **expo-secure-store** – sichere Token-Speicherung
-- Offline- & Error-Handling (Netzwerkstatus, ErrorBoundary)
+- Offline-Handling & Error-Handling (Netzwerkstatus, ErrorBoundary)
 
 ### Backend (`SERVER`)
 
@@ -54,171 +54,89 @@ Geschäftsinhaber können ihre Toiletten listen und so zusätzliche Einnahmen er
 - **MongoDB** + **Mongoose**
 - **JWT** – Authentifizierung (Access- & Refresh-Tokens)
 - **Stripe** – Kartenzahlungen
-- **PayPal** – Alternative Zahlungen
+- **PayPal** – alternative Zahlungen
 - **PDF / XRechnung** – gesetzeskonforme Rechnungen (Deutschland)
 
 ### DevOps & Infrastruktur
 
 - **MongoDB Atlas** – gehostete MongoDB
-- **Render** – Backend-Deployment  
-- **Vercel** – Frontend-Deployment
+- **Render** – Backend-Deployment (Root: `SERVER`)
+- **Vercel** – Frontend-Deployment (Root: `CLIENT`)
 - **Swagger / ReDoc** – API-Dokumentation
 
 ---
 
-## 🚀 Schnellstart
+## 🚀 Schnellstart (Lokal)
 
 ### Voraussetzungen
 
 - **Node.js 18+**
-- npm oder yarn
-- MongoDB  
-  - lokal (`mongodb://localhost:27017/wcfinder`) **oder**  
-  - MongoDB Atlas Connection String
-- Stripe- und PayPal-Testkonten (für Zahlungen)
+- **npm** oder **yarn**
+- **MongoDB**
+  - lokal: `mongodb://localhost:27017/wcfinder`
+  - oder MongoDB Atlas Connection String
+- Stripe- und PayPal-Testkonten (für Payments)
 - Für Mobile: Expo Go App oder iOS/Android-Emulator
 
-### Installation
-
-1. **Repository klonen**
-
-```bash
-git clone https://github.com/yourusername/wcfinder.git
-cd WCFinder
-```
-
-2. **Backend (`SERVER`)**
+### Backend starten
 
 ```bash
 cd SERVER
 npm install
-cp .env.example .env
-
-# .env anpassen:
-# MONGODB, ACCESS_KEY, REFRESH_KEY, STRIPE_SECRET_KEY, PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, ...
-
-npm run dev
+npm start
 ```
 
-Standard:
-- Backend läuft auf `http://localhost:8000`
-- Swagger: `http://localhost:8000/documents/swagger`
-
-3. **Web-Frontend (`CLIENT`)**
+### Web-Frontend im Dev-Modus starten
 
 ```bash
 cd CLIENT
 npm install
-cp .env.example .env.local
-
-# .env.local anpassen:
-# VITE_BASE_URL=http://localhost:8000
-# VITE_STRIPE_PUBLISHABLE_KEY=...
-# VITE_PAYPAL_CLIENT_ID=...
-
 npm run dev
 ```
 
-Standard:
-- Frontend läuft auf `http://localhost:5173`
-
-4. **Mobile App (`MOBILE`, optional aber empfohlen)**
-
-```bash
-cd MOBILE
-npm install
-
-# API-URL konfigurieren:
-# Entweder in app.config.js / app.json oder .env:
-# EXPO_PUBLIC_API_URL=http://localhost:8000
-
-npm start
-```
-
-Dann:
-- `i` für iOS-Simulator  
-- `a` für Android-Emulator  
-- oder QR-Code mit **Expo Go** scannen
-
-Details zur Mobile-App findest du lokal in `MOBILE_APP_GUIDE.md` und `MOBILE/README.md` (werden nicht zu GitHub gepusht).
-
----
-
-## 📁 Projektstruktur (Kurzfassung)
-
-```text
-WCFinder/
-├── CLIENT/                 # React Web Frontend
-│   ├── src/
-│   │   ├── components/    # UI-Komponenten
-│   │   ├── pages/         # Seiten
-│   │   ├── features/      # Redux-Slices & Admin-UI
-│   │   └── router/        # Routing-Konfiguration
-│   └── package.json
-│
-├── SERVER/                 # Node.js Backend (Express)
-│   ├── src/
-│   │   ├── models/        # Mongoose-Modelle
-│   │   ├── controller/    # Controller (Business-Logik)
-│   │   ├── routes/        # API-Routen
-│   │   ├── middleware/    # Auth, Validierung, Errors, Rate-Limiting
-│   │   ├── services/      # Payment, Rechnung, Analytics
-│   │   └── utils/         # Logger, Env-Validator, Helpers
-│   └── package.json
-│
-├── MOBILE/                 # Expo / React Native App
-│   ├── app/               # Expo Router-Seiten (Tabs, Modals, Auth)
-│   ├── src/
-│   │   ├── components/   # Map, Cards, Common UI
-│   │   ├── hooks/        # useBusiness, useAuth, useLocation, ...
-│   │   ├── services/     # API-Client, Geocoding
-│   │   └── store/        # Redux (auth)
-│   └── package.json
-│
-└── README.md               # Diese Datei
-```
+Vite zeigt die lokale URL (z. B. `http://localhost:5173`) an.
 
 ---
 
 ## 🔐 Authentifizierung & Rollen
 
 - **JWT-basierte Authentifizierung**
-  - Access Token (~1h)
-  - Refresh Token (~3 Tage)
+  - Access Token (kurzlebig)
+  - Refresh Token (verlängert Session)
 - **Rollen**
   - `user` – Endnutzer
   - `owner` – Geschäftsinhaber (WC-Betreiber)
   - `admin` – Plattform-Administrator
 
-Der erste Admin kann über das Script / die Anleitung in `CREATE_ADMIN_USER.md` erstellt werden (wird lokal gehalten, nicht auf GitHub).
+Der erste Admin wird über ein lokales Script erstellt (siehe `CREATE_ADMIN_USER.md`, nicht auf GitHub).
 
 ---
 
 ## 💳 Zahlungen & Kommission
 
-- Integration von **Stripe** und **PayPal**
-- Plattform-Gebühr (Service Fee) pro Nutzung
+- **Stripe** und **PayPal** Integration
+- **Service Fee** pro Nutzung für die Plattform
 - Restbetrag wird dem Business gutgeschrieben (Auszahlung über Admin-Panel)
-- Vollständige Dokumentation lokal in:
+- Details lokal dokumentiert in:
   - `COMMISSION_SYSTEM_DOCUMENTATION.md`
   - `STRIPE_TEST_CARDS.md`
 
 ---
 
-## 📚 Lokale Dokumentation (nicht in GitHub)
+## 📚 Lokale Dokumentation (nicht auf GitHub)
 
-Die meisten detaillierten Dokumente (`*.md`) werden per `.gitignore` **nicht** zu GitHub gepusht, sind aber im Projektordner vorhanden, z. B.:
+Viele detaillierte Dokumente (`*.md`) werden per `.gitignore` **nicht** zu GitHub gepusht, sind aber im Projektordner vorhanden, z. B.:
 
-- `prd.md` – Product Requirements Document
-- `CLIENT/docs/ARCHITECTURE.md` – Architektur
-- `ADMIN_PANEL_GUIDE.md` – Admin-Panel & Business-Management
-- `RECHNUNG_SYSTEM_COMPLETE.md` – deutsches Rechnungssystem (XRechnung / EN 16931)
-- `SECURITY_REVIEW.md` – ausführlicher Security-Review
-- `CLEAN_CODE_IMPROVEMENTS.md` – Clean-Code- & Sicherheitsverbesserungen
-- `RENDER_VERCEL_DEPLOYMENT.md` – Backend (Render) + Frontend (Vercel)  
-- `DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md` – weitere Deployment-Guides
+- **`prd.md`** – Product Requirements Document
+- **`CLIENT/docs/ARCHITECTURE.md`** – Architektur
+- **`ADMIN_PANEL_GUIDE.md`** – Admin-Panel & Business-Management
+- **`RECHNUNG_SYSTEM_COMPLETE.md`** – deutsches Rechnungssystem (XRechnung / EN 16931)
+- **`SECURITY_REVIEW.md`** – ausführlicher Security-Review
+- **`CLEAN_CODE_IMPROVEMENTS.md`** – Clean-Code- & Sicherheitsverbesserungen
+- **`RENDER_VERCEL_DEPLOYMENT.md`** – Backend (Render) + Frontend (Vercel)
+- **`DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md`** – weitere Deployment-Guides
 
-Alle diese Dateien sind für die Entwicklung wichtig, werden aber nicht veröffentlicht.
+Diese Dateien sind für Entwicklung und Betrieb wichtig, werden aber nicht veröffentlicht.
 
 ---
 
@@ -226,20 +144,19 @@ Alle diese Dateien sind für die Entwicklung wichtig, werden aber nicht veröffe
 
 Details siehe `SECURITY_REVIEW.md` (lokal).
 
-- Passwort-Hashing mit PBKDF2 (SECRET_KEY, konfigurierbare Runden)
-- Strikte Input-Validierung & Sanitizing (XSS / NoSQL-Injection)
-- Rate-Limiting (Auth, Payment, API)
-- CORS-Konfiguration abhängig von Umgebung
-- HTTP-Sicherheitsheader (Helmet)
-- Sichere Logging-Strategie (keine Passwörter / Tokens im Log)
-- HTTPS im Produktivbetrieb (Render/Vercel)
-- Mobile:
+- **Passwort-Hashing** mit PBKDF2 (`SECRET_KEY`, konfigurierbare Runden)
+- **Input-Validierung & Sanitizing** (Schutz vor XSS / NoSQL-Injections)
+- **Rate-Limiting** für Auth, Payments und API
+- **CORS-Konfiguration** abhängig von Umgebung
+- **HTTP-Sicherheitsheader** via Helmet
+- **Sicheres Logging** (keine Passwörter / Tokens in Logs)
+- **Mobile-Sicherheit**
   - Tokens nur in `expo-secure-store` (kein AsyncStorage)
-  - Network-Status-Handling & Fehleranzeigen
+  - Netzwerk-Status-Handling und klare Fehleranzeigen
 
 ---
 
-## 🧪 Tests
+## 🧪 Tests & Qualität
 
 ```bash
 # Backend-Tests
@@ -250,29 +167,35 @@ npm test
 cd CLIENT
 npm test
 
-# Linting
+# Linting (Root)
 npm run lint
 ```
 
 ---
 
-## 🚢 Deployment (Überblick)
+## 🚢 Deployment (Kurzüberblick)
 
 **Empfohlene Umgebung:** Backend auf **Render**, Frontend auf **Vercel**.
 
-Lokale Anleitungen (nicht auf GitHub):
+- **Backend (Render)**
+  - Root Directory: `SERVER`
+  - Build Command: `npm install`
+  - Start Command: `npm start`
+- **Frontend (Vercel)**
+  - Root Directory: `CLIENT`
+  - Build Command: `npm run build`
+  - Output Directory: `dist`
 
-- **`RENDER_VERCEL_DEPLOYMENT.md`** – Schritt-für-Schritt: Backend (Render) + Frontend (Vercel)
-- `DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md`
+**Konfiguration:**
 
-**Typischer Ablauf:**
+- **Render Env**
+  - `MONGODB` – MongoDB Atlas Connection String
+  - `ACCESS_KEY`, `REFRESH_KEY`, `SECRET_KEY`, Payment-Keys etc.
+  - `CORS_ORIGIN` = Vercel-URL (z. B. `https://xxx.vercel.app`)
+- **Vercel Env**
+  - `VITE_BASE_URL` = Render-Backend-URL (z. B. `https://wcfinder-backend.onrender.com`)
 
-1. MongoDB Atlas einrichten (oder lokale MongoDB)
-2. **Backend** auf **Render** deployen (Root: `SERVER`, siehe `render.yaml`)
-3. **Frontend** auf **Vercel** deployen (Root: `CLIENT`, siehe `CLIENT/vercel.json`)
-4. CORS auf Render: `CORS_ORIGIN` = Vercel-URL (z. B. `https://xxx.vercel.app`)
-5. Vercel-Env: `VITE_BASE_URL` = Render-Backend-URL
-6. Optional: eigene Domain & SSL für Backend/Frontend
+Detailierte Schritt-für-Schritt-Anleitung: `RENDER_VERCEL_DEPLOYMENT.md` (lokal).
 
 ---
 
@@ -284,7 +207,7 @@ Lokale Anleitungen (nicht auf GitHub):
 - Karten- & Listen-Ansicht (Web & Mobile)
 - Stripe- & PayPal-Integration
 - XRechnung-kompatibles Rechnungssystem
-- Admin-Dashboard mit Analytics, Zahlungen, Toiletten & Businesses
+- Admin-Dashboard mit Analytics, Payments, Toiletten & Businesses
 
 **Geplante Erweiterungen**
 
@@ -298,11 +221,11 @@ Lokale Anleitungen (nicht auf GitHub):
 
 ## 🤝 Contribution
 
-1. Repository forken  
-2. Feature-Branch erstellen (`git checkout -b feature/MeinFeature`)  
-3. Änderungen committen (`git commit -m "Add MeinFeature"`)  
-4. Branch pushen (`git push origin feature/MeinFeature`)  
-5. Pull-Request eröffnen
+1. **Repository forken**
+2. **Feature-Branch erstellen**: `git checkout -b feature/MeinFeature`
+3. **Änderungen committen**: `git commit -m "Add MeinFeature"`
+4. **Branch pushen**: `git push origin feature/MeinFeature`
+5. **Pull-Request eröffnen**
 
 ---
 
@@ -314,11 +237,10 @@ Dieses Projekt ist ein **privates Projekt**. Alle Rechte vorbehalten.
 
 ## 📞 Kontakt
 
-- **E-Mail:** info@wcfinder.de  
+- **E-Mail:** info@wcfinder.de
 - **Website:** www.wcfinder.de
 
 ---
 
-**Letztes Update:** Februar 2025  
+**Letztes Update:** Februar 2026  
 **Version:** 1.0.0
-
