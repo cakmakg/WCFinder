@@ -10,8 +10,15 @@
 ![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe)
 ![PayPal](https://img.shields.io/badge/PayPal-Payments-00457C?style=for-the-badge&logo=paypal)
 
-<!-- Hero / Screenshot (Bild hier ablegen, Pfad anpassen) -->
-![WCFinder UI](CLIENT/dist/assets/video.mp4)
+<!-- Hero-Video: Lege deine Datei unter ./assets/wcfinder-demo.mp4 ab -->
+
+<p align="center">
+  <video src="CLIENT/assets/video.mp4" controls width="720">
+    Dein Browser unterstützt das Video-Tag nicht.
+    <br />
+    <a href="CLIENT/assets/video.mp4">🎥 WCFinder Demo-Video herunterladen</a>
+  </video>
+</p>
 
 **Plattform für die Suche, Reservierung und Bezahlung von öffentlichen und privaten Toiletten.**  
 Modernes Fullstack-Setup mit sicherer Zahlungsabwicklung, Rollenverwaltung und Multi-Client-Support (Web & Mobile).
