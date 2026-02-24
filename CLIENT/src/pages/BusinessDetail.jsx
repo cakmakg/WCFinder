@@ -9,7 +9,7 @@ import {
   Typography,
   Grid,
   Chip,
-  IconButton,
+  Button,
   CircularProgress,
   Alert,
   useTheme,
@@ -46,67 +46,46 @@ const BusinessDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { axiosWithToken } = useAxios();
-  
+
   const [business, setBusiness] = useState(null);
   const [toilets, setToilets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    /**
-     * Fetches business details and associated toilets
-     * 
-     * Security & Performance:
-     * - Validates businessId format before making API calls
-     * - Uses server-side filtering to avoid N+1 query problem
-     * - Prevents fetching all toilets and filtering client-side
-     * 
-     * Error Handling:
-     * - Comprehensive error handling with user-friendly messages
-     * - Logs errors for debugging while protecting sensitive info
-     * 
-     * ✅ FIX: Dependency array'den axiosWithToken ve t kaldırıldı
-     * Çünkü bunlar her render'da yeni referanslar oluşturuyor ve sonsuz döngüye neden oluyor
-     */
     const fetchBusinessDetail = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // ✅ SECURITY: Validate ObjectId format to prevent injection attacks
+
         if (!id || !/^[0-9a-fA-F]{24}$/.test(id)) {
           setError(t('businessDetail.invalidBusinessId'));
           setLoading(false);
           return;
         }
-        
-        // ✅ OPTIMIZED: Fetch business and toilets in parallel (better performance)
-        // ✅ FIXED N+1: Use server-side filter instead of fetching all toilets
+
         const [businessResponse, toiletsResponse] = await Promise.all([
           axiosWithToken.get(`/business/${id}`),
           axiosWithToken.get(`/toilets?filter[business]=${id}`)
         ]);
-        
+
         const businessData = businessResponse.data.result;
         const businessToilets = toiletsResponse.data.result || [];
-        
-        // ✅ SECURITY: Validate business exists and is approved (unless admin)
+
         if (!businessData) {
           setError(t('businessDetail.businessNotFound'));
           setLoading(false);
           return;
         }
-        
+
         setBusiness(businessData);
         setToilets(businessToilets);
-        
+
       } catch (err) {
-        // ✅ ERROR HANDLING: Comprehensive error handling with logging
-        const errorMessage = err.response?.data?.message || 
-                           err.message || 
-                           t('businessDetail.businessLoadError');
-        
-        // Log error for debugging (without exposing sensitive data)
+        const errorMessage = err.response?.data?.message ||
+          err.message ||
+          t('businessDetail.businessLoadError');
+
         if (process.env.NODE_ENV === 'development') {
           console.error('Error fetching business detail:', {
             businessId: id,
@@ -114,7 +93,7 @@ const BusinessDetail = () => {
             message: errorMessage
           });
         }
-        
+
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -124,42 +103,53 @@ const BusinessDetail = () => {
     if (id) {
       fetchBusinessDetail();
     }
-    // ✅ FIX: Sadece id dependency olarak kalmalı, axiosWithToken ve t her render'da yeni referans oluşturuyor
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // ── Loading ──
   if (loading) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        minHeight: '100vh' 
+      <Box sx={{
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'center', alignItems: 'center',
+        minHeight: '100vh', gap: 2, bgcolor: '#f8fafc',
       }}>
-        <CircularProgress size={60} />
+        <CircularProgress size={48} thickness={3} sx={{ color: '#0891b2' }} />
+        <Typography sx={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 500 }}>
+          {t('common.loading')}
+        </Typography>
       </Box>
     );
   }
 
+  // ── Error ──
   if (error || !business) {
     return (
-      <Container sx={{ py: 4 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error || t('businessDetail.businessNotFound')}
-        </Alert>
-        <IconButton onClick={() => navigate('/home')}>
-          <ArrowBackIcon />
-          <Typography sx={{ ml: 1 }}>{t('common.backToHome')}</Typography>
-        </IconButton>
-      </Container>
+      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', py: 4 }}>
+        <Container maxWidth="lg">
+          <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>
+            {error || t('businessDetail.businessNotFound')}
+          </Alert>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/home')}
+            sx={{
+              color: '#0891b2', textTransform: 'none', fontWeight: 600,
+              borderRadius: '20px', px: 2,
+              '&:hover': { backgroundColor: 'rgba(8,145,178,0.07)' },
+            }}
+          >
+            {t('common.backToHome')}
+          </Button>
+        </Container>
+      </Box>
     );
   }
 
-  const position = business.location?.coordinates 
+  const position = business.location?.coordinates
     ? [business.location.coordinates[1], business.location.coordinates[0]]
     : [50.7374, 7.0982];
 
-  // SEO için structured data ve meta tags
   const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || window.location.origin;
   const businessUrl = `${baseUrl}/business/${id}`;
   const businessSchema = business ? generateLocalBusinessSchema(business) : null;
@@ -174,7 +164,7 @@ const BusinessDetail = () => {
   const seoKeywords = business ? generateKeywords(business) : 'toilet, wc, tuvalet, booking';
 
   return (
-    <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
+    <Box component="main" sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
       <SEOHead
         title={seoTitle}
         description={seoDescription}
@@ -184,121 +174,183 @@ const BusinessDetail = () => {
         structuredData={businessSchema ? [businessSchema, breadcrumbSchema].filter(Boolean) : null}
         canonical={businessUrl}
       />
-      <Container maxWidth="lg">
-        {/* Header */}
-        <Box component="header" sx={{ mb: 3 }}>
-          <IconButton onClick={() => navigate('/home')} sx={{ mb: 2 }}>
-            <ArrowBackIcon />
-          </IconButton>
 
-          <Paper sx={{ p: 3, mb: 3 }} component="article">
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  {/* ✅ SECURITY: React automatically escapes content, preventing XSS */}
-                  <Typography variant="h1" component="h1" sx={{ fontWeight: 600, fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
-                    {business.businessName}
-                  </Typography>
-                  {business.approvalStatus === 'approved' && (
-                    <VerifiedIcon color="primary" />
-                  )}
-                </Box>
-                
-                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                  <Chip 
-                    icon={<BusinessIcon />}
-                    label={business.businessType} 
-                    size="small" 
-                    color="primary"
-                  />
-                  <Chip 
-                    label={business.approvalStatus === 'approved' ? t('businessDetail.verified') : t('businessDetail.pending')} 
-                    size="small" 
-                    color={business.approvalStatus === 'approved' ? 'success' : 'warning'}
-                  />
-                </Box>
+      {/* ── Hero Header ── */}
+      <Box
+        component="header"
+        sx={{
+          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          pt: { xs: 3, sm: 4 },
+          pb: { xs: 3, sm: 4 },
+          px: 0,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: -40, right: -40,
+            width: 200, height: 200,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            pointerEvents: 'none',
+          },
+        }}
+      >
+        <Container maxWidth="lg">
+          {/* Geri butonu */}
+          <Button
+            startIcon={<ArrowBackIcon sx={{ fontSize: '1rem !important' }} />}
+            onClick={() => navigate('/home')}
+            size="small"
+            sx={{
+              mb: 2.5,
+              color: 'rgba(255,255,255,0.85)',
+              backgroundColor: 'rgba(255,255,255,0.12)',
+              borderRadius: '20px',
+              px: 2,
+              py: 0.5,
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                color: 'white',
+              },
+            }}
+          >
+            Zurück
+          </Button>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'text.secondary' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <AccessTimeIcon fontSize="small" />
-                    <Typography variant="body2">
-                      {business.openingHours || t('businessDetail.today')}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <WcIcon fontSize="small" />
-                    <Typography variant="body2">
-                      {toilets.length} {toilets.length === 1 ? t('businessDetail.toilet') : t('businessDetail.toilets')}
-                    </Typography>
-                  </Box>
-                </Box>
+          {/* Badges */}
+          <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
+            <Chip
+              icon={<BusinessIcon sx={{ fontSize: '0.8rem !important', color: 'rgba(255,255,255,0.9) !important' }} />}
+              label={business.businessType}
+              size="small"
+              sx={{
+                backgroundColor: 'rgba(255,255,255,0.18)',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.72rem',
+                border: '1px solid rgba(255,255,255,0.25)',
+                backdropFilter: 'blur(8px)',
+                '& .MuiChip-icon': { color: 'rgba(255,255,255,0.9)' },
+              }}
+            />
+            <Chip
+              label={business.approvalStatus === 'approved' ? t('businessDetail.verified') : t('businessDetail.pending')}
+              size="small"
+              sx={{
+                backgroundColor: business.approvalStatus === 'approved'
+                  ? 'rgba(22,163,74,0.25)' : 'rgba(234,179,8,0.25)',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.72rem',
+                border: `1px solid ${business.approvalStatus === 'approved' ? 'rgba(22,163,74,0.4)' : 'rgba(234,179,8,0.4)'}`,
+              }}
+            />
+          </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mt: 1 }}>
-                  <LocationOnIcon fontSize="small" color="action" />
-                  {/* ✅ SECURITY: All user-generated content is automatically escaped by React */}
-                  <Typography variant="body2" color="text.secondary">
-                    {business.address?.street}, {business.address?.postalCode} {business.address?.city}
-                  </Typography>
-                </Box>
-              </Box>
+          {/* İşletme adı */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Typography
+              variant="h1"
+              component="h1"
+              sx={{
+                fontWeight: 800,
+                fontSize: { xs: '1.6rem', sm: '2rem' },
+                color: 'white',
+                lineHeight: 1.2,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {business.businessName}
+            </Typography>
+            {business.approvalStatus === 'approved' && (
+              <VerifiedIcon sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.4rem', flexShrink: 0 }} />
+            )}
+          </Box>
+
+          {/* İstatistik satırı */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, sm: 2.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <AccessTimeIcon sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)' }} />
+              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+                {business.openingHours || t('businessDetail.today')}
+              </Typography>
             </Box>
-          </Paper>
-        </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <WcIcon sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)' }} />
+              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+                {toilets.length} {toilets.length === 1 ? t('businessDetail.toilet') : t('businessDetail.toilets')}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <LocationOnIcon sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)' }} />
+              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+                {business.address?.street}, {business.address?.postalCode} {business.address?.city}
+              </Typography>
+            </Box>
+          </Box>
+        </Container>
+      </Box>
 
-        {/* Main Content Grid */}
-        <Grid container spacing={3} component="article">
-          {/* Left Column - Details */}
+      {/* ── Main Content ── */}
+      <Container maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5 } }}>
+        <Grid container spacing={2.5} component="article">
+
+          {/* Sol kolon */}
           <Grid item xs={12} md={7} component="section">
-            {/* Map */}
-            <Paper sx={{ mb: 3, overflow: 'hidden', borderRadius: 2 }} component="section">
-              <MapContainer 
-                center={position} 
-                zoom={15} 
-                style={{ height: isMobile ? '250px' : '300px', width: '100%' }}
+
+            {/* Harita */}
+            <Paper
+              sx={{
+                mb: 2.5,
+                overflow: 'hidden',
+                borderRadius: '16px',
+                border: '1px solid rgba(8,145,178,0.1)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+              }}
+              component="section"
+            >
+              <MapContainer
+                center={position}
+                zoom={15}
+                style={{ height: isMobile ? '220px' : '280px', width: '100%' }}
                 scrollWheelZoom={false}
               >
-                {/* Modern CartoDB Positron harita teması */}
                 <MapTileLayer mapStyle="positron" />
                 <Marker position={position} />
               </MapContainer>
             </Paper>
 
-            {/* Standort Info */}
-            <Paper sx={{ p: 3, mb: 3 }} component="section">
-              <Typography variant="h2" component="h2" sx={{ mb: 2, fontWeight: 600, fontSize: '1.25rem' }}>
-                {t('businessDetail.location')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {t('businessDetail.locationDescription')}
-              </Typography>
-            </Paper>
-
-            {/* Available Toilets */}
+            {/* Tuvalet listesi */}
             {toilets.length > 0 ? (
               <Box component="section">
                 <ToiletList toilets={toilets} />
               </Box>
             ) : (
-              <Paper sx={{ p: 3 }} component="section">
-                <Alert severity="info">
+              <Paper sx={{ p: 3, borderRadius: '16px' }} component="section">
+                <Alert severity="info" sx={{ borderRadius: '10px' }}>
                   {t('businessDetail.noToilets')}
                 </Alert>
               </Paper>
             )}
           </Grid>
 
-          {/* Right Column - Booking Panel */}
+          {/* Sağ kolon — Booking */}
           <Grid item xs={12} md={5} component="aside">
-            <Box sx={{ 
-              position: { xs: 'static', md: 'sticky' }, // Mobile'da sticky kaldır
-              top: { md: 24 } 
+            <Box sx={{
+              position: { xs: 'static', md: 'sticky' },
+              top: { md: 24 },
             }}>
               {toilets.length > 0 ? (
                 <BookingPanel business={business} toilets={toilets} />
               ) : (
-                <Paper sx={{ p: 3 }}>
-                  <Alert severity="warning">
+                <Paper sx={{ p: 3, borderRadius: '16px' }}>
+                  <Alert severity="warning" sx={{ borderRadius: '10px' }}>
                     {t('businessDetail.reservationNotPossible')}
                   </Alert>
                 </Paper>

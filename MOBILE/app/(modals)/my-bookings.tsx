@@ -4,7 +4,7 @@
  * Shows user's booking history with details
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Platform, RefreshControl, Share } from 'react-native';
 import { 
   Text, 
@@ -17,7 +17,7 @@ import {
   Chip,
   Surface
 } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { tokenStorage, clearAllStorage } from '../../src/utils/secureStorage';
 import { useAuth } from '../../src/hooks/useAuth';
@@ -57,6 +57,7 @@ export default function MyBookingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
+  const isFirstFocus = useRef(true);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -64,12 +65,13 @@ export default function MyBookingsScreen() {
       
       // Double check token from secure storage
       const storedToken = await tokenStorage.getAccessToken();
-      console.log('[MyBookings] Fetching bookings...', {
-        hasReduxToken: !!token,
-        hasStoredToken: !!storedToken,
-        storedTokenPreview: storedToken ? storedToken.substring(0, 30) + '...' : 'null',
-        isAuthenticated
-      });
+      if (__DEV__) {
+        console.log('[MyBookings] Fetching bookings...', {
+          hasReduxToken: !!token,
+          hasStoredToken: !!storedToken,
+          isAuthenticated,
+        });
+      }
       
       if (!storedToken && !token) {
         setError('Bitte melden Sie sich an, um Ihre Buchungen zu sehen');
@@ -80,9 +82,7 @@ export default function MyBookingsScreen() {
       // Use axiosWithToken which handles token from AsyncStorage
       const response = await axiosWithToken.get('/usages/my-usages');
       
-      console.log('[MyBookings] Bookings response:', {
-        count: response.data?.result?.length || 0,
-      });
+      if (__DEV__) console.log('[MyBookings] Bookings loaded:', response.data?.result?.length || 0);
       
       if (response.data?.result) {
         // Sort by date, newest first
@@ -125,24 +125,14 @@ export default function MyBookingsScreen() {
   useEffect(() => {
     const checkAndFetch = async () => {
       if (isInitializing) {
-        console.log('[MyBookings] Waiting for auth initialization...');
         return;
       }
       
       // Check secure storage directly for token
       const storedToken = await tokenStorage.getAccessToken();
       
-      console.log('[MyBookings] Auth initialized, checking auth state...', {
-        isAuthenticated,
-        hasReduxToken: !!token,
-        hasStoredToken: !!storedToken,
-        hasUser: !!currentUser,
-        userId: currentUser?._id
-      });
-      
       // If no token anywhere, redirect to login
       if (!storedToken && !token) {
-        console.log('[MyBookings] No token found, redirecting to login');
         setLoading(false);
         setError('Bitte melden Sie sich an, um Ihre Buchungen zu sehen');
         setTimeout(() => {
@@ -156,6 +146,19 @@ export default function MyBookingsScreen() {
     
     checkAndFetch();
   }, [isInitializing, fetchBookings, token, currentUser, router]);
+
+  // Refresh data every time the screen is focused (e.g. after returning from payment)
+  useFocusEffect(
+    useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return; // Initial load is handled by the useEffect above
+      }
+      if (!isInitializing) {
+        fetchBookings();
+      }
+    }, [isInitializing, fetchBookings])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

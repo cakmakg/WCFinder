@@ -1,18 +1,18 @@
 /**
  * Payment Screen
- * 
+ *
  * Handles payment processing after booking
  * Similar to CLIENT PaymentPage
  */
 
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
-import { 
-  Text, 
-  Card, 
-  Button, 
-  Divider, 
-  ActivityIndicator, 
+import {
+  Text,
+  Card,
+  Button,
+  Divider,
+  ActivityIndicator,
   useTheme,
   IconButton,
   RadioButton,
@@ -40,7 +40,7 @@ export default function PaymentScreen() {
   const router = useRouter();
   const { bookingData: bookingDataParam } = useLocalSearchParams<{ bookingData: string }>();
   const { currentUser, token } = useSelector((state: any) => state.auth);
-  
+
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
   const [loading, setLoading] = useState(false);
@@ -48,11 +48,12 @@ export default function PaymentScreen() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [cardDetails, setCardDetails] = useState<any>(null);
+  const [cardError, setCardError] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [cardholderName, setCardholderName] = useState('');
   const [cardholderSurname, setCardholderSurname] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
-  
+
   const stripe = useStripe ? useStripe() : null;
   const confirmPayment = stripe?.confirmPayment;
 
@@ -64,7 +65,7 @@ export default function PaymentScreen() {
         setBookingData(parsed);
       } catch (err) {
         console.error('Error parsing booking data:', err);
-        setError('Invalid booking data');
+        setError('Ungültige Buchungsdaten');
       }
     }
   }, [bookingDataParam]);
@@ -73,14 +74,8 @@ export default function PaymentScreen() {
   useEffect(() => {
     const checkAuth = async () => {
       const storedToken = await tokenStorage.getAccessToken();
-      console.log('[Payment] Auth check:', {
-        hasToken: !!token,
-        hasStoredToken: !!storedToken,
-        hasCurrentUser: !!currentUser
-      });
 
       if (!token && !storedToken && !currentUser) {
-        console.log('[Payment] No auth found, redirecting to login');
         router.replace('/(auth)/login');
       }
     };
@@ -91,7 +86,7 @@ export default function PaymentScreen() {
   // Handle card payment confirmation
   const handleCardPayment = async () => {
     if (!clientSecret || !cardDetails?.complete) {
-      setError('Please enter valid card details');
+      setError('Bitte gültige Kartendaten eingeben');
       return;
     }
 
@@ -101,19 +96,18 @@ export default function PaymentScreen() {
 
       // Validate billing details
       if (!cardholderName.trim()) {
-        setError('Please enter your first name');
+        setError('Bitte geben Sie Ihren Vornamen ein');
         return;
       }
       if (!cardholderSurname.trim()) {
-        setError('Please enter your last name');
+        setError('Bitte geben Sie Ihren Nachnamen ein');
         return;
       }
-      if (!billingEmail.trim() || !billingEmail.includes('@')) {
-        setError('Please enter a valid email address');
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!billingEmail.trim() || !emailRegex.test(billingEmail)) {
+        setError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
         return;
       }
-
-      console.log('[Payment] Confirming card payment...');
 
       const { error: confirmError, paymentIntent } = await confirmPayment(clientSecret, {
         paymentMethodType: 'Card',
@@ -124,14 +118,11 @@ export default function PaymentScreen() {
       });
 
       if (confirmError) {
-        console.error('[Payment] Card payment error:', confirmError);
-        setError(confirmError.message || 'Payment failed');
+        setError(confirmError.message || 'Zahlung fehlgeschlagen');
         return;
       }
 
       if (paymentIntent?.status === 'Succeeded') {
-        console.log('[Payment] Payment succeeded:', paymentIntent.id);
-        
         // Navigate to payment success with booking data and payment info
         router.replace({
           pathname: '/(modals)/payment-success',
@@ -146,8 +137,7 @@ export default function PaymentScreen() {
         });
       }
     } catch (err: any) {
-      console.error('[Payment] Card payment error:', err);
-      setError(err.message || 'Payment failed');
+      setError(err.message || 'Zahlung fehlgeschlagen');
     } finally {
       setProcessingPayment(false);
     }
@@ -164,7 +154,7 @@ export default function PaymentScreen() {
 
     // Check authentication
     if (!token) {
-      setError('Please login to continue with payment');
+      setError('Bitte melden Sie sich an, um fortzufahren');
       router.replace('/(auth)/login');
       return;
     }
@@ -174,23 +164,24 @@ export default function PaymentScreen() {
       setError(null);
 
       // Ensure date is properly formatted
-      let startTime: string;
-      if (bookingData.date instanceof Date) {
-        startTime = bookingData.date.toISOString();
-      } else if (typeof bookingData.date === 'string') {
-        // If it's already an ISO string, use it directly
-        startTime = bookingData.date.includes('T') ? bookingData.date : new Date(bookingData.date).toISOString();
-      } else {
-        startTime = new Date().toISOString();
+      if (!bookingData.date) {
+        throw new Error('Buchungsdatum fehlt');
       }
+      const parsedDate = bookingData.date instanceof Date
+        ? bookingData.date
+        : new Date(bookingData.date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Ungültiges Buchungsdatum');
+      }
+      const startTime = parsedDate.toISOString();
 
       // Ensure totalAmount is a number
-      const totalAmount = typeof bookingData.pricing.total === 'string' 
-        ? parseFloat(bookingData.pricing.total) 
+      const totalAmount = typeof bookingData.pricing.total === 'string'
+        ? parseFloat(bookingData.pricing.total)
         : Number(bookingData.pricing.total);
 
       if (isNaN(totalAmount) || totalAmount <= 0) {
-        throw new Error(`Invalid total amount: ${bookingData.pricing.total}`);
+        throw new Error(`Ungültiger Gesamtbetrag: ${bookingData.pricing.total}`);
       }
 
       const bookingDataForPayment = {
@@ -202,50 +193,32 @@ export default function PaymentScreen() {
         totalAmount,
       };
 
-      console.log('[Payment] Creating Stripe payment intent...', {
-        businessId: bookingDataForPayment.businessId,
-        totalAmount: bookingDataForPayment.totalAmount,
-        startTime: bookingDataForPayment.startTime,
-        hasToken: !!token,
-      });
-
       const response = await api.post('/payments/stripe/create', {
         bookingData: bookingDataForPayment,
-      });
-
-      console.log('[Payment] Stripe payment intent response:', {
-        hasClientSecret: !!response.data?.result?.clientSecret,
-        hasPaymentId: !!response.data?.result?.paymentId,
       });
 
       if (response.data?.result?.clientSecret) {
         setClientSecret(response.data.result.clientSecret);
         setPaymentId(response.data.result.paymentId);
       } else {
-        throw new Error('Invalid response from server');
+        throw new Error('Ungültige Antwort vom Server');
       }
     } catch (err: any) {
-      console.error('[Payment] Stripe payment error:', err);
-      
       // Handle 401 Unauthorized
       if (err.response?.status === 401) {
-        setError('Authentication failed. Please login again.');
-        // Clear storage and redirect to login
+        setError('Authentifizierung fehlgeschlagen. Bitte erneut anmelden.');
         setTimeout(() => {
           router.replace('/(auth)/login');
         }, 2000);
       } else if (err.response?.status === 409) {
-        // Handle duplicate payment (409 Conflict)
-        setError('A payment for this booking already exists. Please check your bookings.');
+        setError('Für diese Buchung existiert bereits eine Zahlung. Bitte prüfen Sie Ihre Buchungen.');
       } else if (err.response?.status === 502) {
-        // Handle Bad Gateway (backend not responding)
-        setError('Payment service is temporarily unavailable. Please try again later or use PayPal.');
+        setError('Der Zahlungsdienst ist vorübergehend nicht verfügbar. Bitte später erneut versuchen oder PayPal verwenden.');
       } else if (err.response?.status === 500) {
-        // Handle Internal Server Error
-        const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Server error occurred';
-        setError(`Payment failed: ${errorMessage}. Please try again or contact support.`);
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Serverfehler aufgetreten';
+        setError(`Zahlung fehlgeschlagen: ${errorMessage}. Bitte erneut versuchen oder Support kontaktieren.`);
       } else {
-        setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to create payment');
+        setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Zahlung konnte nicht erstellt werden');
       }
     } finally {
       setLoading(false);
@@ -267,9 +240,9 @@ export default function PaymentScreen() {
           />
         </View>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No booking information available</Text>
+          <Text style={styles.errorText}>Keine Buchungsinformationen verfügbar</Text>
           <Button onPress={handleBackPress} mode="outlined">
-            Go Back
+            Zurück
           </Button>
         </View>
       </View>
@@ -286,7 +259,7 @@ export default function PaymentScreen() {
           onPress={handleBackPress}
         />
         <Text variant="titleLarge" style={styles.headerTitle}>
-          Payment
+          Zahlung
         </Text>
       </View>
 
@@ -295,9 +268,9 @@ export default function PaymentScreen() {
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              Order Summary
+              Bestellübersicht
             </Text>
-            
+
             <View style={styles.summaryRow}>
               <Text variant="bodyMedium" style={styles.summaryLabel}>
                 Business
@@ -309,7 +282,7 @@ export default function PaymentScreen() {
 
             <View style={styles.summaryRow}>
               <Text variant="bodyMedium" style={styles.summaryLabel}>
-                Toilet
+                Toilette
               </Text>
               <Text variant="bodyMedium" style={styles.summaryValue}>
                 {bookingData.toilet.name}
@@ -318,16 +291,16 @@ export default function PaymentScreen() {
 
             <View style={styles.summaryRow}>
               <Text variant="bodyMedium" style={styles.summaryLabel}>
-                Date
+                Datum
               </Text>
               <Text variant="bodyMedium" style={styles.summaryValue}>
-                {new Date(bookingData.date).toLocaleDateString()}
+                {new Date(bookingData.date).toLocaleDateString('de-DE')}
               </Text>
             </View>
 
             <View style={styles.summaryRow}>
               <Text variant="bodyMedium" style={styles.summaryLabel}>
-                People
+                Personen
               </Text>
               <Text variant="bodyMedium" style={styles.summaryValue}>
                 {bookingData.personCount}
@@ -347,7 +320,7 @@ export default function PaymentScreen() {
 
             <View style={styles.priceRow}>
               <Text variant="bodyMedium" style={styles.priceLabel}>
-                Service Fee
+                Servicegebühr
               </Text>
               <Text variant="bodyMedium" style={styles.priceValue}>
                 € {bookingData.pricing.serviceFee.toFixed(2)}
@@ -358,7 +331,7 @@ export default function PaymentScreen() {
 
             <View style={styles.totalRow}>
               <Text variant="titleLarge" style={styles.totalLabel}>
-                Total
+                Gesamt
               </Text>
               <Text variant="titleLarge" style={[styles.totalValue, { color: theme.colors.primary }]}>
                 € {bookingData.pricing.total.toFixed(2)}
@@ -371,7 +344,7 @@ export default function PaymentScreen() {
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              Payment Method
+              Zahlungsmethode
             </Text>
 
             <RadioButton.Group
@@ -379,7 +352,7 @@ export default function PaymentScreen() {
               value={paymentMethod}
             >
               <List.Item
-                title="Credit/Debit Card"
+                title="Kredit-/Debitkarte"
                 left={() => <List.Icon icon="credit-card-outline" />}
                 right={() => <RadioButton value="card" />}
                 onPress={() => setPaymentMethod('card')}
@@ -408,15 +381,15 @@ export default function PaymentScreen() {
           <Card style={styles.card}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.sectionTitle}>
-                Card Payment
+                Kartenzahlung
               </Text>
-              
+
               {CardField && stripe ? (
                 <>
                   {/* Cardholder Name */}
                   <TextInput
                     style={styles.textInput}
-                    label="First Name"
+                    label="Vorname"
                     value={cardholderName}
                     onChangeText={setCardholderName}
                     mode="outlined"
@@ -426,7 +399,7 @@ export default function PaymentScreen() {
                   {/* Cardholder Surname */}
                   <TextInput
                     style={styles.textInput}
-                    label="Last Name"
+                    label="Nachname"
                     value={cardholderSurname}
                     onChangeText={setCardholderSurname}
                     mode="outlined"
@@ -436,7 +409,7 @@ export default function PaymentScreen() {
                   {/* Billing Email */}
                   <TextInput
                     style={styles.textInput}
-                    label="Email"
+                    label="E-Mail"
                     value={billingEmail}
                     onChangeText={setBillingEmail}
                     mode="outlined"
@@ -458,20 +431,24 @@ export default function PaymentScreen() {
                       borderRadius: 8,
                     }}
                     style={styles.cardField}
-                    onCardChange={(cardDetails: any) => {
-                      setCardDetails(cardDetails);
-                      // CardField doesn't expose error in Details type, handle validation separately
-                      if (!cardDetails.complete && cardDetails.number) {
-                        // Card is incomplete but user has started typing
-                        setError(null);
-                      } else if (cardDetails.complete) {
-                        setError(null);
+                    onCardChange={(details: any) => {
+                      setCardDetails(details);
+                      if (details.complete) {
+                        setCardError(null);
+                      } else if (details.validNumber === 'Invalid') {
+                        setCardError('Ungültige Kartennummer');
+                      } else if (details.validExpiryDate === 'Invalid') {
+                        setCardError('Ungültiges Ablaufdatum');
+                      } else if (details.validCVC === 'Invalid') {
+                        setCardError('Ungültiger Sicherheitscode (CVC)');
+                      } else {
+                        setCardError(null);
                       }
                     }}
                   />
 
-                  {error && (
-                    <Text style={styles.cardError}>{error}</Text>
+                  {cardError && (
+                    <Text style={styles.cardError}>{cardError}</Text>
                   )}
 
                   <Button
@@ -483,16 +460,16 @@ export default function PaymentScreen() {
                     disabled={!cardDetails?.complete || !cardholderName.trim() || !cardholderSurname.trim() || !billingEmail.trim() || processingPayment}
                     icon="lock"
                   >
-                    {processingPayment ? 'Processing...' : 'Pay €' + bookingData.pricing.total.toFixed(2)}
+                    {processingPayment ? 'Verarbeitung...' : `€ ${bookingData.pricing.total.toFixed(2)} Jetzt bezahlen`}
                   </Button>
                 </>
               ) : (
                 <View>
                   <Text variant="bodyMedium" style={styles.infoText}>
-                    Card payment requires a development build. Please use PayPal or contact support.
+                    Kartenzahlung erfordert einen Development Build. Bitte verwenden Sie PayPal oder kontaktieren Sie den Support.
                   </Text>
                   <Text variant="bodySmall" style={styles.infoSubtext}>
-                    Stripe card payment is not available in Expo Go. Please build the app with EAS Build to use card payments.
+                    Stripe-Kartenzahlung ist in Expo Go nicht verfügbar. Bitte erstellen Sie die App mit EAS Build, um Kartenzahlungen zu nutzen.
                   </Text>
                 </View>
               )}
@@ -505,10 +482,10 @@ export default function PaymentScreen() {
           <Card style={styles.card}>
             <Card.Content>
               <Text variant="titleMedium" style={styles.sectionTitle}>
-                PayPal Payment
+                PayPal-Zahlung
               </Text>
               <Text variant="bodyMedium" style={styles.infoText}>
-                PayPal payment integration is in development. Please contact support to complete your booking.
+                PayPal-Zahlung ist derzeit in Entwicklung. Bitte kontaktieren Sie den Support, um Ihre Buchung abzuschließen.
               </Text>
             </Card.Content>
           </Card>
@@ -529,29 +506,34 @@ export default function PaymentScreen() {
                   setError(null);
 
                   if (!token) {
-                    setError('Please login to continue with payment');
+                    setError('Bitte melden Sie sich an, um fortzufahren');
                     router.replace('/(auth)/login');
                     return;
                   }
 
                   // Ensure date is properly formatted
-                  let startTime: string;
-                  if (bookingData.date instanceof Date) {
-                    startTime = bookingData.date.toISOString();
-                  } else if (typeof bookingData.date === 'string') {
-                    // If it's already an ISO string, use it directly
-                    startTime = bookingData.date.includes('T') ? bookingData.date : new Date(bookingData.date).toISOString();
-                  } else {
-                    startTime = new Date().toISOString();
+                  if (!bookingData.date) {
+                    setError('Buchungsdatum fehlt');
+                    setLoading(false);
+                    return;
                   }
+                  const parsedDatePaypal = bookingData.date instanceof Date
+                    ? bookingData.date
+                    : new Date(bookingData.date);
+                  if (isNaN(parsedDatePaypal.getTime())) {
+                    setError('Ungültiges Buchungsdatum');
+                    setLoading(false);
+                    return;
+                  }
+                  const startTime = parsedDatePaypal.toISOString();
 
                   // Ensure totalAmount is a number
-                  const totalAmount = typeof bookingData.pricing.total === 'string' 
-                    ? parseFloat(bookingData.pricing.total) 
+                  const totalAmount = typeof bookingData.pricing.total === 'string'
+                    ? parseFloat(bookingData.pricing.total)
                     : Number(bookingData.pricing.total);
 
                   if (isNaN(totalAmount) || totalAmount <= 0) {
-                    setError(`Invalid total amount: ${bookingData.pricing.total}`);
+                    setError(`Ungültiger Gesamtbetrag: ${bookingData.pricing.total}`);
                     setLoading(false);
                     return;
                   }
@@ -565,81 +547,54 @@ export default function PaymentScreen() {
                     totalAmount,
                   };
 
-                  console.log('[Payment] Creating PayPal order...', { 
-                    businessId: bookingDataForPayment.businessId, 
-                    totalAmount: bookingDataForPayment.totalAmount,
-                    startTime: bookingDataForPayment.startTime,
-                    hasToken: !!token 
-                  });
-
                   const response = await api.post('/payments/paypal/create', {
                     bookingData: bookingDataForPayment,
                   });
 
-                  console.log('[Payment] PayPal order response:', response.data);
+                  const orderId = response.data?.result?.orderId;
+                  const paypalPaymentId = response.data?.result?.paymentId;
 
-                const orderId = response.data?.result?.orderId || response.data?.result?.orderId;
-                const paypalPaymentId = response.data?.result?.paymentId;
-
-                if (orderId) {
-                  // Navigate to payment success with booking data and PayPal info
-                  router.replace({
-                    pathname: '/(modals)/payment-success',
-                    params: {
-                      paymentData: JSON.stringify({
-                        orderId: orderId,
-                        paymentId: paypalPaymentId,
-                        bookingData: bookingData,
-                        paymentMethod: 'paypal',
-                      }),
-                    },
-                  });
-                } else {
-                  throw new Error('Invalid response from server');
-                }
+                  if (orderId) {
+                    // Navigate to payment success with booking data and PayPal info
+                    router.replace({
+                      pathname: '/(modals)/payment-success',
+                      params: {
+                        paymentData: JSON.stringify({
+                          orderId: orderId,
+                          paymentId: paypalPaymentId,
+                          bookingData: bookingData,
+                          paymentMethod: 'paypal',
+                        }),
+                      },
+                    });
+                  } else {
+                    throw new Error('Ungültige Antwort vom Server');
+                  }
                 } catch (err: any) {
-                  console.error('[Payment] PayPal payment error:', err);
-                  console.error('[Payment] PayPal error response:', {
-                    status: err.response?.status,
-                    data: err.response?.data,
-                    message: err.message,
-                  });
-                  
                   if (err.response?.status === 401) {
-                    setError('Authentication failed. Please login again.');
+                    setError('Authentifizierung fehlgeschlagen. Bitte erneut anmelden.');
                     setTimeout(() => {
                       router.replace('/(auth)/login');
                     }, 2000);
                   } else if (err.response?.status === 500) {
-                    // Handle Internal Server Error with more details
-                    const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Server error occurred';
-                    const errorDetails = err.response?.data?.details;
-                    
-                    console.error('[Payment] PayPal 500 error details:', {
-                      message: errorMessage,
-                      details: errorDetails,
-                      fullData: err.response?.data,
-                    });
-                    
-                    // Show user-friendly error message
-                    let userMessage = `PayPal payment failed: ${errorMessage}`;
-                    
-                    // Add specific guidance based on error message
+                    const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Serverfehler aufgetreten';
+                    let userMessage = `PayPal-Zahlung fehlgeschlagen: ${errorMessage}`;
+
                     if (errorMessage.includes('PayPal configuration') || errorMessage.includes('PAYPAL_CLIENT_ID')) {
-                      userMessage += '\n\nPlease contact support. PayPal is not properly configured.';
+                      userMessage += '\n\nBitte kontaktieren Sie den Support. PayPal ist nicht korrekt konfiguriert.';
                     } else if (errorMessage.includes('Business not found')) {
-                      userMessage += '\n\nThe selected business could not be found. Please try again.';
+                      userMessage += '\n\nDas ausgewählte Business wurde nicht gefunden. Bitte erneut versuchen.';
                     } else if (errorMessage.includes('Invalid totalAmount')) {
-                      userMessage += '\n\nInvalid payment amount. Please try again.';
+                      userMessage += '\n\nUngültiger Zahlungsbetrag. Bitte erneut versuchen.';
                     } else {
-                      userMessage += '\n\nPlease try again or contact support if the problem persists.';
+                      userMessage += '\n\nBitte erneut versuchen oder Support kontaktieren.';
                     }
-                    
+
                     setError(userMessage);
                   } else if (err.response?.status === 502) {
-                    setError('Payment service is temporarily unavailable. Please try again later.');
+                    setError('Der Zahlungsdienst ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.');
                   } else {
-                    setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to create PayPal order');
+                    setError(err.response?.data?.message || err.response?.data?.error || err.message || 'PayPal-Bestellung konnte nicht erstellt werden');
                   }
                 } finally {
                   setLoading(false);
@@ -652,19 +607,19 @@ export default function PaymentScreen() {
             disabled={loading}
             icon={paymentMethod === 'paypal' ? 'wallet' : 'credit-card'}
           >
-            {loading 
-              ? 'Processing...' 
-              : paymentMethod === 'paypal' 
-                ? `Pay with PayPal - €${bookingData.pricing.total.toFixed(2)}`
-                : 'Continue to Payment'}
+            {loading
+              ? 'Verarbeitung...'
+              : paymentMethod === 'paypal'
+                ? `Mit PayPal bezahlen – €${bookingData.pricing.total.toFixed(2)}`
+                : 'Weiter zur Zahlung'}
           </Button>
         ) : (
           <View style={styles.paymentReadyContainer}>
             <Text variant="bodyMedium" style={[styles.paymentReadyText, { color: theme.colors.primary }]}>
-              ✓ Payment intent created successfully
+              ✓ Zahlungsvorgang erfolgreich initialisiert
             </Text>
             <Text variant="bodySmall" style={styles.paymentReadySubtext}>
-              Please select a payment method above to proceed
+              Bitte wählen Sie oben eine Zahlungsmethode aus
             </Text>
           </View>
         )}
@@ -672,7 +627,7 @@ export default function PaymentScreen() {
         {/* Security Badge */}
         <View style={styles.securityBadge}>
           <Text variant="bodySmall" style={[styles.securityText, { color: theme.colors.primary }]}>
-            🔒 Secure Payment
+            🔒 Sichere Zahlung
           </Text>
         </View>
       </ScrollView>
@@ -822,4 +777,3 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 });
-

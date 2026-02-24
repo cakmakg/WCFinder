@@ -38,6 +38,10 @@ SERVER/.env
 SERVER/.env.local
 SERVER/.env.development
 SERVER/.env.production
+MOBILE/.env
+MOBILE/.env.local
+MOBILE/.env.development
+MOBILE/.env.production
 
 # ✅ allow only example env files
 !.env.example

@@ -3,11 +3,17 @@ import { Popup } from 'react-leaflet';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Paper, Box, Typography, Chip } from '@mui/material';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
-import EuroIcon from '@mui/icons-material/Euro';
+import { Box, Typography, Tooltip } from '@mui/material';
+import WcIcon from '@mui/icons-material/Wc';
 import AccessibleIcon from '@mui/icons-material/Accessible';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+
+const STATUS_CONFIG = {
+  available: { color: '#16a34a', label: 'Verfügbar' },
+  in_use:    { color: '#d97706', label: 'Belegt'    },
+  default:   { color: '#dc2626', label: 'Außer Betrieb' },
+};
 
 export const MarkerPopup = ({ toiletItem, theme, isMobile }) => {
   const { t } = useTranslation();
@@ -15,203 +21,140 @@ export const MarkerPopup = ({ toiletItem, theme, isMobile }) => {
   const { currentUser, token } = useSelector((state) => state.auth);
 
   const handlePopupClick = () => {
-    // Popup'a tıklandığında booking paneline git
     if (!currentUser || !token) {
-      navigate('/', { 
-        state: { 
+      navigate('/', {
+        state: {
           openLoginModal: true,
           from: `/business/${toiletItem.business._id}`,
-          businessName: toiletItem.business.businessName 
-        } 
+          businessName: toiletItem.business.businessName,
+        },
       });
       return;
     }
-    
     navigate(`/business/${toiletItem.business._id}`);
   };
-  
+
+  const status = STATUS_CONFIG[toiletItem.status] || STATUS_CONFIG.default;
+  const isFree = toiletItem.fee === 0;
+  const hasAccessible = toiletItem.features?.isAccessible;
+  const hasBaby = toiletItem.features?.hasBabyChangingStation;
+
   return (
-    <Popup maxWidth={isMobile ? 240 : 260}>
-      <Paper 
+    <Popup maxWidth={300} minWidth={260}>
+      <Box
         onClick={handlePopupClick}
-        sx={{ 
-          p: 1.5, 
-          borderRadius: 2.5, 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          backgroundColor: 'white',
-          minWidth: 220,
-          maxWidth: 260,
+        sx={{
           cursor: 'pointer',
-          '&:hover': {
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            transform: 'translateY(-1px)',
-            transition: 'all 0.2s ease'
-          }
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.25,
+          width: 260,
+          userSelect: 'none',
+          py: 0.25,
         }}
       >
-        {/* Business Type Chip */}
-        <Box sx={{ mb: 0.75 }}>
-          <Chip 
-            label={toiletItem.business.businessType}
-            size="small"
-            sx={{ 
-              fontSize: '0.65rem',
-              height: '20px',
-              px: 0.75,
-              backgroundColor: '#e0f2fe',
-              color: '#0891b2',
-              fontWeight: 600,
-              borderRadius: 1,
-            }}
-          />
-        </Box>
-
-        {/* Business Name - Compact */}
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            fontWeight: 700,
-            fontSize: '0.875rem',
-            mb: 0.75,
-            color: '#1e293b',
-            lineHeight: 1.2,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}
-          title={toiletItem.business.businessName}
-        >
-          {toiletItem.business.businessName}
-        </Typography>
-
-        {/* Toilet Name */}
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            fontSize: '0.75rem',
-            color: '#64748b',
-            mb: 0.75,
-            fontWeight: 500
-          }}
-        >
-          {toiletItem.name}
-        </Typography>
-
-        {/* Price & Status - Single Row */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 0.75,
-          gap: 0.5
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <EuroIcon sx={{ fontSize: '0.75rem', mr: 0.3, color: '#0891b2' }} />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 700, 
-                color: '#0891b2', 
-                fontSize: '0.8rem',
-                lineHeight: 1
-              }}
-            >
-              {toiletItem.fee > 0 ? `${toiletItem.fee.toFixed(2)}€` : t('map.free', 'Free')}
-            </Typography>
-          </Box>
-          
-          <Chip 
-            label={
-              toiletItem.status === 'available' ? t('myBookings.available', 'Available') : 
-              toiletItem.status === 'in_use' ? t('myBookings.inUse', 'In Use') : 
-              t('myBookings.outOfOrder', 'Out of Order')
-            } 
-            size="small"
-            sx={{
-              fontSize: '0.65rem',
-              height: '18px',
-              px: 0.5
-            }}
-            color={
-              toiletItem.status === 'available' ? 'success' : 
-              toiletItem.status === 'in_use' ? 'warning' : 'error'
-            }
-            variant="filled"
-          />
-        </Box>
-
-        {/* Features - Compact */}
-        {toiletItem.features && (toiletItem.features.isAccessible || toiletItem.features.hasBabyChangingStation) && (
-          <Box sx={{ mb: 0.75 }}>
-            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-              {toiletItem.features.isAccessible && (
-                <Chip 
-                  icon={<AccessibleIcon sx={{ fontSize: '0.75rem !important' }} />}
-                  label={t('map.accessible', 'Accessible')}
-                  size="small"
-                  sx={{
-                    fontSize: '0.65rem',
-                    height: '20px',
-                    px: 0.5
-                  }}
-                  color="info"
-                  variant="outlined"
-                />
-              )}
-              {toiletItem.features.hasBabyChangingStation && (
-                <Chip 
-                  icon={<ChildCareIcon sx={{ fontSize: '0.75rem !important' }} />}
-                  label="Bebek Bakım"
-                  size="small"
-                  sx={{
-                    fontSize: '0.65rem',
-                    height: '20px',
-                    px: 0.5
-                  }}
-                  color="secondary"
-                  variant="outlined"
-                />
-              )}
-            </Box>
-          </Box>
-        )}
-
-        {/* Address - Compact */}
-        {toiletItem.business.address && (
-          <Box sx={{ 
-            pt: 0.75, 
-            borderTop: '1px solid #e2e8f0',
+        {/* ── Sol: WC İkon ── */}
+        <Box
+          sx={{
+            flexShrink: 0,
+            width: 36,
+            height: 36,
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
             display: 'flex',
-            alignItems: 'flex-start'
-          }}>
-            <LocationOnIcon sx={{ 
-              fontSize: '0.75rem', 
-              color: '#0891b2',
-              mr: 0.4,
-              mt: 0.1,
-              flexShrink: 0
-            }} />
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontSize: '0.7rem', 
-                lineHeight: 1.3,
-                color: '#64748b',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <WcIcon sx={{ color: 'white', fontSize: '1.1rem' }} />
+        </Box>
+
+        {/* ── Orta: Bilgi ── */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {/* Üst satır: İşletme adı */}
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              color: '#0f172a',
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {toiletItem.business.businessName}
+          </Typography>
+
+          {/* Alt satır: Tuvalet adı · durum · ikonlar */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mt: 0.3, flexWrap: 'nowrap' }}>
+            <Typography
+              sx={{
+                fontSize: '0.7rem',
+                color: '#94a3b8',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical'
+                whiteSpace: 'nowrap',
+                maxWidth: 80,
+                flexShrink: 1,
               }}
-              title={`${toiletItem.business.address.street}, ${toiletItem.business.address.postalCode} ${toiletItem.business.address.city}`}
             >
-              {toiletItem.business.address.street}, {toiletItem.business.address.postalCode} {toiletItem.business.address.city}
+              {toiletItem.name}
             </Typography>
+
+            <Box sx={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: '#e2e8f0', flexShrink: 0 }} />
+
+            {/* Durum */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flexShrink: 0 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: status.color }} />
+              <Typography sx={{ fontSize: '0.68rem', color: status.color, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {status.label}
+              </Typography>
+            </Box>
+
+            {/* Özellik ikonları */}
+            {hasAccessible && (
+              <Tooltip title="Barrierefrei" arrow placement="top">
+                <AccessibleIcon sx={{ fontSize: '0.75rem', color: '#0ea5e9', flexShrink: 0 }} />
+              </Tooltip>
+            )}
+            {hasBaby && (
+              <Tooltip title="Wickelraum" arrow placement="top">
+                <ChildCareIcon sx={{ fontSize: '0.75rem', color: '#a855f7', flexShrink: 0 }} />
+              </Tooltip>
+            )}
           </Box>
-        )}
-      </Paper>
+        </Box>
+
+        {/* ── Sağ: Fiyat + Arrow ── */}
+        <Box sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              fontWeight: 800,
+              color: isFree ? '#16a34a' : '#0891b2',
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isFree ? t('map.free', 'Kostenlos') : `${toiletItem.fee?.toFixed(2)} €`}
+          </Typography>
+
+          <Box
+            sx={{
+              width: 20,
+              height: 20,
+              borderRadius: '6px',
+              background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ArrowForwardIosIcon sx={{ fontSize: '0.5rem', color: 'white' }} />
+          </Box>
+        </Box>
+      </Box>
     </Popup>
   );
 };

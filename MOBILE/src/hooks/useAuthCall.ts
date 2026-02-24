@@ -32,9 +32,8 @@ const useAuthCall = () => {
   const apiCall = useApiCall();
 
   const login = async (userInfo: { email: string; password: string }) => {
-    console.log("🔐 [useAuthCall] Login called with:", maskSensitiveData(userInfo));
+    if (__DEV__) console.log("🔐 [useAuthCall] Login called");
     try {
-      console.log("🔐 [useAuthCall] Calling apiCall with url: /auth/login");
       const data = await apiCall({
         url: "/auth/login",
         method: "post",
@@ -45,9 +44,7 @@ const useAuthCall = () => {
         successMessage: "Giriş işlemi başarılı.",
         requiresAuth: false,
       });
-      
-      console.log('🔐 Login response:', data);
-      
+
       if (data?.bearer?.accessToken || data?.token) {
         // Navigate to home after successful login
         router.replace('/(tabs)');
@@ -74,7 +71,7 @@ const useAuthCall = () => {
       });
       
       // Navigate to login after successful registration
-      router.replace('/login');
+      router.replace('/(auth)/login');
       return data;
     } catch (error) {
       console.error('❌ Register failed:', error);
@@ -99,7 +96,7 @@ const useAuthCall = () => {
       dispatch(logoutSuccess());
     } finally {
       // Navigate to login after logout
-      router.replace('/login');
+      router.replace('/(auth)/login');
     }
   };
 

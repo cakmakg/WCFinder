@@ -28,12 +28,13 @@ api.interceptors.request.use(
   async (config) => {
     try {
       const token = await tokenStorage.getAccessToken();
-      console.log('[API] Request interceptor:', {
-        url: config.url,
-        method: config.method,
-        hasToken: !!token,
-        tokenPreview: token ? token.substring(0, 20) + '...' : 'null'
-      });
+      if (__DEV__) {
+        console.log('[API] Request interceptor:', {
+          url: config.url,
+          method: config.method,
+          hasToken: !!token,
+        });
+      }
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -85,7 +86,9 @@ api.interceptors.response.use(
 
     // If it's a 401 and the request hasn't been retried yet, attempt refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log('[API] 401 received. originalRequest._retry =', originalRequest?._retry, 'isRefreshing =', isRefreshing, 'url =', originalRequest?.url);
+      if (__DEV__) {
+        console.log('[API] 401 received. isRefreshing =', isRefreshing);
+      }
 
       // Avoid trying to refresh if the original request was the refresh endpoint
       if (originalRequest.url && originalRequest.url.includes('/auth/refresh')) {

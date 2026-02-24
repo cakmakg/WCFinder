@@ -23,6 +23,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import LockIcon from '@mui/icons-material/Lock';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SecurityIcon from '@mui/icons-material/Security';
 import { OrderSummary } from '../components/payment/OrderSummary';
 import { StripeCardForm } from '../components/payment/StripeCardForm';
 import { PayPalButton } from '../components/payment/PayPalButton';
@@ -354,76 +355,111 @@ const PaymentPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
-      <Container maxWidth="lg">
-        {/* Header */}
-        <Box sx={{ mb: 4 }}>
-          <IconButton 
-            onClick={() => navigate(-1)} 
-            sx={{ 
-              mb: 2,
-              bgcolor: 'white',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
+      {/* ── Gradient Hero Header ── */}
+      <Box
+        component="header"
+        sx={{
+          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          pt: { xs: 3, sm: 4 },
+          pb: { xs: 3, sm: 4 },
+          position: 'relative',
+          overflow: 'hidden',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: -40, right: -40,
+            width: 200, height: 200,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            pointerEvents: 'none',
+          },
+        }}
+      >
+        <Container maxWidth="lg">
+          <Button
+            startIcon={<ArrowBackIcon sx={{ fontSize: '1rem !important' }} />}
+            onClick={() => navigate(-1)}
+            size="small"
+            sx={{
+              mb: 2.5,
+              color: 'rgba(255,255,255,0.85)',
+              backgroundColor: 'rgba(255,255,255,0.12)',
+              borderRadius: '20px',
+              px: 2,
+              py: 0.5,
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              textTransform: 'none',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.18)',
               '&:hover': {
-                bgcolor: 'white',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              }
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                color: 'white',
+              },
             }}
           >
-            <ArrowBackIcon sx={{ color: '#0891b2' }} />
-          </IconButton>
+            Zurück
+          </Button>
 
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontWeight: 700, 
-              mb: 0.5,
-              color: '#1e293b'
-            }}
-          >
-            {t('payment.title')}
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#64748b' }}>
-            {t('payment.subtitle')}
-          </Typography>
-        </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography
+                variant="h1"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: { xs: '1.6rem', sm: '2rem' },
+                  color: 'white',
+                  lineHeight: 1.2,
+                  mb: 0.5,
+                }}
+              >
+                {t('payment.title')}
+              </Typography>
+              <Typography sx={{ fontSize: '0.87rem', color: 'rgba(255,255,255,0.82)', fontWeight: 500 }}>
+                Sichere &amp; schnelle Bezahlung
+              </Typography>
+            </Box>
+            <SecurityIcon sx={{ fontSize: '2.8rem', color: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+          </Box>
+        </Container>
+      </Box>
 
+      <Container maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5 } }}>
         {error && (
-          <Alert 
-            severity="error" 
-            sx={{ 
+          <Alert
+            severity="error"
+            sx={{
               mb: 3,
-              borderRadius: 2,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-              backgroundColor: '#fee2e2',
-              '& .MuiAlert-icon': {
-                color: '#ef4444'
-              }
-            }} 
+              borderRadius: '12px',
+              '& .MuiAlert-icon': { color: '#ef4444' },
+            }}
             onClose={() => setError(null)}
           >
             {error}
           </Alert>
         )}
 
-        <Grid container spacing={3}>
+        <Grid container spacing={2.5}>
           {/* Left Column - Payment Methods */}
           <Grid size={{ xs: 12, md: 7 }}>
-            <Paper 
-              sx={{ 
-                p: 3, 
-                mb: 3,
-                borderRadius: 3,
-                boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
-                border: '1px solid #e2e8f0'
+            <Paper
+              sx={{
+                p: 3,
+                mb: 2.5,
+                borderRadius: '16px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                border: '1px solid rgba(8,145,178,0.1)',
               }}
             >
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  mb: 3, 
+              <Typography
+                sx={{
+                  mb: 2.5,
                   fontWeight: 700,
-                  color: '#1e293b'
+                  fontSize: '0.85rem',
+                  color: '#0891b2',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
                 }}
               >
                 {t('payment.paymentMethod')}
@@ -443,15 +479,15 @@ const PaymentPage = () => {
                   <Card
                     sx={{
                       mb: 2,
-                      border: paymentMethod === 'card' ? '2px solid #0891b2' : '1px solid #e2e8f0',
-                      borderRadius: 2,
+                      border: paymentMethod === 'card' ? '2px solid #0891b2' : '1.5px solid rgba(0,0,0,0.08)',
+                      borderRadius: '14px',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         borderColor: '#0891b2',
                         boxShadow: '0 4px 12px rgba(8,145,178,0.15)',
                       },
-                      backgroundColor: paymentMethod === 'card' ? '#f0f9ff' : 'white'
+                      backgroundColor: paymentMethod === 'card' ? '#f0f9ff' : 'white',
                     }}
                     onClick={() => setPaymentMethod('card')}
                   >
@@ -477,15 +513,15 @@ const PaymentPage = () => {
                   {/* PayPal */}
                   <Card
                     sx={{
-                      border: paymentMethod === 'paypal' ? '2px solid #0891b2' : '1px solid #e2e8f0',
-                      borderRadius: 2,
+                      border: paymentMethod === 'paypal' ? '2px solid #0891b2' : '1.5px solid rgba(0,0,0,0.08)',
+                      borderRadius: '14px',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         borderColor: '#0891b2',
                         boxShadow: '0 4px 12px rgba(8,145,178,0.15)',
                       },
-                      backgroundColor: paymentMethod === 'paypal' ? '#f0f9ff' : 'white'
+                      backgroundColor: paymentMethod === 'paypal' ? '#f0f9ff' : 'white',
                     }}
                     onClick={() => setPaymentMethod('paypal')}
                   >
@@ -523,7 +559,7 @@ const PaymentPage = () => {
                 </RadioGroup>
               </FormControl>
 
-              <Divider sx={{ my: 3, borderColor: '#e2e8f0' }} />
+              <Divider sx={{ my: 2.5, borderColor: 'rgba(8,145,178,0.1)' }} />
 
               {/* Payment Form Area */}
               {loading ? (
@@ -560,11 +596,16 @@ const PaymentPage = () => {
                           size="large"
                           onClick={createStripePaymentIntent}
                           disabled={loading}
+                          startIcon={!loading && <LockIcon />}
                           sx={{
                             py: 1.5,
                             textTransform: 'none',
                             fontSize: '1rem',
-                            fontWeight: 600,
+                            fontWeight: 700,
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                            '&:hover': { background: 'linear-gradient(135deg, #0284c7 0%, #0e7490 100%)' },
+                            '&:disabled': { background: '#94a3b8', color: 'white' },
                           }}
                         >
                           {loading ? (
@@ -608,11 +649,16 @@ const PaymentPage = () => {
                           size="large"
                           onClick={createPayPalOrder}
                           disabled={loading}
+                          startIcon={!loading && <LockIcon />}
                           sx={{
                             py: 1.5,
                             textTransform: 'none',
                             fontSize: '1rem',
-                            fontWeight: 600,
+                            fontWeight: 700,
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                            '&:hover': { background: 'linear-gradient(135deg, #0284c7 0%, #0e7490 100%)' },
+                            '&:disabled': { background: '#94a3b8', color: 'white' },
                           }}
                         >
                           {loading ? (
@@ -636,12 +682,13 @@ const PaymentPage = () => {
             </Paper>
 
             {/* Security Notice */}
-            <Paper 
-              sx={{ 
-                p: 2.5, 
-                borderRadius: 2,
+            <Paper
+              sx={{
+                p: 2.5,
+                borderRadius: '14px',
                 backgroundColor: '#f0f9ff',
-                border: '1px solid #bae6fd'
+                border: '1px solid rgba(8,145,178,0.2)',
+                boxShadow: 'none',
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

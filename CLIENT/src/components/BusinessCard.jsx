@@ -3,285 +3,225 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
+import {
+  Card,
+  CardContent,
+  Typography,
   CardActionArea,
   Box,
-  Rating,
   Chip,
   useTheme
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
+
+// İşletme tipine göre renk
+const TYPE_COLORS = {
+  Cafe:         { bg: '#fef3c7', color: '#d97706' },
+  Restaurant:   { bg: '#fce7f3', color: '#db2777' },
+  Hotel:        { bg: '#ede9fe', color: '#7c3aed' },
+  Shop:         { bg: '#dcfce7', color: '#16a34a' },
+  'Gas Station':{ bg: '#ffedd5', color: '#ea580c' },
+  Other:        { bg: '#f1f5f9', color: '#64748b' },
+};
 
 const BusinessCard = ({ business, isSelected }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const navigate = useNavigate();
-  
   const { currentUser, token } = useSelector((state) => state.auth);
 
   if (!business) return null;
 
   const rating = 4.2;
-  const reviewCount = 156;
+  const typeStyle = TYPE_COLORS[business.businessType] || TYPE_COLORS.Other;
 
   const handleDoubleClick = (e) => {
     e.stopPropagation();
-    
-    // Business detail sayfası private route, login kontrolü PrivateRouter'da yapılıyor
     if (!currentUser || !token) {
-      navigate('/', { 
-        state: { 
+      navigate('/', {
+        state: {
           openLoginModal: true,
           from: `/business/${business._id}`,
-          businessName: business.businessName 
-        } 
+          businessName: business.businessName
+        }
       });
       return;
     }
-    
     navigate(`/business/${business._id}`);
   };
 
   return (
-    <Card 
-      sx={{ 
+    <Card
+      sx={{
         width: '100%',
-        maxWidth: '100%',
-        boxShadow: isSelected ? '0 4px 16px rgba(8,145,178,0.12)' : '0 1px 4px rgba(0,0,0,0.06)',
-        border: `1.5px solid ${isSelected ? '#0891b2' : 'transparent'}`,
-        borderRadius: 2.5,
-        backgroundColor: isSelected ? 'rgba(8,145,178,0.03)' : 'white',
-        transition: 'all 0.3s ease',
-        mb: 1.5,
+        borderRadius: '14px',
+        border: `1.5px solid ${isSelected ? '#0891b2' : '#e2e8f0'}`,
+        boxShadow: isSelected
+          ? '0 4px 20px rgba(8,145,178,0.15)'
+          : '0 1px 4px rgba(0,0,0,0.05)',
+        backgroundColor: isSelected ? 'rgba(8,145,178,0.02)' : 'white',
+        transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+        position: 'relative',
+        overflow: 'hidden',
         '&:hover': {
-          boxShadow: '0 6px 20px rgba(8,145,178,0.15)',
+          boxShadow: '0 8px 24px rgba(8,145,178,0.14)',
           transform: 'translateY(-2px)',
-          borderColor: '#0891b2',
-        }
+          border: '1.5px solid #0891b2',
+        },
+        // Sol accent çizgisi
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '3px',
+          borderRadius: '14px 0 0 14px',
+          background: isSelected
+            ? 'linear-gradient(180deg, #0891b2, #06b6d4)'
+            : 'transparent',
+          transition: 'background 0.25s ease',
+        },
+        '&:hover::before': {
+          background: 'linear-gradient(180deg, #0891b2, #06b6d4)',
+        },
       }}
     >
-      <CardActionArea 
+      <CardActionArea
         onDoubleClick={handleDoubleClick}
-        onClick={(e) => {
-          // Tek tıklamada event'i propagate et ki BusinessList'teki onClick çalışsın
-          // CardActionArea event'i engellemesin
-        }}
-        sx={{ 
+        onClick={() => {}}
+        disableRipple
+        sx={{
           height: '100%',
-          '&:hover .arrow-icon': {
-            transform: 'translateX(3px)',
-          }
+          '&:hover .MuiCardActionArea-focusHighlight': { opacity: 0 },
         }}
       >
-        <CardContent sx={{ p: 1.5 }}>
-          {/* Header: Badge & Popular */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            mb: 1,
-            gap: 0.5
-          }}>
-            <Chip 
+        <CardContent sx={{ p: 1.75, pb: '14px !important' }}>
+          {/* Header: type badge + rating */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Chip
               label={business.businessType}
               size="small"
-              sx={{ 
-                fontSize: '0.75rem',
-                height: '22px',
+              sx={{
+                fontSize: '0.72rem',
+                height: '20px',
                 px: 0.75,
-                backgroundColor: '#e0f2fe',
-                color: '#0891b2',
-                fontWeight: 600,
-                borderRadius: 1,
+                backgroundColor: typeStyle.bg,
+                color: typeStyle.color,
+                fontWeight: 700,
+                borderRadius: '6px',
+                border: 'none',
               }}
             />
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontWeight: 600,
-                color: '#0891b2',
-                fontSize: '0.75rem',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              ⭐
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+              <StarRoundedIcon sx={{ fontSize: '0.9rem', color: '#f59e0b' }} />
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, fontSize: '0.78rem' }}>
+                {rating}
+              </Typography>
+            </Box>
           </Box>
 
-          {/* Business Name - Compact */}
-          <Typography 
-            variant="h6" 
-            component="div" 
-            sx={{ 
+          {/* Business Name */}
+          <Typography
+            variant="subtitle1"
+            sx={{
               fontWeight: 700,
-              fontSize: '1rem',
-              mb: 1,
-              color: '#1e293b',
-              height: '2.4rem',
+              fontSize: '0.95rem',
+              mb: 0.75,
+              color: '#0f172a',
+              lineHeight: 1.3,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
-              lineHeight: 1.2,
             }}
             title={business.businessName}
           >
             {business.businessName}
           </Typography>
 
-          {/* Opening Hours & Rating - Single Row */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 0.75,
-            gap: 1
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
-              <AccessTimeIcon sx={{ 
-                fontSize: '1rem', 
-                color: '#64748b',
-                mr: 0.4,
-                flexShrink: 0
-              }} />
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: '#64748b', 
-                  fontSize: '0.85rem',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {business.openingHours || '09:00-18:00'}
-              </Typography>
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, flexShrink: 0 }}>
-              <Rating 
-                value={rating} 
-                precision={0.1}
-                size="small" 
-                readOnly 
-                sx={{ 
-                  fontSize: '1rem',
-                  '& .MuiRating-iconFilled': {
-                    color: '#f59e0b',
-                  }
-                }}
-              />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#64748b', 
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {rating}
-              </Typography>
-            </Box>
+          {/* Opening hours */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+            <AccessTimeIcon sx={{ fontSize: '0.85rem', color: '#94a3b8', mr: 0.5, flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 500 }}>
+              {business.openingHours || '09:00 – 18:00'}
+            </Typography>
           </Box>
 
-          {/* Address - Compact */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'flex-start', 
-            mb: 1,
-          }}>
-            <LocationOnIcon sx={{ 
-              fontSize: '1rem', 
-              color: '#0891b2',
-              mr: 0.4,
-              mt: 0.1,
-              flexShrink: 0
-            }} />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontSize: '0.85rem', 
-                lineHeight: 1.3,
+          {/* Address */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.25 }}>
+            <LocationOnIcon sx={{ fontSize: '0.85rem', color: '#0891b2', mr: 0.5, mt: 0.15, flexShrink: 0 }} />
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.8rem',
                 color: '#64748b',
+                lineHeight: 1.4,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical'
+                WebkitBoxOrient: 'vertical',
               }}
-              title={`${business.address?.street}, ${business.address?.postalCode} ${business.address?.city}`}
             >
               {business.address?.street}, {business.address?.postalCode} {business.address?.city}
             </Typography>
           </Box>
 
           {/* Divider */}
-          <Box sx={{ 
-            borderTop: '1px solid #e2e8f0',
-            my: 1
-          }} />
+          <Box sx={{ borderTop: '1px solid #f1f5f9', mb: 1.25 }} />
 
-          {/* Price & Action Button - Compact */}
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.3 }}>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#64748b', 
-                  fontSize: '0.75rem' 
-                }}
-              >
+          {/* Footer: price + arrow */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.25 }}>
+              <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.75rem' }}>
                 {t('businessCard.from')}
               </Typography>
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  fontWeight: 700, 
-                  color: '#0891b2', 
-                  fontSize: '1.125rem',
-                  lineHeight: 1
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  color: '#0891b2',
+                  fontSize: '1.1rem',
+                  lineHeight: 1,
+                  mx: 0.25,
                 }}
               >
                 €1
               </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#64748b', 
-                  fontSize: '0.75rem' 
-                }}
-              >
+              <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.75rem' }}>
                 {t('common.perDay')}
               </Typography>
             </Box>
-            
-            <Box 
-              className="arrow-icon"
-              sx={{ 
+
+            <Box
+              sx={{
                 width: 28,
                 height: 28,
-                background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
-                borderRadius: 1.5,
+                borderRadius: '9px',
+                background: isSelected
+                  ? 'linear-gradient(135deg, #0891b2, #06b6d4)'
+                  : 'rgba(8,145,178,0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'white',
-                transition: 'transform 0.3s ease',
-                boxShadow: '0 2px 6px rgba(8,145,178,0.25)',
+                transition: 'all 0.25s ease',
+                '.MuiCard-root:hover &': {
+                  background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+                },
               }}
             >
-              <ArrowForwardIcon sx={{ fontSize: '1rem' }} />
+              <ArrowForwardIosIcon
+                sx={{
+                  fontSize: '0.7rem',
+                  color: isSelected ? 'white' : '#0891b2',
+                  '.MuiCard-root:hover &': { color: 'white' },
+                  transition: 'color 0.25s ease',
+                }}
+              />
             </Box>
           </Box>
         </CardContent>

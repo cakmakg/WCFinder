@@ -25,7 +25,6 @@ export const tokenStorage = {
   async saveAccessToken(token: string): Promise<void> {
     try {
       await SecureStore.setItemAsync(STORAGE_KEYS.ACCESS_TOKEN, token);
-      console.log('[SecureStorage] Access token saved successfully');
     } catch (error) {
       console.error('[SecureStorage] Failed to save access token:', error);
       throw error;
@@ -51,7 +50,6 @@ export const tokenStorage = {
   async saveRefreshToken(token: string): Promise<void> {
     try {
       await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, token);
-      console.log('[SecureStorage] Refresh token saved successfully');
     } catch (error) {
       console.error('[SecureStorage] Failed to save refresh token:', error);
       throw error;
@@ -80,7 +78,6 @@ export const tokenStorage = {
         SecureStore.deleteItemAsync(STORAGE_KEYS.ACCESS_TOKEN),
         SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN),
       ]);
-      console.log('[SecureStorage] All tokens cleared');
     } catch (error) {
       console.error('[SecureStorage] Failed to clear tokens:', error);
       throw error;
@@ -114,7 +111,6 @@ export const userStorage = {
         STORAGE_KEYS.USER_DATA,
         JSON.stringify(sanitizedData)
       );
-      console.log('[UserStorage] User data saved successfully');
     } catch (error) {
       console.error('[UserStorage] Failed to save user data:', error);
       throw error;
@@ -140,7 +136,6 @@ export const userStorage = {
   async clear(): Promise<void> {
     try {
       await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      console.log('[UserStorage] User data cleared');
     } catch (error) {
       console.error('[UserStorage] Failed to clear user data:', error);
       throw error;
@@ -157,7 +152,6 @@ export const clearAllStorage = async (): Promise<void> => {
       tokenStorage.clearTokens(),
       userStorage.clear(),
     ]);
-    console.log('[Storage] All storage cleared');
   } catch (error) {
     console.error('[Storage] Failed to clear all storage:', error);
     throw error;

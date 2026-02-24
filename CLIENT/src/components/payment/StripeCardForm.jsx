@@ -13,6 +13,7 @@ import {
   CircularProgress,
   TextField,
 } from '@mui/material';
+import LockIcon from '@mui/icons-material/Lock';
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -33,17 +34,30 @@ const CARD_ELEMENT_OPTIONS = {
   hidePostalCode: true,
 };
 
+const INPUT_SX = {
+  mb: 2,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#0891b2',
+      borderWidth: '2px',
+    },
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#0891b2',
+  },
+};
+
 export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => {
   const stripe = useStripe();
   const elements = useElements();
-  
+
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [cardholderName, setCardholderName] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
 
   // ✅ SECURITY: Stripe ve Elements kontrolü
-  // Eğer Elements provider yoksa veya Stripe yüklenmediyse, hata göster
   if (!stripe || !elements) {
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
@@ -75,7 +89,6 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
     const cardElement = elements.getElement(CardElement);
 
     try {
-      // Payment Method oluştur
       const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
         type: 'card',
         card: cardElement,
@@ -89,8 +102,6 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         throw new Error(methodError.message);
       }
 
-      // Payment Intent'i onayla
-      // ✅ SECURITY: clientSecret loglanmıyor (sensitive data)
       if (import.meta.env.DEV) {
         console.log('📤 [StripeCardForm] Confirming payment intent...', {
           paymentMethodId: paymentMethod.id
@@ -104,7 +115,6 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         }
       );
 
-      // ✅ SECURITY: Sensitive data loglanmıyor, sadece development'ta detaylı log
       if (import.meta.env.DEV) {
         console.log('📥 [StripeCardForm] Payment confirmation response:', {
           error: confirmError ? {
@@ -124,12 +134,9 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
       }
 
       if (confirmError) {
-        // Daha detaylı hata mesajları
         let errorMessage = confirmError.message || 'Zahlung fehlgeschlagen';
-        
-        // ✅ 402 (Payment Required) hatası için özel kontrol
-        // Bu hata genellikle payment intent'in zaten confirm edilmiş olmasından kaynaklanır
-        if (confirmError.code === 'payment_intent_unexpected_state' || 
+
+        if (confirmError.code === 'payment_intent_unexpected_state' ||
             confirmError.message?.includes('402') ||
             confirmError.message?.toLowerCase().includes('payment required')) {
           errorMessage = 'Diese Zahlung wurde bereits verarbeitet. Bitte starten Sie eine neue Zahlung.';
@@ -148,8 +155,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         } else if (confirmError.type === 'validation_error') {
           errorMessage = `Validierungsfehler: ${confirmError.message}`;
         }
-        
-        // ✅ SECURITY: Production'da sadece gerekli hata bilgisi loglanıyor
+
         if (import.meta.env.DEV) {
           console.error('❌ [StripeCardForm] Payment confirmation error:', {
             type: confirmError.type,
@@ -159,7 +165,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
             param: confirmError.param
           });
         }
-        
+
         throw new Error(errorMessage);
       }
 
@@ -192,7 +198,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         onChange={(e) => setCardholderName(e.target.value)}
         required
         disabled={processing}
-        sx={{ mb: 2 }}
+        sx={INPUT_SX}
       />
 
       <TextField
@@ -204,24 +210,27 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         onChange={(e) => setBillingEmail(e.target.value)}
         required
         disabled={processing}
-        sx={{ mb: 2 }}
+        sx={INPUT_SX}
       />
 
       <Box
         sx={{
           p: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
+          border: '1.5px solid rgba(8,145,178,0.2)',
+          borderRadius: '12px',
           mb: 2,
           bgcolor: 'background.paper',
+          transition: 'border-color 0.2s',
+          '&:focus-within': {
+            borderColor: '#0891b2',
+          },
         }}
       >
         <CardElement options={CARD_ELEMENT_OPTIONS} />
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
           {error}
         </Alert>
       )}
@@ -232,11 +241,21 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         variant="contained"
         size="large"
         disabled={!stripe || processing}
+        startIcon={!processing && <LockIcon />}
         sx={{
           py: 1.5,
           textTransform: 'none',
           fontSize: '1rem',
-          fontWeight: 600,
+          fontWeight: 700,
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #0284c7 0%, #0e7490 100%)',
+          },
+          '&:disabled': {
+            background: '#94a3b8',
+            color: 'white',
+          },
         }}
       >
         {processing ? (

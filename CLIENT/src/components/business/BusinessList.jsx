@@ -7,101 +7,69 @@ import BusinessCard from '../BusinessCard';
 import { BusinessSearchBar } from './BusinessSearchBar';
 import { useBusinessSearch } from '../../hook/useBusinessSearch';
 import { useBusinessFilter } from '../../hook/useBusinessFilter';
-import { 
-  Box, 
-  Typography, 
-  CircularProgress, 
+import {
+  Box,
+  Typography,
+  CircularProgress,
   Alert,
+  Chip,
   useTheme
 } from '@mui/material';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import SearchOffIcon from '@mui/icons-material/SearchOff';
 
-const BusinessList = ({ 
-  onBusinessClick, 
-  selectedBusinessId, 
+const BusinessList = ({
+  onBusinessClick,
+  selectedBusinessId,
   onLocationSearch,
-  initialSearch = '' // StartPage'den gelen search parametresi
+  initialSearch = ''
 }) => {
   const { t } = useTranslation();
   const theme = useTheme();
-  
+
   const { getCrudData } = useCrudCall();
   const { business, loading, error } = useSelector((state) => state.crud);
-  
+
   const hasFetched = useRef(false);
 
-  // Debug: Business verilerini logla
-  useEffect(() => {
-    console.log("📊 BusinessList - Current business data:", {
-      count: business?.length || 0,
-      businesses: business,
-      loading,
-      error
-    });
-  }, [business, loading, error]);
-  
-  const { 
-    search, 
-    setSearch, 
-    isSearching, 
-    clearSearch 
+  const {
+    search,
+    setSearch,
+    isSearching,
+    clearSearch
   } = useBusinessSearch(onLocationSearch);
-  
+
   const filteredBusinesses = useBusinessFilter(business, search);
 
-  // Debug: Filtered businesses
-  useEffect(() => {
-    console.log("🔍 BusinessList - Filtered businesses:", {
-      total: business?.length || 0,
-      filtered: filteredBusinesses?.length || 0,
-      searchTerm: search,
-      filteredList: filteredBusinesses
-    });
-  }, [business, filteredBusinesses, search]);
-
-  // URL'den gelen initialSearch'ü uygula
   useEffect(() => {
     if (initialSearch && initialSearch.trim()) {
       setSearch(initialSearch);
     }
   }, [initialSearch]);
 
-  // Business verilerini yükle - auth gerekmeden
   useEffect(() => {
-    console.log("🔄 BusinessList - Loading business data...");
-    getCrudData('business', false, 1000); // ✅ Public endpoint, limit: 1000 (tüm business'ları getir)
+    getCrudData('business', false, 1000);
     hasFetched.current = true;
   }, []);
 
-  // Sayfa görünür olduğunda veya focus olduğunda veriyi yenile (yeni business oluşturulduktan sonra)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && hasFetched.current) {
-        // Sayfa tekrar görünür olduğunda veriyi yenile
-        console.log("🔄 Refreshing business list (visibility change)");
         getCrudData('business', false, 1000);
       }
     };
-
     const handleFocus = () => {
       if (hasFetched.current) {
-        // Window focus olduğunda veriyi yenile
-        console.log("🔄 Refreshing business list (window focus)");
         getCrudData('business', false, 1000);
       }
     };
-
-    // Storage event listener - başka tab'da değişiklik olduğunda
     const handleStorageChange = (e) => {
       if (e.key === 'business_updated' && hasFetched.current) {
-        console.log("🔄 Refreshing business list (storage event)");
         getCrudData('business', false, 1000);
       }
     };
-
-    // Custom event listener - aynı tab'da değişiklik olduğunda
     const handleBusinessUpdate = () => {
       if (hasFetched.current) {
-        console.log("🔄 Refreshing business list (custom event)");
         getCrudData('business', false, 1000);
       }
     };
@@ -119,65 +87,71 @@ const BusinessList = ({
     };
   }, [getCrudData]);
 
-  const handleClearSearch = () => {
-    clearSearch();
-  };
-
   return (
-    <Box sx={{ 
+    <Box sx={{
       p: 2,
-      pb: 3, // Alt padding ekle ki son card tamamen görünsün
+      pb: 3,
       height: '100%',
       overflowY: 'auto',
-      backgroundColor: '#f8f9fa',
-      boxSizing: 'border-box'
+      backgroundColor: '#f8fafc',
+      boxSizing: 'border-box',
     }}>
       <BusinessSearchBar
         search={search}
         onSearchChange={setSearch}
-        onClear={handleClearSearch}
+        onClear={clearSearch}
         isSearching={isSearching}
         theme={theme}
       />
 
-      {business && business.length > 0 && (
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {filteredBusinesses?.length || 0} {t('businessList.locationsFound')}
-        </Typography>
-      )}
-
-      {loading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress size={30} />
+      {/* Sonuç sayısı chip */}
+      {business && business.length > 0 && !loading && (
+        <Box sx={{ mb: 2 }}>
+          <Chip
+            size="small"
+            label={`${filteredBusinesses?.length || 0} ${t('businessList.locationsFound')}`}
+            sx={{
+              backgroundColor: 'rgba(8,145,178,0.08)',
+              color: '#0891b2',
+              fontWeight: 600,
+              fontSize: '0.75rem',
+              height: '24px',
+              border: '1px solid rgba(8,145,178,0.15)',
+            }}
+          />
         </Box>
       )}
-      
+
+      {/* Loading */}
+      {loading && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, gap: 2 }}>
+          <CircularProgress size={36} thickness={3} sx={{ color: '#0891b2' }} />
+          <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.85rem' }}>
+            {t('common.loading')}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Error */}
       {error && (
-        <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
+        <Alert severity="error" variant="outlined" sx={{ mb: 2, borderRadius: 2, fontSize: '0.85rem' }}>
           {t('businessList.loadError')}
         </Alert>
       )}
 
+      {/* Liste */}
       {!loading && !error && filteredBusinesses && filteredBusinesses.length > 0 ? (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          gap: 2
-        }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
           {filteredBusinesses.map((businessItem) => (
-            <Box 
-              key={businessItem._id} 
-              sx={{ 
-                height: '180px',
-                flexShrink: 0,
-                cursor: 'pointer'
-              }}
+            <Box
+              key={businessItem._id}
+              sx={{ flexShrink: 0, cursor: 'pointer' }}
               onClick={(e) => {
                 e.stopPropagation();
                 onBusinessClick(businessItem);
               }}
             >
-              <BusinessCard 
+              <BusinessCard
                 business={businessItem}
                 isSelected={selectedBusinessId === businessItem._id}
               />
@@ -186,9 +160,31 @@ const BusinessList = ({
         </Box>
       ) : (
         !loading && !error && (
-          <Box sx={{ textAlign: 'center', p: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              {search 
+          <Box sx={{
+            textAlign: 'center',
+            py: 6,
+            px: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1.5,
+          }}>
+            <Box sx={{
+              width: 52,
+              height: 52,
+              borderRadius: '14px',
+              backgroundColor: 'rgba(8,145,178,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {search
+                ? <SearchOffIcon sx={{ fontSize: '1.6rem', color: '#0891b2' }} />
+                : <StorefrontIcon sx={{ fontSize: '1.6rem', color: '#0891b2' }} />
+              }
+            </Box>
+            <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.85rem' }}>
+              {search
                 ? t('businessList.noResults', { search })
                 : t('businessList.noLocations')
               }

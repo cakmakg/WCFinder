@@ -5,31 +5,46 @@ export const createCustomIcon = (color = '#2196f3') => {
   return L.divIcon({
     html: `
       <div style="
-        background-color: ${color};
-        width: 30px;
-        height: 30px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        position: relative;
+        width: 34px;
+        height: 42px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       ">
+        <!-- Pin gövdesi -->
         <div style="
-          color: white;
-          font-size: 14px;
-          transform: rotate(45deg);
+          width: 34px;
+          height: 34px;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          background: ${color};
+          box-shadow: 0 3px 10px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.15);
+          border: 2.5px solid white;
           display: flex;
           align-items: center;
           justify-content: center;
-          height: 100%;
         ">
-          🚻
+          <!-- İçerik (döndürülmüş geri) -->
+          <div style="
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+          ">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="white">
+              <path d="M5.5 22v-7.5H4V9c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v5.5H10.5V22h-5zM18 22v-6h3l-2.54-7.63A2.01 2.01 0 0 0 16.56 7h-.12a2 2 0 0 0-1.9 1.37L12 16h3v6h3zM7.5 6c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2zm9 0c1.11 0 2-.89 2-2s-.89-2-2-2-2 .89-2 2 .89 2 2 2z"/>
+            </svg>
+          </div>
         </div>
       </div>
     `,
     className: 'custom-div-icon',
-    iconSize: [30, 42],
-    iconAnchor: [15, 42],
-    popupAnchor: [0, -42]
+    iconSize: [34, 42],
+    iconAnchor: [17, 42],
+    popupAnchor: [0, -44],
   });
 };
 

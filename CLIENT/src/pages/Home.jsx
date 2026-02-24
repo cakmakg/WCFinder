@@ -117,10 +117,11 @@ export default function Home() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: { xs: DRAWER_WIDTH_MOBILE, sm: DRAWER_WIDTH },
-              maxWidth: '90vw', // Mobile'da ekran genişliğini aşmasın
-              backgroundColor: '#f8f9fa',
+              maxWidth: '90vw',
+              backgroundColor: 'white',
               border: 'none',
               mt: 8,
+              boxShadow: '4px 0 24px rgba(0,0,0,0.08)',
             },
           }}
         >
@@ -148,10 +149,11 @@ export default function Home() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
-              backgroundColor: '#f8f9fa',
-              borderRight: `1px solid ${theme.palette.divider}`,
+              backgroundColor: 'white',
+              borderRight: '1px solid rgba(8,145,178,0.1)',
               mt: 8,
               height: 'calc(100% - 64px)',
+              boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
             },
           }}
           open

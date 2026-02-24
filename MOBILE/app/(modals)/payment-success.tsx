@@ -4,7 +4,7 @@
  * Shows after successful payment with booking details and QR code
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Platform, Share, Linking } from 'react-native';
 import { 
   Text, 
@@ -68,6 +68,11 @@ export default function PaymentSuccessScreen() {
   const [usageDetails, setUsageDetails] = useState<UsageDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (paymentDataParam) {
@@ -113,20 +118,21 @@ export default function PaymentSuccessScreen() {
       } else {
         // Usage might not be created yet, wait a bit and retry
         setTimeout(async () => {
+          if (!isMountedRef.current) return;
           try {
             const retryPaymentResponse = await api.get(`/payments/${paymentId}`);
             const retryPayment = retryPaymentResponse.data?.result || retryPaymentResponse.data;
             const retryUsageId = retryPayment?.usageId || retryPayment?.metadata?.usageId;
-            
+
             if (retryUsageId) {
               const retryUsageResponse = await api.get(`/usages/my-usages/${retryUsageId}`);
               const retryUsage = retryUsageResponse.data?.result || retryUsageResponse.data;
-              setUsageDetails(retryUsage);
+              if (isMountedRef.current) setUsageDetails(retryUsage);
             }
           } catch (retryErr) {
             console.error('Error retrying usage fetch:', retryErr);
           } finally {
-            setLoading(false);
+            if (isMountedRef.current) setLoading(false);
           }
         }, 2000);
         return;
@@ -159,6 +165,7 @@ export default function PaymentSuccessScreen() {
         } else {
           // Wait and retry
           setTimeout(async () => {
+            if (!isMountedRef.current) return;
             try {
               const retryPaymentsResponse = await api.get('/payments/my-payments');
               const retryPayments = retryPaymentsResponse.data?.result || retryPaymentsResponse.data || [];
@@ -168,13 +175,13 @@ export default function PaymentSuccessScreen() {
                 if (retryUsageId) {
                   const retryUsageResponse = await api.get(`/usages/my-usages/${retryUsageId}`);
                   const retryUsage = retryUsageResponse.data?.result || retryUsageResponse.data;
-                  setUsageDetails(retryUsage);
+                  if (isMountedRef.current) setUsageDetails(retryUsage);
                 }
               }
             } catch (retryErr) {
               console.error('Error retrying usage fetch:', retryErr);
             } finally {
-              setLoading(false);
+              if (isMountedRef.current) setLoading(false);
             }
           }, 2000);
           return;
@@ -295,7 +302,7 @@ export default function PaymentSuccessScreen() {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={theme.colors.primary} />
                 <Text variant="bodySmall" style={styles.loadingText}>
-                  Loading booking details...
+                  Buchungsdetails werden geladen...
                 </Text>
               </View>
             ) : (
@@ -409,7 +416,10 @@ export default function PaymentSuccessScreen() {
                     <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, styles.totalLabel]}>Gesamt</Text>
                       <Text style={[styles.detailValue, styles.totalValue, { color: theme.colors.primary }]}>
-                        € {((usageDetails?.payment?.amount || paymentData?.bookingData?.pricing?.total) / 100 || paymentData?.bookingData?.pricing?.total || 0).toFixed(2)}
+                        € {(usageDetails?.payment?.amount
+                          ? (usageDetails.payment.amount / 100)
+                          : (paymentData?.bookingData?.pricing?.total || 0)
+                        ).toFixed(2)}
                       </Text>
                     </View>
                   </>
@@ -545,18 +555,6 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 8,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  loadingText: {
-    marginTop: 8,
-    opacity: 0.7,
-  },
-  monoText: {
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    fontSize: 12,
   },
   loadingContainer: {
     alignItems: 'center',
