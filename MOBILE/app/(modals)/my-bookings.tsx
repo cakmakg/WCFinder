@@ -6,17 +6,17 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Platform, RefreshControl, Share } from 'react-native';
-import { 
-  Text, 
-  Card, 
-  Button, 
-  Divider, 
-  useTheme,
+import {
+  Text,
+  Card,
+  Button,
+  Divider,
   IconButton,
   ActivityIndicator,
   Chip,
   Surface
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { tokenStorage, clearAllStorage } from '../../src/utils/secureStorage';
@@ -47,7 +47,6 @@ interface Booking {
 }
 
 export default function MyBookingsScreen() {
-  const theme = useTheme();
   const router = useRouter();
   const { currentUser, token, isInitializing, isAuthenticated } = useAuth();
   const { axiosWithToken } = useAxios();
@@ -228,9 +227,9 @@ export default function MyBookingsScreen() {
     const statusColor = getStatusColor(booking.status);
     
     return (
-      <Card 
-        key={booking._id} 
-        style={styles.bookingCard}
+      <Card
+        key={booking._id}
+        style={[styles.bookingCard, { borderLeftColor: statusColor }]}
         onPress={() => toggleExpanded(booking._id)}
       >
         <Card.Content>
@@ -287,7 +286,7 @@ export default function MyBookingsScreen() {
                     <MaterialCommunityIcons 
                       name="qrcode" 
                       size={40} 
-                      color={theme.colors.primary} 
+                      color={'#0891b2'} 
                     />
                     <Text variant="headlineSmall" style={styles.accessCode}>
                       {booking.accessCode}
@@ -337,28 +336,34 @@ export default function MyBookingsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#0891b2', '#0e7490']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <IconButton
           icon="arrow-left"
           size={24}
           onPress={handleBack}
+          iconColor="#fff"
         />
         <Text variant="titleLarge" style={styles.headerTitle}>
           Meine Buchungen
         </Text>
         <View style={{ width: 48 }} />
-      </View>
+      </LinearGradient>
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={'#0891b2'} />
           <Text style={styles.loadingText}>Buchungen werden geladen...</Text>
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
           <MaterialCommunityIcons name="alert-circle-outline" size={60} color="#ef4444" />
           <Text style={styles.errorText}>{error}</Text>
-          <Button mode="contained" onPress={fetchBookings} style={styles.retryButton}>
+          <Button mode="contained" buttonColor="#0891b2" onPress={fetchBookings} style={styles.retryButton}>
             Erneut versuchen
           </Button>
         </View>
@@ -369,7 +374,7 @@ export default function MyBookingsScreen() {
           <Text style={styles.emptySubtitle}>
             Sie haben noch keine Buchungen. Finden Sie eine Toilette in der Nähe!
           </Text>
-          <Button mode="contained" onPress={handleGoHome} style={styles.findButton}>
+          <Button mode="contained" buttonColor="#0891b2" onPress={handleGoHome} style={styles.findButton}>
             Toilette finden
           </Button>
         </View>
@@ -391,20 +396,19 @@ export default function MyBookingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8fafc',
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingHorizontal: 8,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerTitle: {
     fontWeight: 'bold',
+    color: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -447,6 +451,8 @@ const styles = StyleSheet.create({
   bookingCard: {
     marginBottom: 12,
     backgroundColor: '#fff',
+    borderRadius: 14,
+    borderLeftWidth: 3,
   },
   cardHeader: {
     flexDirection: 'row',

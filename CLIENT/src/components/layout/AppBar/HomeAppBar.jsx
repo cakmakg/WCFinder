@@ -13,12 +13,13 @@ export const HomeAppBar = ({
   onUserMenuOpen,
   onUserMenuClose,
   onMyBookingsClick,
+  onOwnerProfileClick,
   onAdminPanelClick,
   onLogoutClick,
   onLoginClick,
   onLogoClick,
   theme,
-  onMenuClick
+  onMenuClick,
 }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
@@ -97,6 +98,7 @@ export const HomeAppBar = ({
               open={Boolean(anchorElUser)}
               onClose={onUserMenuClose}
               onMyBookingsClick={onMyBookingsClick}
+              onOwnerProfileClick={onOwnerProfileClick}
               onAdminPanelClick={onAdminPanelClick}
               onLogoutClick={onLogoutClick}
               currentUser={currentUser}
@@ -128,7 +130,7 @@ export const HomeAppBar = ({
               },
             }}
           >
-            Giriş Yap
+            Anmelden
           </Button>
         )}
       </Toolbar>

@@ -5,16 +5,18 @@ import { Menu, MenuItem, Divider, Typography, Box, ListItemIcon } from '@mui/mat
 import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import StoreOutlinedIcon from '@mui/icons-material/StoreOutlined';
 
-export const UserMenu = ({ 
-  anchorEl, 
-  open, 
-  onClose, 
-  onMyBookingsClick, 
+export const UserMenu = ({
+  anchorEl,
+  open,
+  onClose,
+  onMyBookingsClick,
+  onOwnerProfileClick,
   onAdminPanelClick,
   onLogoutClick,
   currentUser,
-  theme 
+  theme,
 }) => {
   const { t } = useTranslation();
   return (
@@ -53,6 +55,16 @@ export const UserMenu = ({
         </ListItemIcon>
         <Typography>{t('userMenu.myBookings')}</Typography>
       </MenuItem>
+
+      {/* Owner Profile - Sadece owner/admin için */}
+      {(currentUser?.role === 'owner' || currentUser?.role === 'admin') && (
+        <MenuItem onClick={onOwnerProfileClick}>
+          <ListItemIcon>
+            <StoreOutlinedIcon fontSize="small" sx={{ color: '#0891b2' }} />
+          </ListItemIcon>
+          <Typography>Mein Profil</Typography>
+        </MenuItem>
+      )}
 
       {/* Admin Panel - Sadece admin için */}
       {currentUser?.role === 'admin' && <Divider />}

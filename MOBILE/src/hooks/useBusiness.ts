@@ -63,9 +63,9 @@ export const useBusiness = (params?: BusinessListParams) => {
       
       // Handle rate limiting (429) specially
       if (err.response?.status === 429) {
-        setError('Too many requests. Please wait a moment and try again.');
+        setError('Zu viele Anfragen. Bitte warten Sie einen Moment.');
       } else {
-        setError(err.message || 'Failed to fetch businesses');
+        setError(err.message || 'Unternehmen konnten nicht geladen werden.');
       }
       
       // If API fails, try to use cached data
@@ -124,7 +124,7 @@ export const useBusinessDetail = (id: string | null) => {
         setBusiness(data);
       } catch (err: any) {
         console.error('Error fetching business:', err);
-        setError(err.message || 'Failed to fetch business');
+        setError(err.message || 'Unternehmen konnte nicht geladen werden.');
       } finally {
         setLoading(false);
       }

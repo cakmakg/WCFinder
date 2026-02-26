@@ -4,8 +4,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  Container,
   Box,
+  Paper,
   Typography,
   Alert,
   Tabs,
@@ -35,8 +35,7 @@ const MyBookingsPage = () => {
   const { currentUser } = useSelector((state) => state.auth);
   const apiCall = useApiCall();
   const { logout } = useAuthCall();
-  
-  // Use secure user storage utility (removes sensitive data)
+
   const localStorageUser = useMemo(() => {
     try {
       const { getUserData } = require('../utils/userStorage');
@@ -45,26 +44,19 @@ const MyBookingsPage = () => {
       return null;
     }
   }, []);
-  
+
   const baseUser = currentUser || localStorageUser;
-  
-  // ✅ Fetch full user data from backend (includes email, firstName, lastName)
+
   const [user, setUser] = useState(baseUser);
   const [loadingUser, setLoadingUser] = useState(false);
-  
+
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!baseUser?._id) {
-        setUser(null);
-        return;
-      }
-      
-      // If baseUser already has email, firstName, lastName, use it directly
+      if (!baseUser?._id) { setUser(null); return; }
       if (baseUser?.email && baseUser?.firstName !== undefined && baseUser?.lastName !== undefined) {
         setUser(baseUser);
         return;
       }
-      
       setLoadingUser(true);
       try {
         const response = await apiCall({
@@ -72,28 +64,22 @@ const MyBookingsPage = () => {
           method: 'get',
           requiresAuth: true,
         });
-        
         if (response?.result) {
           setUser(response.result);
         } else {
           setUser(baseUser);
         }
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        // Fallback to baseUser if fetch fails
+      } catch {
         setUser(baseUser);
       } finally {
         setLoadingUser(false);
       }
     };
-    
     fetchUserData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUser?._id]);
-  const isOwner = user?.role === 'owner' || 
-                  user?.role === 'admin' || 
-                  user?.isOwner === true || 
-                  user?.isAdmin === true;
+
+  const isOwner = user?.role === 'owner' || user?.role === 'admin' || user?.isOwner === true || user?.isAdmin === true;
 
   const [activeTab, setActiveTab] = useState(0);
   const { bookings, loading, error, paymentMethods, setError } = useBookings(user, isOwner);
@@ -108,8 +94,6 @@ const MyBookingsPage = () => {
   } = useBookingDetails();
 
   const handleViewDetails = (booking) => {
-    // Set the booking, modal will fetch details automatically if needed
-    // Don't fetch here to avoid double requests
     fetchBookingDetails(booking).catch((err) => {
       if (err.response?.status !== 429) {
         setError('Fehler beim Laden der Reservierungsdetails.');
@@ -117,9 +101,7 @@ const MyBookingsPage = () => {
     });
   };
 
-  const handleViewQR = (booking) => {
-    viewQROnly(booking);
-  };
+  const handleViewQR = (booking) => viewQROnly(booking);
 
   const handleProfileUpdate = async (profileData) => {
     try {
@@ -129,150 +111,123 @@ const MyBookingsPage = () => {
         body: profileData,
         requiresAuth: true,
       });
-      
       if (response?.result) {
         dispatch(userUpdateSuccess({ user: response.result }));
-        setUser(response.result); // Update local user state
+        setUser(response.result);
         setError(null);
       }
-    } catch (err) {
-      console.error('Error updating profile:', err);
+    } catch {
       setError('Fehler beim Aktualisieren des Profils.');
     }
   };
 
   const handleDeleteProfile = async () => {
     try {
-      console.log('🗑️ [handleDeleteProfile] Starting profile deletion using /users/me endpoint', {
-        userId: user?._id,
-        hasToken: !!localStorage.getItem('token')
-      });
-
-      // ✅ DELETE request - /users/me endpoint'ini kullan (daha güvenli, ID göndermeye gerek yok)
-      // Backend req.user.id'den kullanıcı ID'sini alır (JWT token'dan)
-      // useApiCall 204 durumunda null döndürür, bu normaldir
-      const response = await apiCall({
-        url: `/users/me`, // ✅ Örnek koda göre: /users/me endpoint'i kullan
+      await apiCall({
+        url: `/users/me`,
         method: 'delete',
         requiresAuth: true,
-        errorAction: null, // ✅ Toast göstermesin, hatayı kendimiz handle edeceğiz
-        errorMessage: null, // ✅ Toast göstermesin, hatayı kendimiz handle edeceğiz
+        errorAction: null,
+        errorMessage: null,
       });
-      
-      console.log('✅ [handleDeleteProfile] Profile deleted successfully, response:', response);
-      
-      // ✅ 204 No Content durumunda response null olabilir, bu normaldir
-      // useApiCall zaten 204 durumunu handle ediyor ve null döndürüyor
-      
-      // ✅ Auth state'i temizle ve logout yap
       dispatch(clearAuth());
       await logout();
-      
-      // ✅ Ana sayfaya yönlendir
       navigate('/', { replace: true });
     } catch (err) {
-      console.error('❌ [handleDeleteProfile] Error deleting profile:', {
-        error: err,
-        message: err.message,
-        response: err.response,
-        status: err.response?.status,
-        data: err.response?.data
-      });
-      
-      // ✅ Hata mesajını throw et ki ProfileTab'de gösterilebilsin
       let errorMessage = 'Fehler beim Löschen des Profils.';
-      
-      // ✅ Önce backend'den gelen spesifik mesajı kontrol et
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message && err.message !== 'Bir hata oluştu.' && err.message !== 'Fehler beim Löschen des Profils.') {
-        // useApiCall'dan gelen mesajı kullan (eğer genel mesaj değilse)
-        errorMessage = err.message;
-      } else if (err.response?.status === 403) {
-        errorMessage = 'Sie haben keine Berechtigung, Ihr Profil zu löschen. Bitte kontaktieren Sie den Administrator.';
-      } else if (err.response?.status === 404) {
-        errorMessage = 'Benutzer nicht gefunden.';
-      } else if (err.response?.status === 401) {
-        errorMessage = 'Sie sind nicht angemeldet. Bitte melden Sie sich erneut an.';
-      } else if (err.response?.status === 500) {
-        errorMessage = 'Serverfehler. Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support.';
-      }
-      
-      console.error('❌ [handleDeleteProfile] Final error message:', errorMessage);
-      console.error('❌ [handleDeleteProfile] Error details:', {
-        status: err.response?.status,
-        statusText: err.response?.statusText,
-        data: err.response?.data,
-        message: err.message,
-        originalError: err
-      });
-      
-      // ✅ Hata mesajını throw et
+      if (err.response?.data?.message) errorMessage = err.response.data.message;
+      else if (err.response?.status === 403) errorMessage = 'Keine Berechtigung.';
+      else if (err.response?.status === 404) errorMessage = 'Benutzer nicht gefunden.';
+      else if (err.response?.status === 401) errorMessage = 'Nicht angemeldet.';
       throw new Error(errorMessage);
     }
   };
 
   const handleDownloadQR = () => {
-    if (selectedBooking?.accessCode) {
-      downloadQRCode(selectedBooking.accessCode);
-    }
+    if (selectedBooking?.accessCode) downloadQRCode(selectedBooking.accessCode);
   };
 
-  const handleOpenMaps = (booking) => {
-    openMaps(booking);
-  };
+  const handleOpenMaps = (booking) => openMaps(booking);
 
-  if (isOwner) {
-    return <OwnerPanel />;
-  }
+  if (isOwner) return <OwnerPanel />;
 
   if (loadingUser) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
+        <CircularProgress sx={{ color: '#0891b2' }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', py: 3 }}>
-      <Container maxWidth="lg">
-        <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#1a1a2e' }}>
-          Meine Reservierungen
-        </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', py: 4 }}>
+      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 } }}>
+
+        {/* Gradient Header */}
+        <Paper
+          elevation={0}
+          sx={{
+            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+            borderRadius: '16px',
+            p: { xs: 2.5, md: 3 },
+            mb: 3,
+            boxShadow: '0 4px 20px rgba(8,145,178,0.25)',
+          }}
+        >
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', mb: 0.3 }}>
+            Meine Reservierungen
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)' }}>
+            Ihre Buchungen und Profilinformationen
+          </Typography>
+        </Paper>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          <Alert
+            severity="error"
+            sx={{ mb: 2.5, borderRadius: '12px' }}
+            onClose={() => setError(null)}
+          >
             {error}
           </Alert>
         )}
 
-        <Tabs
-          value={activeTab}
-          onChange={(e, newValue) => setActiveTab(newValue)}
+        {/* Modern Tabs */}
+        <Paper
+          elevation={0}
           sx={{
+            borderRadius: '14px',
             mb: 3,
-            borderBottom: '1px solid #e2e8f0',
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontWeight: 600,
-              minHeight: 64,
-            },
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            overflow: 'hidden',
           }}
         >
-          <Tab
-            icon={<CalendarTodayIcon />}
-            iconPosition="start"
-            label="Reservierungen"
-          />
-          <Tab
-            icon={<PersonIcon />}
-            iconPosition="start"
-            label="Profil"
-          />
-        </Tabs>
+          <Tabs
+            value={activeTab}
+            onChange={(e, v) => setActiveTab(v)}
+            sx={{
+              px: 1,
+              '& .MuiTabs-indicator': {
+                backgroundColor: '#0891b2',
+                height: 3,
+                borderRadius: '3px 3px 0 0',
+              },
+              '& .MuiTab-root': {
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                color: '#64748b',
+                minHeight: 56,
+                '&.Mui-selected': { color: '#0891b2', fontWeight: 700 },
+              },
+            }}
+          >
+            <Tab icon={<CalendarTodayIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Reservierungen" />
+            <Tab icon={<PersonIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Profil" />
+          </Tabs>
+        </Paper>
 
-        {/* Tab 0: Reservierungen */}
+        {/* Tab Content */}
         {activeTab === 0 && (
           <BookingsTab
             bookings={bookings}
@@ -282,7 +237,6 @@ const MyBookingsPage = () => {
           />
         )}
 
-        {/* Tab 1: Profil */}
         {activeTab === 1 && (
           <ProfileTab
             user={user}
@@ -304,7 +258,7 @@ const MyBookingsPage = () => {
           onOpenMaps={handleOpenMaps}
           onDownloadQR={handleDownloadQR}
         />
-      </Container>
+      </Box>
     </Box>
   );
 };

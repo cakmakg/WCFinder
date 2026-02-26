@@ -18,7 +18,11 @@ export default function ModalLayout() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="scan-qr"
+        name="my-bookings"
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="payment-success"
         options={{ headerShown: false }}
       />
     </Stack>

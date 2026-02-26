@@ -1,15 +1,18 @@
 /**
  * List Screen
- * 
- * Filterable list view of toilets/businesses
+ *
+ * Filterable list view of toilets/businesses with gradient header
  */
 
 import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { Text, Searchbar, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { BusinessCard } from '../../src/components/business/BusinessCard';
 import { useBusiness } from '../../src/hooks/useBusiness';
+import { useToilets } from '../../src/hooks/useToilets';
 import { useLocation } from '../../src/hooks/useLocation';
 import { Business } from '../../src/services/businessService';
 
@@ -17,7 +20,7 @@ export default function ListScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const { location, getCurrentLocation } = useLocation();
-  
+
   // Fetch businesses
   const businessParams = useMemo(() => {
     if (location) {
@@ -35,11 +38,34 @@ export default function ListScreen() {
 
   const { businesses, loading, error, refreshing, refresh } = useBusiness(businessParams);
 
+  // Fetch toilets for fee data (location-based, same params as businesses)
+  const toiletParams = useMemo(() => location
+    ? { latitude: location.latitude, longitude: location.longitude, radius: 10 }
+    : undefined
+  , [location?.latitude, location?.longitude]);
+  const { toilets } = useToilets(toiletParams, { enabled: !!location });
+
+  // Compute minimum toilet fee per business
+  const minFeeByBusinessId = useMemo(() => {
+    const map: Record<string, number> = {};
+    toilets.forEach((toilet: any) => {
+      const bId = typeof toilet.business === 'object'
+        ? toilet.business?._id
+        : (toilet.business || toilet.businessId);
+      if (bId && typeof toilet.fee === 'number') {
+        if (map[bId] === undefined || toilet.fee < map[bId]) {
+          map[bId] = toilet.fee;
+        }
+      }
+    });
+    return map;
+  }, [toilets]);
+
   // Filter businesses by search query
   const filteredBusinesses = useMemo(() => {
     if (!businesses || !Array.isArray(businesses)) return [];
     if (!searchQuery.trim()) return businesses;
-    
+
     const query = searchQuery.toLowerCase();
     return businesses.filter((business) =>
       business.name.toLowerCase().includes(query) ||
@@ -51,12 +77,12 @@ export default function ListScreen() {
   const businessesWithDistance = useMemo(() => {
     if (!filteredBusinesses || !Array.isArray(filteredBusinesses)) return [];
     if (!location) return filteredBusinesses.map(b => ({ business: b }));
-    
+
     return filteredBusinesses.map((business) => {
       if (!business.location?.coordinates) {
         return { business };
       }
-      
+
       const [longitude, latitude] = business.location.coordinates;
       const distance = calculateDistance(
         location.latitude,
@@ -64,7 +90,7 @@ export default function ListScreen() {
         latitude,
         longitude
       );
-      
+
       return { business, distance };
     }).sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
   }, [filteredBusinesses, location]);
@@ -83,7 +109,7 @@ export default function ListScreen() {
 
   // Calculate distance (Haversine formula)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371; // Earth's radius in kilometers
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
@@ -97,32 +123,53 @@ export default function ListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Toilet List
-        </Text>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={['#0891b2', '#0e7490']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.headerRow}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>WC in der Nähe</Text>
+            <Text style={styles.headerSubtitle}>Finden Sie eine Toilette</Text>
+          </View>
+          <View style={styles.headerIconCircle}>
+            <MaterialCommunityIcons name="toilet" size={32} color="#0891b2" />
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Search Section */}
+      <View style={styles.searchSection}>
         <Searchbar
-          placeholder="Search toilets..."
+          placeholder="WCs suchen..."
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchbar}
+          iconColor="#0891b2"
+          inputStyle={{ color: '#0f172a' }}
         />
       </View>
 
+      {/* Content */}
       {loading && (!businesses || businesses.length === 0) ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Loading toilets...</Text>
+        <View style={styles.stateContainer}>
+          <ActivityIndicator size="large" color="#0891b2" />
+          <Text style={styles.stateText}>WCs werden geladen...</Text>
         </View>
       ) : error ? (
-        <View style={styles.errorContainer}>
+        <View style={styles.stateContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color="#d32f2f" />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : businessesWithDistance.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No toilets found</Text>
+        <View style={styles.stateContainer}>
+          <MaterialCommunityIcons name="toilet" size={56} color="rgba(8,145,178,0.25)" />
+          <Text style={styles.emptyText}>Keine WCs gefunden</Text>
           {searchQuery && (
-            <Text style={styles.emptySubtext}>Try a different search term</Text>
+            <Text style={styles.emptySubtext}>Versuchen Sie einen anderen Suchbegriff</Text>
           )}
         </View>
       ) : (
@@ -133,12 +180,18 @@ export default function ListScreen() {
             <BusinessCard
               business={item.business}
               distance={item.distance}
+              minFee={minFeeByBusinessId[item.business._id]}
               onPress={handleBusinessPress}
             />
           )}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#0891b2"
+              colors={['#0891b2']}
+            />
           }
         />
       )}
@@ -149,55 +202,87 @@ export default function ListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f8fafc',
   },
   header: {
-    padding: 16,
     paddingTop: 60,
-    backgroundColor: '#fff',
+    paddingBottom: 20,
+    paddingHorizontal: 20,
   },
-  title: {
-    marginBottom: 16,
-    fontWeight: 'bold',
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+  },
+  headerIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  searchSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f8fafc',
   },
   searchbar: {
-    marginBottom: 8,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#0891b2',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   listContent: {
     padding: 16,
+    paddingTop: 4,
   },
-  loadingContainer: {
+  stateContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
+    gap: 12,
   },
-  loadingText: {
-    marginTop: 12,
-    opacity: 0.7,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
+  stateText: {
+    marginTop: 4,
+    opacity: 0.6,
+    color: '#0f172a',
   },
   errorText: {
     color: '#d32f2f',
     textAlign: 'center',
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
   emptyText: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#0f172a',
     opacity: 0.7,
-    marginBottom: 8,
   },
   emptySubtext: {
-    opacity: 0.5,
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
   },
 });
-

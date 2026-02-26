@@ -2,14 +2,15 @@
 
 "use strict"
 const router = require('express').Router();
-const { 
-    list, 
-    myBusiness, 
+const {
+    list,
+    myBusiness,
+    updateMyBusiness,
     getOwnerStats,
     getBusinessStats,
-    create, 
-    read, 
-    update, 
+    create,
+    read,
+    update,
     deletee,
     partnerRegistration,
     approveBusiness
@@ -26,6 +27,9 @@ router.post('/partner-registration', partnerRegistration);
 
 // ✅ Owner kendi işletmesini görebilir
 router.get('/my-business', isOwnerOrAdmin, myBusiness);
+
+// ✅ Owner kendi işletmesini güncelleyebilir
+router.patch('/my-business', isOwnerOrAdmin, updateMyBusiness);
 
 // ✅ Owner kendi istatistiklerini görebilir (READ-ONLY)
 router.get('/my-stats', isOwnerOrAdmin, getOwnerStats);

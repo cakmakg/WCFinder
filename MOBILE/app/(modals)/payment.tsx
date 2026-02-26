@@ -13,12 +13,12 @@ import {
   Button,
   Divider,
   ActivityIndicator,
-  useTheme,
   IconButton,
   RadioButton,
   List,
   TextInput
 } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 // Conditional Stripe import (may not work in Expo Go)
@@ -36,7 +36,6 @@ import api from '../../src/services/api';
 import { tokenStorage } from '../../src/utils/secureStorage';
 
 export default function PaymentScreen() {
-  const theme = useTheme();
   const router = useRouter();
   const { bookingData: bookingDataParam } = useLocalSearchParams<{ bookingData: string }>();
   const { currentUser, token } = useSelector((state: any) => state.auth);
@@ -232,13 +231,19 @@ export default function PaymentScreen() {
   if (!bookingData) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <LinearGradient
+          colors={['#0891b2', '#0e7490']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
           <IconButton
             icon="arrow-left"
             size={24}
             onPress={handleBackPress}
+            iconColor="#fff"
           />
-        </View>
+        </LinearGradient>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Keine Buchungsinformationen verfügbar</Text>
           <Button onPress={handleBackPress} mode="outlined">
@@ -252,16 +257,22 @@ export default function PaymentScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={['#0891b2', '#0e7490']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <IconButton
           icon="arrow-left"
           size={24}
           onPress={handleBackPress}
+          iconColor="#fff"
         />
         <Text variant="titleLarge" style={styles.headerTitle}>
           Zahlung
         </Text>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Order Summary */}
@@ -333,7 +344,7 @@ export default function PaymentScreen() {
               <Text variant="titleLarge" style={styles.totalLabel}>
                 Gesamt
               </Text>
-              <Text variant="titleLarge" style={[styles.totalValue, { color: theme.colors.primary }]}>
+              <Text variant="titleLarge" style={[styles.totalValue, { color: '#0891b2' }]}>
                 € {bookingData.pricing.total.toFixed(2)}
               </Text>
             </View>
@@ -453,6 +464,7 @@ export default function PaymentScreen() {
 
                   <Button
                     mode="contained"
+                    buttonColor="#0891b2"
                     onPress={handleCardPayment}
                     style={styles.confirmButton}
                     contentStyle={styles.confirmButtonContent}
@@ -495,6 +507,7 @@ export default function PaymentScreen() {
         {!clientSecret ? (
           <Button
             mode="contained"
+            buttonColor="#0891b2"
             onPress={async () => {
               // Route to proper payment flow depending on selected payment method
               if (paymentMethod === 'card') {
@@ -615,7 +628,7 @@ export default function PaymentScreen() {
           </Button>
         ) : (
           <View style={styles.paymentReadyContainer}>
-            <Text variant="bodyMedium" style={[styles.paymentReadyText, { color: theme.colors.primary }]}>
+            <Text variant="bodyMedium" style={[styles.paymentReadyText, { color: '#0891b2' }]}>
               ✓ Zahlungsvorgang erfolgreich initialisiert
             </Text>
             <Text variant="bodySmall" style={styles.paymentReadySubtext}>
@@ -626,7 +639,7 @@ export default function PaymentScreen() {
 
         {/* Security Badge */}
         <View style={styles.securityBadge}>
-          <Text variant="bodySmall" style={[styles.securityText, { color: theme.colors.primary }]}>
+          <Text variant="bodySmall" style={[styles.securityText, { color: '#0891b2' }]}>
             🔒 Sichere Zahlung
           </Text>
         </View>
@@ -638,19 +651,20 @@ export default function PaymentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
   },
   header: {
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingHorizontal: 8,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     zIndex: 1,
   },
   headerTitle: {
     fontWeight: 'bold',
     marginLeft: 8,
+    color: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -660,6 +674,9 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
+    borderRadius: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0891b2',
   },
   sectionTitle: {
     fontWeight: 'bold',
@@ -704,6 +721,7 @@ const styles = StyleSheet.create({
   },
   errorCard: {
     backgroundColor: '#fee2e2',
+    borderLeftColor: '#ef4444',
   },
   errorText: {
     color: '#ef4444',
@@ -717,6 +735,7 @@ const styles = StyleSheet.create({
   payButton: {
     marginTop: 8,
     marginBottom: 16,
+    borderRadius: 12,
   },
   payButtonContent: {
     paddingVertical: 8,

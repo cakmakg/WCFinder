@@ -1,23 +1,23 @@
 /**
  * Payment Success Screen
- * 
- * Shows after successful payment with booking details and QR code
+ *
+ * Shows after successful payment with green gradient hero and booking details
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Platform, Share, Linking } from 'react-native';
-import { 
-  Text, 
-  Card, 
-  Button, 
-  Divider, 
-  useTheme,
+import { View, StyleSheet, ScrollView, Platform, Share, Linking, TouchableOpacity } from 'react-native';
+import {
+  Text,
+  Card,
+  Button,
+  Divider,
   IconButton,
   Surface,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native-paper';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 import api from '../../src/services/api';
 
@@ -59,11 +59,10 @@ interface UsageDetails {
 }
 
 export default function PaymentSuccessScreen() {
-  const theme = useTheme();
   const router = useRouter();
   const { paymentData: paymentDataParam } = useLocalSearchParams<{ paymentData: string }>();
   const { currentUser } = useSelector((state: any) => state.auth);
-  
+
   const [paymentData, setPaymentData] = useState<PaymentSuccessData | null>(null);
   const [usageDetails, setUsageDetails] = useState<UsageDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,19 +78,17 @@ export default function PaymentSuccessScreen() {
       try {
         const parsed = JSON.parse(paymentDataParam);
         setPaymentData(parsed);
-        
-        // Fetch usage details if paymentId is available
+
         if (parsed.paymentId) {
           fetchUsageDetails(parsed.paymentId);
         } else if (parsed.orderId && parsed.paymentMethod === 'paypal') {
-          // For PayPal, find payment by orderId
           fetchUsageDetailsByOrderId(parsed.orderId);
         } else {
           setLoading(false);
         }
       } catch (err) {
         console.error('Error parsing payment data:', err);
-        setError('Invalid payment data');
+        setError('Ungültige Zahlungsdaten');
         setLoading(false);
       }
     } else {
@@ -103,27 +100,22 @@ export default function PaymentSuccessScreen() {
     try {
       setLoading(true);
       setError(null);
-      
-      // First, get payment details to find usageId
+
       const paymentResponse = await api.get(`/payments/${paymentId}`);
       const payment = paymentResponse.data?.result || paymentResponse.data;
-      
       const usageId = payment?.usageId || payment?.metadata?.usageId;
-      
+
       if (usageId) {
-        // Fetch usage details
         const usageResponse = await api.get(`/usages/my-usages/${usageId}`);
         const usage = usageResponse.data?.result || usageResponse.data;
         setUsageDetails(usage);
       } else {
-        // Usage might not be created yet, wait a bit and retry
         setTimeout(async () => {
           if (!isMountedRef.current) return;
           try {
             const retryPaymentResponse = await api.get(`/payments/${paymentId}`);
             const retryPayment = retryPaymentResponse.data?.result || retryPaymentResponse.data;
             const retryUsageId = retryPayment?.usageId || retryPayment?.metadata?.usageId;
-
             if (retryUsageId) {
               const retryUsageResponse = await api.get(`/usages/my-usages/${retryUsageId}`);
               const retryUsage = retryUsageResponse.data?.result || retryUsageResponse.data;
@@ -139,7 +131,6 @@ export default function PaymentSuccessScreen() {
       }
     } catch (err: any) {
       console.error('Error fetching usage details:', err);
-      // Don't show error, usage might not be created yet
       setError(null);
     } finally {
       setLoading(false);
@@ -150,12 +141,11 @@ export default function PaymentSuccessScreen() {
     try {
       setLoading(true);
       setError(null);
-      
-      // Find payment by PayPal orderId
+
       const paymentsResponse = await api.get('/payments/my-payments');
       const payments = paymentsResponse.data?.result || paymentsResponse.data || [];
       const payment = payments.find((p: any) => p.paypalOrderId === orderId);
-      
+
       if (payment) {
         const usageId = payment?.usageId || payment?.metadata?.usageId;
         if (usageId) {
@@ -163,7 +153,6 @@ export default function PaymentSuccessScreen() {
           const usage = usageResponse.data?.result || usageResponse.data;
           setUsageDetails(usage);
         } else {
-          // Wait and retry
           setTimeout(async () => {
             if (!isMountedRef.current) return;
             try {
@@ -206,55 +195,54 @@ export default function PaymentSuccessScreen() {
   const handleShare = async () => {
     const accessCode = usageDetails?.accessCode || paymentData?.accessCode;
     if (!accessCode) return;
-    
-    const businessName = usageDetails?.business?.businessName || 
-                        paymentData?.bookingData?.business?.name || 
-                        paymentData?.businessName || 
-                        'N/A';
-    const toiletName = usageDetails?.toilet?.name || 
-                      paymentData?.bookingData?.toilet?.name || 
-                      paymentData?.toiletName || 
-                      'N/A';
-    
+
+    const businessName =
+      usageDetails?.business?.businessName ||
+      paymentData?.bookingData?.business?.name ||
+      paymentData?.businessName ||
+      'N/A';
+    const toiletName =
+      usageDetails?.toilet?.name ||
+      paymentData?.bookingData?.toilet?.name ||
+      paymentData?.toiletName ||
+      'N/A';
+
     try {
       await Share.share({
         message: `Mein WC-Zugangscode: ${accessCode}\n\nBusiness: ${businessName}\nToilette: ${toiletName}`,
         title: 'WC Zugangscode',
       });
-    } catch (error) {
-      console.error('Error sharing:', error);
+    } catch (shareError) {
+      console.error('Error sharing:', shareError);
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <IconButton
-          icon="close"
-          size={24}
+      {/* Green Gradient Hero */}
+      <LinearGradient
+        colors={['#22c55e', '#16a34a']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
+      >
+        <TouchableOpacity
           onPress={handleGoHome}
-        />
-      </View>
+          style={styles.closeButton}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="close" size={24} color="#fff" />
+        </TouchableOpacity>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Success Icon */}
-        <View style={styles.successIcon}>
-          <MaterialCommunityIcons 
-            name="check-circle" 
-            size={80} 
-            color={theme.colors.primary} 
-          />
+        <View style={styles.successIconCircle}>
+          <MaterialCommunityIcons name="check-circle" size={60} color="#22c55e" />
         </View>
 
-        <Text variant="headlineMedium" style={styles.successTitle}>
-          Zahlung erfolgreich!
-        </Text>
-        
-        <Text variant="bodyLarge" style={styles.successSubtitle}>
-          Ihre Buchung wurde bestätigt
-        </Text>
+        <Text style={styles.heroTitle}>Zahlung erfolgreich!</Text>
+        <Text style={styles.heroSubtitle}>Ihre Buchung wurde bestätigt</Text>
+      </LinearGradient>
 
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Access Code Card */}
         {(usageDetails?.accessCode || paymentData?.accessCode) && (
           <Card style={[styles.card, styles.accessCodeCard]}>
@@ -262,13 +250,9 @@ export default function PaymentSuccessScreen() {
               <Text variant="titleMedium" style={styles.sectionTitle}>
                 Ihr Zugangscode
               </Text>
-              
+
               <Surface style={styles.qrPlaceholder} elevation={1}>
-                <MaterialCommunityIcons 
-                  name="qrcode" 
-                  size={100} 
-                  color={theme.colors.primary} 
-                />
+                <MaterialCommunityIcons name="qrcode" size={100} color="#22c55e" />
                 <Text variant="headlineSmall" style={styles.accessCode}>
                   {usageDetails?.accessCode || paymentData?.accessCode}
                 </Text>
@@ -283,6 +267,7 @@ export default function PaymentSuccessScreen() {
                 onPress={handleShare}
                 style={styles.shareButton}
                 icon="share-variant"
+                textColor="#22c55e"
                 disabled={!usageDetails?.accessCode && !paymentData?.accessCode}
               >
                 Code teilen
@@ -292,22 +277,21 @@ export default function PaymentSuccessScreen() {
         )}
 
         {/* Booking Details Card */}
-        <Card style={styles.card}>
+        <Card style={[styles.card, styles.detailsCard]}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
               Buchungsdetails
             </Text>
-            
+
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={theme.colors.primary} />
+                <ActivityIndicator size="small" color="#0891b2" />
                 <Text variant="bodySmall" style={styles.loadingText}>
                   Buchungsdetails werden geladen...
                 </Text>
               </View>
             ) : (
               <>
-                {/* Customer Name */}
                 {currentUser && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Kunde</Text>
@@ -317,17 +301,15 @@ export default function PaymentSuccessScreen() {
                   </View>
                 )}
 
-                {/* Transaction ID */}
-                {(paymentData?.paymentIntentId || paymentData?.orderId) && (
+                {(paymentData?.paymentIntentId || (paymentData as any)?.orderId) && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Transaktions-ID</Text>
                     <Text style={[styles.detailValue, styles.monoText]}>
-                      {paymentData.paymentIntentId || paymentData.orderId}
+                      {paymentData?.paymentIntentId || (paymentData as any)?.orderId}
                     </Text>
                   </View>
                 )}
 
-                {/* Payment Method */}
                 {paymentData?.paymentMethod && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Zahlungsmethode</Text>
@@ -337,7 +319,6 @@ export default function PaymentSuccessScreen() {
                   </View>
                 )}
 
-                {/* Business Name */}
                 {(usageDetails?.business?.businessName || paymentData?.bookingData?.business?.name) && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Business</Text>
@@ -347,29 +328,34 @@ export default function PaymentSuccessScreen() {
                   </View>
                 )}
 
-                {/* Address */}
                 {(usageDetails?.business?.address || paymentData?.bookingData?.business?.address) && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Adresse</Text>
-                    <Text 
-                      style={[styles.detailValue, { textDecorationLine: 'underline', color: theme.colors.primary }]}
+                    <Text
+                      style={[styles.detailValue, { textDecorationLine: 'underline', color: '#0891b2' }]}
                       onPress={() => {
-                        const coords = usageDetails?.business?.location?.coordinates || 
-                                     paymentData?.bookingData?.business?.location?.coordinates;
+                        const coords =
+                          usageDetails?.business?.location?.coordinates ||
+                          paymentData?.bookingData?.business?.location?.coordinates;
                         if (coords && coords.length === 2) {
                           const lat = coords[1];
                           const lng = coords[0];
-                          Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`);
+                          Linking.openURL(
+                            `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+                          );
                         }
                       }}
                     >
-                      {usageDetails?.business?.address?.street || paymentData?.bookingData?.business?.address?.street || ''}, {' '}
-                      {usageDetails?.business?.address?.city || paymentData?.bookingData?.business?.address?.city || ''}
+                      {usageDetails?.business?.address?.street ||
+                        paymentData?.bookingData?.business?.address?.street ||
+                        ''},{' '}
+                      {usageDetails?.business?.address?.city ||
+                        paymentData?.bookingData?.business?.address?.city ||
+                        ''}
                     </Text>
                   </View>
                 )}
 
-                {/* Toilet Name */}
                 {(usageDetails?.toilet?.name || paymentData?.bookingData?.toilet?.name) && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Toilette</Text>
@@ -379,17 +365,17 @@ export default function PaymentSuccessScreen() {
                   </View>
                 )}
 
-                {/* Date */}
                 {(usageDetails?.startTime || paymentData?.bookingData?.date) && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Datum</Text>
                     <Text style={styles.detailValue}>
-                      {new Date(usageDetails?.startTime || paymentData?.bookingData?.date).toLocaleDateString('de-DE')}
+                      {new Date(
+                        usageDetails?.startTime || paymentData?.bookingData?.date
+                      ).toLocaleDateString('de-DE')}
                     </Text>
                   </View>
                 )}
 
-                {/* Person Count */}
                 {(usageDetails?.personCount || paymentData?.bookingData?.personCount) && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Personen</Text>
@@ -399,26 +385,29 @@ export default function PaymentSuccessScreen() {
                   </View>
                 )}
 
-                {/* Gender Preference */}
                 {usageDetails?.genderPreference && (
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Geschlecht</Text>
                     <Text style={styles.detailValue}>
-                      {usageDetails.genderPreference === 'Male' ? 'Männlich' : usageDetails.genderPreference === 'Female' ? 'Weiblich' : usageDetails.genderPreference}
+                      {usageDetails.genderPreference === 'Male'
+                        ? 'Männlich'
+                        : usageDetails.genderPreference === 'Female'
+                        ? 'Weiblich'
+                        : usageDetails.genderPreference}
                     </Text>
                   </View>
                 )}
 
-                {/* Total Amount */}
                 {(usageDetails?.payment?.amount || paymentData?.bookingData?.pricing?.total) && (
                   <>
                     <Divider style={styles.divider} />
                     <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, styles.totalLabel]}>Gesamt</Text>
-                      <Text style={[styles.detailValue, styles.totalValue, { color: theme.colors.primary }]}>
-                        € {(usageDetails?.payment?.amount
-                          ? (usageDetails.payment.amount / 100)
-                          : (paymentData?.bookingData?.pricing?.total || 0)
+                      <Text style={[styles.detailValue, styles.totalValue]}>
+                        €{' '}
+                        {(usageDetails?.payment?.amount
+                          ? usageDetails.payment.amount / 100
+                          : paymentData?.bookingData?.pricing?.total || 0
                         ).toFixed(2)}
                       </Text>
                     </View>
@@ -436,6 +425,7 @@ export default function PaymentSuccessScreen() {
             onPress={handleGoToBookings}
             style={styles.primaryButton}
             contentStyle={styles.buttonContent}
+            buttonColor="#0891b2"
             icon="calendar-check"
           >
             Meine Buchungen
@@ -446,6 +436,7 @@ export default function PaymentSuccessScreen() {
             onPress={handleGoHome}
             style={styles.secondaryButton}
             contentStyle={styles.buttonContent}
+            textColor="#0891b2"
             icon="home"
           >
             Zur Startseite
@@ -459,14 +450,46 @@ export default function PaymentSuccessScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
   },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    paddingHorizontal: 8,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    backgroundColor: '#fff',
+  hero: {
+    paddingTop: Platform.OS === 'ios' ? 60 : 36,
+    paddingBottom: 36,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    gap: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  successIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
@@ -475,30 +498,24 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  successIcon: {
-    marginBottom: 16,
-  },
-  successTitle: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  successSubtitle: {
-    opacity: 0.7,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
   card: {
     width: '100%',
     marginBottom: 16,
+    borderRadius: 14,
+    borderLeftWidth: 3,
   },
   accessCodeCard: {
-    backgroundColor: '#f0f9ff',
+    borderLeftColor: '#22c55e',
+    backgroundColor: '#f0fdf4',
+  },
+  detailsCard: {
+    borderLeftColor: '#0891b2',
   },
   sectionTitle: {
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
+    color: '#0f172a',
   },
   qrPlaceholder: {
     alignItems: 'center',
@@ -512,14 +529,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 12,
     letterSpacing: 2,
+    color: '#0f172a',
   },
   qrHint: {
     textAlign: 'center',
     opacity: 0.7,
     marginBottom: 16,
+    color: '#64748b',
   },
   shareButton: {
     marginTop: 8,
+    borderColor: '#22c55e',
   },
   detailRow: {
     flexDirection: 'row',
@@ -528,9 +548,14 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     opacity: 0.7,
+    color: '#64748b',
   },
   detailValue: {
     fontWeight: '600',
+    color: '#0f172a',
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 16,
   },
   divider: {
     marginVertical: 12,
@@ -538,10 +563,13 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontWeight: 'bold',
     fontSize: 16,
+    color: '#0f172a',
+    opacity: 1,
   },
   totalValue: {
     fontWeight: 'bold',
     fontSize: 18,
+    color: '#0891b2',
   },
   buttonContainer: {
     width: '100%',
@@ -549,9 +577,12 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     marginBottom: 12,
+    borderRadius: 12,
   },
   secondaryButton: {
     marginBottom: 24,
+    borderRadius: 12,
+    borderColor: '#0891b2',
   },
   buttonContent: {
     paddingVertical: 8,
@@ -563,6 +594,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     opacity: 0.7,
+    color: '#64748b',
   },
   monoText: {
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',

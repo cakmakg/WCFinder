@@ -60,6 +60,11 @@ export default function Home() {
     handleUserMenuClose();
   };
 
+  const handleOwnerProfileClick = () => {
+    navigate('/owner-profile');
+    handleUserMenuClose();
+  };
+
   const handleAdminPanelClick = () => {
     navigate('/admin');
     handleUserMenuClose();
@@ -90,6 +95,7 @@ export default function Home() {
         onUserMenuOpen={handleUserMenuOpen}
         onUserMenuClose={handleUserMenuClose}
         onMyBookingsClick={handleMyBookingsClick}
+        onOwnerProfileClick={handleOwnerProfileClick}
         onAdminPanelClick={handleAdminPanelClick}
         onLogoutClick={handleLogoutClick}
         onLoginClick={() => navigate('/')}

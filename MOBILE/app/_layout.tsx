@@ -15,7 +15,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
-import { PaperProvider, Portal } from 'react-native-paper';
+import { MD3LightTheme, PaperProvider, Portal } from 'react-native-paper';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -37,6 +37,16 @@ try {
   console.warn('Stripe React Native not available:', error);
 }
 
+// Custom Paper MD3 theme — consistent with web design language (#0891b2 cyan)
+const paperTheme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: '#0891b2',
+    secondary: '#0e7490',
+  },
+};
+
 export const unstable_settings = {
   initialRouteName: 'index',
 };
@@ -49,10 +59,9 @@ const initializeAuth = async () => {
       userStorage.get(),
     ]);
 
-    console.log('[RootLayout] Initializing auth:', {
-      hasToken: !!token,
-      hasUser: !!user,
-    });
+    if (__DEV__) {
+      console.log('[RootLayout] Initializing auth:', { hasToken: !!token, hasUser: !!user });
+    }
 
     if (token && user) {
       store.dispatch(setInitialAuth({ token, user }));
@@ -88,7 +97,7 @@ export default function RootLayout() {
 
   const content = (
     <ErrorBoundary>
-      <PaperProvider>
+      <PaperProvider theme={paperTheme}>
         <Portal.Host>
           <OfflineBanner />
           <RootLayoutNav />

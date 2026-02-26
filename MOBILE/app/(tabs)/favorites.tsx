@@ -12,13 +12,13 @@ export default function FavoritesScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.title}>
-          Favorites
+          Favoriten
         </Text>
       </View>
-      
+
       <ScrollView style={styles.content}>
         <Text variant="bodyLarge" style={styles.placeholder}>
-          Favorites coming soon...
+          Favoriten demnächst verfügbar...
         </Text>
       </ScrollView>
     </View>

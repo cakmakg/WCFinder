@@ -31,12 +31,17 @@ interface UseToiletsParams {
   limit?: number;
 }
 
-export const useToilets = (params?: UseToiletsParams) => {
+export const useToilets = (params?: UseToiletsParams, options?: { enabled?: boolean }) => {
+  const enabled = options?.enabled ?? true;
   const [toilets, setToilets] = useState<Toilet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchToilets = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -167,12 +172,12 @@ export const useToilets = (params?: UseToiletsParams) => {
       }
     } catch (err: any) {
       console.error('[useToilets] Error fetching toilets:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to fetch toilets');
+      setError(err.response?.data?.message || err.message || 'WCs konnten nicht geladen werden.');
       setToilets([]);
     } finally {
       setLoading(false);
     }
-  }, [params?.latitude, params?.longitude, params?.radius, params?.limit]);
+  }, [params?.latitude, params?.longitude, params?.radius, params?.limit, enabled]);
 
   // Fetch on mount and when params change
   useEffect(() => {

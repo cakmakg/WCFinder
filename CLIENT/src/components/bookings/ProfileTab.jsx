@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Grid,
   Paper,
@@ -7,35 +7,60 @@ import {
   TextField,
   Button,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Alert,
+  IconButton,
 } from '@mui/material';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
 import EditIcon from '@mui/icons-material/Edit';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CloseIcon from '@mui/icons-material/Close';
 
-const ProfileTab = ({
-  user,
-  paymentMethods,
-  onUpdateProfile,
-  onDeleteProfile,
-}) => {
-  // ✅ DEBUG: Prop'ların doğru geçirildiğini kontrol et
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('🔍 [ProfileTab] Component rendered with props:', {
-        hasUser: !!user,
-        userId: user?._id,
-        hasOnDeleteProfile: typeof onDeleteProfile === 'function',
-        onDeleteProfileType: typeof onDeleteProfile
-      });
-    }
-  }, [user, onDeleteProfile]);
+const SectionHeader = ({ icon: Icon, title }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+    <Box
+      sx={{
+        width: 36,
+        height: 36,
+        borderRadius: '10px',
+        backgroundColor: 'rgba(8,145,178,0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <Icon sx={{ color: '#0891b2', fontSize: 20 }} />
+    </Box>
+    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a' }}>
+      {title}
+    </Typography>
+  </Box>
+);
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '10px',
+    '&:hover fieldset': { borderColor: '#0891b2' },
+    '&.Mui-focused fieldset': { borderColor: '#0891b2' },
+  },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#0891b2' },
+};
+
+const readFieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '10px',
+    backgroundColor: '#f8fafc',
+    '& fieldset': { borderColor: 'rgba(0,0,0,0.08)' },
+  },
+};
+
+const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     username: user?.username || '',
@@ -63,77 +88,53 @@ const ProfileTab = ({
   };
 
   const handleDeleteClick = async () => {
-    // ✅ Normalize: trim + lowercase ile kontrol et (LÖSCHEN, löschen, Löschen hepsi kabul edilir)
-    const normalizedConfirm = deleteConfirmText.trim().toLowerCase();
-    
-    console.log('🗑️ [ProfileTab] handleDeleteClick called', {
-      deleteConfirmText,
-      normalizedConfirm,
-      hasOnDeleteProfile: typeof onDeleteProfile === 'function',
-      onDeleteProfileType: typeof onDeleteProfile
-    });
-    
-    // ✅ Normalize edilmiş kontrol
-    if (normalizedConfirm !== 'löschen') {
-      console.warn('⚠️ [ProfileTab] Delete confirmation text does not match:', {
-        original: deleteConfirmText,
-        normalized: normalizedConfirm,
-        expected: 'löschen'
-      });
+    if (deleteConfirmText.trim().toLowerCase() !== 'löschen') {
       setError('Bitte geben Sie "LÖSCHEN" ein, um zu bestätigen.');
       return;
     }
-    
-    // ✅ onDeleteProfile prop'unun tanımlı olduğunu kontrol et
     if (typeof onDeleteProfile !== 'function') {
-      console.error('❌ [ProfileTab] onDeleteProfile is not a function:', {
-        onDeleteProfile,
-        type: typeof onDeleteProfile,
-        value: onDeleteProfile
-      });
-      setError('Fehler: Delete-Funktion ist nicht verfügbar. Bitte kontaktieren Sie den Support.');
+      setError('Fehler: Löschfunktion nicht verfügbar.');
       return;
     }
-    
     try {
-      console.log('📤 [ProfileTab] Calling onDeleteProfile...');
-      // ✅ onDeleteProfile async olabilir, await ile bekliyoruz
       await onDeleteProfile();
-      console.log('✅ [ProfileTab] onDeleteProfile completed successfully');
-      // ✅ Başarılı olursa dialog kapanır
       setDeleteDialogOpen(false);
       setDeleteConfirmText('');
       setError(null);
     } catch (err) {
-      console.error('❌ [ProfileTab] Error in handleDeleteClick:', {
-        error: err,
-        message: err.message,
-        stack: err.stack,
-        response: err.response,
-        status: err.response?.status
-      });
-      // ✅ Hata durumunda dialog açık kalır ve hata gösterilir
-      setError(err.message || 'Fehler beim Löschen des Profils. Bitte versuchen Sie es erneut.');
+      setError(err.message || 'Fehler beim Löschen des Profils.');
     }
   };
 
+  const roleLabel = { user: 'Benutzer', owner: 'Inhaber', admin: 'Administrator' };
+
   return (
     <>
-      <Grid container spacing={3}>
-        {/* Profil Bilgileri */}
+      <Grid container spacing={2.5}>
+        {/* Profilinformationen */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Profilinformationen
-              </Typography>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: '14px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0 }}>
+              <SectionHeader icon={PersonOutlinedIcon} title="Profilinformationen" />
               {!isEditing && (
                 <IconButton
                   size="small"
                   onClick={() => setIsEditing(true)}
-                  sx={{ color: 'primary.main' }}
+                  sx={{
+                    color: '#0891b2',
+                    border: '1px solid rgba(8,145,178,0.2)',
+                    borderRadius: '8px',
+                    '&:hover': { backgroundColor: 'rgba(8,145,178,0.06)' },
+                  }}
                 >
-                  <EditIcon />
+                  <EditIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               )}
             </Box>
@@ -146,6 +147,7 @@ const ProfileTab = ({
                   onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
                   fullWidth
                   size="small"
+                  sx={fieldSx}
                 />
                 <Box sx={{ display: 'flex', gap: 2 }}>
                   <TextField
@@ -154,6 +156,7 @@ const ProfileTab = ({
                     onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
                     fullWidth
                     size="small"
+                    sx={fieldSx}
                   />
                   <TextField
                     label="Nachname"
@@ -161,6 +164,7 @@ const ProfileTab = ({
                     onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
                     fullWidth
                     size="small"
+                    sx={fieldSx}
                   />
                 </Box>
                 <TextField
@@ -170,58 +174,64 @@ const ProfileTab = ({
                   onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                   fullWidth
                   size="small"
+                  sx={fieldSx}
                 />
                 <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                  <Button variant="contained" onClick={handleSave} size="small">
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveOutlinedIcon />}
+                    onClick={handleSave}
+                    size="small"
+                    sx={{
+                      background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                      borderRadius: '10px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      boxShadow: 'none',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)',
+                      },
+                    }}
+                  >
                     Speichern
                   </Button>
-                  <Button variant="outlined" onClick={handleCancel} size="small">
+                  <Button
+                    variant="outlined"
+                    onClick={handleCancel}
+                    size="small"
+                    sx={{
+                      borderRadius: '10px',
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      color: '#64748b',
+                      borderColor: '#e2e8f0',
+                      '&:hover': { borderColor: '#94a3b8' },
+                    }}
+                  >
                     Abbrechen
                   </Button>
                 </Box>
               </Box>
             ) : (
-              <Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    Benutzername
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {user?.username || 'N/A'}
-                  </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TextField label="Benutzername" value={user?.username || '—'} fullWidth size="small" InputProps={{ readOnly: true }} sx={readFieldSx} />
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <TextField label="Vorname" value={user?.firstName || '—'} fullWidth size="small" InputProps={{ readOnly: true }} sx={readFieldSx} />
+                  <TextField label="Nachname" value={user?.lastName || '—'} fullWidth size="small" InputProps={{ readOnly: true }} sx={readFieldSx} />
                 </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    Vorname
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {user?.firstName || 'N/A'}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    Nachname
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {user?.lastName || 'N/A'}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                    E-Mail
-                  </Typography>
-                  <Typography variant="body1" fontWeight={500}>
-                    {user?.email || 'N/A'}
-                  </Typography>
-                </Box>
+                <TextField label="E-Mail" value={user?.email || '—'} fullWidth size="small" InputProps={{ readOnly: true }} sx={readFieldSx} />
                 <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: '#64748b', mb: 0.5, display: 'block' }}>
                     Rolle
                   </Typography>
                   <Chip
-                    label={user?.role === 'user' ? 'Benutzer' : user?.role || 'N/A'}
+                    label={roleLabel[user?.role] || user?.role || '—'}
                     size="small"
-                    color="primary"
+                    sx={{
+                      backgroundColor: 'rgba(8,145,178,0.1)',
+                      color: '#0891b2',
+                      fontWeight: 600,
+                    }}
                   />
                 </Box>
               </Box>
@@ -231,13 +241,15 @@ const ProfileTab = ({
 
         {/* Zahlungsmethoden */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
-              <CreditCardIcon sx={{ color: 'primary.main' }} />
-              <Typography variant="h6" fontWeight={600}>
-                Zahlungsmethoden
-              </Typography>
-            </Box>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: '14px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            }}
+          >
+            <SectionHeader icon={CreditCardIcon} title="Zahlungsmethoden" />
 
             {paymentMethods.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -246,23 +258,24 @@ const ProfileTab = ({
                     key={index}
                     sx={{
                       p: 2,
-                      border: '1px solid #e2e8f0',
-                      borderRadius: 1,
+                      borderLeft: '3px solid #0891b2',
+                      borderRadius: '12px',
+                      backgroundColor: '#f0f9ff',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 2,
                     }}
                   >
-                    <CreditCardIcon sx={{ color: 'text.secondary' }} />
+                    <CreditCardIcon sx={{ color: '#0891b2' }} />
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" fontWeight={500}>
-                        {payment.paymentMethod === 'credit_card' ? 'Kreditkarte' : 
-                         payment.paymentMethod === 'paypal' ? 'PayPal' : 
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a' }}>
+                        {payment.paymentMethod === 'credit_card' ? 'Kreditkarte' :
+                         payment.paymentMethod === 'paypal' ? 'PayPal' :
                          payment.paymentMethod || 'Unbekannt'}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {payment.paymentProvider === 'stripe' ? 'Stripe' : 
-                         payment.paymentProvider === 'paypal' ? 'PayPal' : 
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        {payment.paymentProvider === 'stripe' ? 'Stripe' :
+                         payment.paymentProvider === 'paypal' ? 'PayPal' :
                          payment.paymentProvider || 'N/A'}
                       </Typography>
                     </Box>
@@ -270,137 +283,127 @@ const ProfileTab = ({
                 ))}
               </Box>
             ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                Keine Zahlungsmethoden gefunden
-              </Typography>
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '12px',
+                    backgroundColor: '#f0f9ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mx: 'auto',
+                    mb: 1.5,
+                  }}
+                >
+                  <CreditCardIcon sx={{ color: '#0891b2', fontSize: 24 }} />
+                </Box>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  Keine Zahlungsmethoden gefunden
+                </Typography>
+              </Box>
             )}
           </Paper>
         </Grid>
 
         {/* Profil löschen */}
         <Grid size={{ xs: 12 }}>
-          <Paper 
-            sx={{ 
-              p: 3, 
-              borderRadius: 2, 
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              border: '1px solid #fee2e2',
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: '14px',
+              border: '1px solid #fecaca',
               bgcolor: '#fef2f2',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5, color: '#dc2626' }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.3, color: '#dc2626' }}>
                   Profil löschen
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Diese Aktion kann nicht rückgängig gemacht werden. Alle Ihre Daten werden permanent gelöscht.
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  Diese Aktion kann nicht rückgängig gemacht werden. Alle Daten werden permanent gelöscht.
                 </Typography>
               </Box>
               <Button
                 variant="outlined"
                 color="error"
                 startIcon={<DeleteIcon />}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🔴 [ProfileTab] Open delete dialog button clicked');
-                  setDeleteDialogOpen(true);
+                onClick={() => setDeleteDialogOpen(true)}
+                sx={{
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  flexShrink: 0,
+                  ml: 2,
                 }}
               >
-                Profil löschen
+                Löschen
               </Button>
             </Box>
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Delete Profile Dialog */}
+      {/* Delete Dialog */}
       <Dialog
         open={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setDeleteConfirmText('');
-          setError(null);
-        }}
+        onClose={() => { setDeleteDialogOpen(false); setDeleteConfirmText(''); setError(null); }}
         maxWidth="sm"
         fullWidth
-        disableEnforceFocus={false} // ✅ Focus yönetimini etkinleştir
-        disableAutoFocus={false} // ✅ İlk focus'u TextField'a ver
-        disableRestoreFocus={false} // ✅ Dialog kapandığında focus'u geri ver
+        PaperProps={{ sx: { borderRadius: '16px' } }}
       >
-        <DialogTitle>
-          Profil löschen bestätigen
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#0f172a' }}>
+            Profil löschen bestätigen
+          </Typography>
           <IconButton
             aria-label="close"
-            onClick={() => {
-              setDeleteDialogOpen(false);
-              setDeleteConfirmText('');
-              setError(null);
-            }}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
+            onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmText(''); setError(null); }}
+            sx={{ position: 'absolute', right: 12, top: 12, color: '#94a3b8' }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
         <DialogContent>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
             Diese Aktion kann nicht rückgängig gemacht werden!
           </Alert>
-          <Typography variant="body2" sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ mb: 2, color: '#334155' }}>
             Um Ihr Profil zu löschen, geben Sie bitte <strong>"LÖSCHEN"</strong> in das Feld unten ein.
           </Typography>
           <TextField
             fullWidth
             label="Bestätigung"
             value={deleteConfirmText}
-            onChange={(e) => {
-              setDeleteConfirmText(e.target.value);
-              setError(null);
-            }}
+            onChange={(e) => { setDeleteConfirmText(e.target.value); setError(null); }}
             placeholder="LÖSCHEN"
-            sx={{ mt: 2 }}
-            autoFocus // ✅ Dialog açıldığında otomatik focus
-            inputProps={{
-              'aria-label': 'Bestätigungstext eingeben'
-            }}
+            sx={{ mt: 1, ...fieldSx }}
+            autoFocus
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setDeleteDialogOpen(false);
-            setDeleteConfirmText('');
-            setError(null);
-          }}>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmText(''); setError(null); }}
+            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, color: '#64748b' }}
+          >
             Abbrechen
           </Button>
           <Button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const normalizedConfirm = deleteConfirmText.trim().toLowerCase();
-              console.log('🔴 [ProfileTab] Delete button clicked', {
-                deleteConfirmText,
-                normalizedConfirm,
-                isDisabled: normalizedConfirm !== 'löschen',
-                hasOnDeleteProfile: typeof onDeleteProfile === 'function'
-              });
-              handleDeleteClick();
-            }}
+            onClick={handleDeleteClick}
             color="error"
             variant="contained"
             disabled={deleteConfirmText.trim().toLowerCase() !== 'löschen'}
             startIcon={<DeleteIcon />}
+            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
           >
             Profil löschen
           </Button>
@@ -411,4 +414,3 @@ const ProfileTab = ({
 };
 
 export default ProfileTab;
-

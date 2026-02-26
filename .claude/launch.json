@@ -14,13 +14,6 @@
       "runtimeArgs": ["node_modules/vite/bin/vite.js"],
       "port": 5173,
       "cwd": "CLIENT"
-    },
-    {
-      "name": "mobile",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/expo/bin/cli", "start", "--tunnel"],
-      "port": 8081,
-      "cwd": "MOBILE"
     }
   ]
 }

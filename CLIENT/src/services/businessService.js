@@ -35,6 +35,12 @@ export const businessService = {
     const response = await api.get('/business/my-stats');
     return response.data;
   },
+
+  // Owner kendi işletmesini günceller
+  updateMyBusiness: async (data) => {
+    const response = await api.patch('/business/my-business', data);
+    return response.data;
+  },
 };
 
 export default businessService;

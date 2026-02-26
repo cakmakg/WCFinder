@@ -23,14 +23,14 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#6200EE', // Modern purple color
+        tabBarActiveTintColor: '#0891b2',
         tabBarInactiveTintColor: '#9E9E9E',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
+          borderTopColor: 'rgba(8,145,178,0.15)',
           height: 60,
           paddingBottom: 8,
           paddingTop: 8,
@@ -44,10 +44,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Map',
+          title: 'Karte',
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
-              name={focused ? 'map' : 'map-outline'}
+              name={focused ? 'map-marker-radius' : 'map-marker-outline'}
               size={28}
               color={color}
             />
@@ -59,10 +59,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="list"
         options={{
-          title: 'List',
+          title: 'WC-Liste',
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
-              name={focused ? 'format-list-bulleted' : 'format-list-bulleted'}
+              name="toilet"
               size={28}
               color={color}
             />
@@ -74,10 +74,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Profil',
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
-              name={focused ? 'account' : 'account-outline'}
+              name={focused ? 'account-circle' : 'account-circle-outline'}
               size={28}
               color={color}
             />

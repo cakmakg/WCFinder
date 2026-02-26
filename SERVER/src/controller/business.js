@@ -65,6 +65,32 @@ module.exports = {
     },
 
     /**
+     * PATCH /business/my-business — Owner updates their own business info
+     */
+    updateMyBusiness: async (req, res) => {
+        const business = await Business.findOne({ owner: req.user._id });
+        if (!business) {
+            res.errorStatusCode = 404;
+            throw new Error("You don't have a registered business yet.");
+        }
+
+        // SECURITY: Only allow safe fields — no owner/approvalStatus change
+        const allowed = ['businessName', 'businessType', 'address', 'openingHours', 'phone', 'ustIdNr'];
+        const updateData = {};
+        for (const key of allowed) {
+            if (req.body[key] !== undefined) updateData[key] = req.body[key];
+        }
+
+        const result = await Business.findByIdAndUpdate(
+            business._id,
+            updateData,
+            { new: true, runValidators: true }
+        ).populate('owner', 'username email');
+
+        res.status(200).send({ error: false, result });
+    },
+
+    /**
      * Get owner's business
      */
     myBusiness: async (req, res) => {

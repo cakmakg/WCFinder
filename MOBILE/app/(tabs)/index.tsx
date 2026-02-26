@@ -13,9 +13,9 @@
  */
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { View, StyleSheet, Platform, Alert, Keyboard, Linking, Text, FlatList, RefreshControl } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
-import { Searchbar, FAB, IconButton, useTheme, ActivityIndicator, Text as PaperText } from 'react-native-paper';
+import { View, StyleSheet, Platform, Alert, Keyboard, Linking, Text, FlatList, RefreshControl, TextInput, TouchableOpacity } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE, Region, Polyline } from 'react-native-maps';
+import { FAB, IconButton, ActivityIndicator, Text as PaperText } from 'react-native-paper';
 import BottomSheet, { BottomSheetView, BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Location from 'expo-location';
@@ -23,6 +23,7 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import Constants from 'expo-constants';
 import { useSelector } from 'react-redux';
 import { router, useLocalSearchParams } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { ToiletMarker } from '../../src/components/map/ToiletMarker';
 import { ToiletDetailsSheet } from '../../src/components/map/ToiletDetailsSheet';
@@ -41,7 +42,6 @@ interface UserLocation {
 }
 
 export default function MapScreen() {
-  const theme = useTheme();
   const mapRef = useRef<MapView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const businessListSheetRef = useRef<BottomSheet>(null);
@@ -57,6 +57,7 @@ export default function MapScreen() {
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [searchedLocation, setSearchedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [nearestToiletCoords, setNearestToiletCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handle search parameter from StartPage
@@ -158,6 +159,22 @@ export default function MapScreen() {
 
   const { businesses, loading: businessesLoading, error: businessesError, refreshing: businessesRefreshing, refresh: refreshBusinesses } = useBusiness(businessParams);
 
+  // Compute minimum toilet fee per business from loaded toilets
+  const minFeeByBusinessId = useMemo(() => {
+    const map: Record<string, number> = {};
+    toilets.forEach((toilet: any) => {
+      const bId = typeof toilet.business === 'object'
+        ? toilet.business?._id
+        : (toilet.business || toilet.businessId);
+      if (bId && typeof toilet.fee === 'number') {
+        if (map[bId] === undefined || toilet.fee < map[bId]) {
+          map[bId] = toilet.fee;
+        }
+      }
+    });
+    return map;
+  }, [toilets]);
+
   // Calculate distance for each business
   const businessesWithDistance = useMemo(() => {
     if (!businesses || !Array.isArray(businesses)) return [];
@@ -216,17 +233,16 @@ export default function MapScreen() {
           const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
           Alert.alert(
-            'Konum İzni Gerekli',
-            `Yakındaki tuvaletleri görmek için konum izni vermelisiniz.\n\nAyarlar > ${isExpoGo ? 'Expo Go' : 'WCFinder'} > Konum > İzin Ver`,
+            'Standortzugriff erforderlich',
+            `Bitte erlauben Sie den Standortzugriff, um WCs in Ihrer Nähe zu sehen.\n\nEinstellungen > ${isExpoGo ? 'Expo Go' : 'WCFinder'} > Standort > Erlauben`,
             [
-              { text: 'İptal', style: 'cancel' },
+              { text: 'Abbrechen', style: 'cancel' },
               {
-                text: 'Ayarlara Git',
+                text: 'Einstellungen öffnen',
                 onPress: () => {
                   if (Platform.OS === 'ios') {
                     Linking.openSettings();
                   } else {
-                    // Use actual package name from app.json
                     const pkg = isExpoGo ? 'host.exp.exponent' : 'com.wcfinder.app';
                     IntentLauncher.startActivityAsync(
                       IntentLauncher.ActivityAction.APPLICATION_DETAILS_SETTINGS,
@@ -349,12 +365,12 @@ export default function MapScreen() {
         const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
         Alert.alert(
-          'Konum İzni Reddedildi',
-          `Konum izni daha önce reddedilmiş. GPS özelliğini kullanmak için cihaz ayarlarından konum iznini manuel olarak açmalısınız.\n\nAyarlar > ${isExpoGo ? 'Expo Go' : 'WCFinder'} > Konum`,
+          'Standortzugriff verweigert',
+          `Der Standortzugriff wurde abgelehnt. Bitte aktivieren Sie ihn manuell in den Geräteeinstellungen.\n\nEinstellungen > ${isExpoGo ? 'Expo Go' : 'WCFinder'} > Standort`,
           [
-            { text: 'İptal', style: 'cancel' },
+            { text: 'Abbrechen', style: 'cancel' },
             {
-              text: 'Ayarlara Git',
+              text: 'Einstellungen öffnen',
               onPress: async () => {
                 // Open app settings
                 if (Platform.OS === 'ios') {
@@ -392,12 +408,12 @@ export default function MapScreen() {
           const isExpoGo = Constants.executionEnvironment === 'storeClient';
           
           Alert.alert(
-            'Konum İzni Gerekli',
-            `Yakındaki tuvaletleri görmek ve GPS butonunu kullanmak için konum izni vermelisiniz.\n\nAyarlar > ${isExpoGo ? 'Expo Go' : 'WCFinder'} > Konum > İzin Ver`,
+            'Standortzugriff erforderlich',
+            `Bitte erlauben Sie den Standortzugriff für WCs in der Nähe und GPS-Funktionen.\n\nEinstellungen > ${isExpoGo ? 'Expo Go' : 'WCFinder'} > Standort > Erlauben`,
             [
-              { text: 'İptal', style: 'cancel' },
+              { text: 'Abbrechen', style: 'cancel' },
               {
-                text: 'Ayarlara Git',
+                text: 'Einstellungen öffnen',
                 onPress: () => {
                   if (Platform.OS === 'ios') {
                     Linking.openSettings();
@@ -496,27 +512,74 @@ export default function MapScreen() {
       } else {
         console.warn('[MapScreen] No location available');
         Alert.alert(
-          'Konum Bulunamadı',
-          'Konumunuz alınamadı. Lütfen GPS\'inizin açık olduğundan ve konum izni verdiğinizden emin olun.',
-          [{ text: 'Tamam' }]
+          'Standort nicht gefunden',
+          'Ihr Standort konnte nicht ermittelt werden. Bitte stellen Sie sicher, dass GPS aktiviert ist.',
+          [{ text: 'OK' }]
         );
       }
     } catch (error: any) {
       console.error('[MapScreen] Error centering on user:', error.message || error);
-      
-      // Fallback to cached location
+
       if (userLocation && mapRef.current) {
         console.log('[MapScreen] Using cached location due to error');
         mapRef.current.animateToRegion(userLocation, 1000);
-    } else {
+      } else {
         Alert.alert(
-          'Konum Bulunamadı',
-          'Konumunuz alınamadı. Lütfen GPS\'inizin açık olduğundan ve konum izni verdiğinizden emin olun.',
-          [{ text: 'Tamam' }]
+          'Standort nicht gefunden',
+          'Ihr Standort konnte nicht ermittelt werden. Bitte stellen Sie sicher, dass GPS aktiviert ist.',
+          [{ text: 'OK' }]
         );
       }
     }
   }, [userLocation, getCurrentLocation]);
+
+  /**
+   * Navigate to nearest toilet
+   * Centers map to show both user and nearest WC, draws a route line
+   */
+  const handleNavigateToNearest = useCallback(() => {
+    if (!location || toilets.length === 0) {
+      Alert.alert('Kein WC gefunden', 'Es konnten keine WCs in Ihrer Nähe gefunden werden.');
+      return;
+    }
+
+    let nearest: any = null;
+    let minDist = Infinity;
+
+    toilets.forEach((toilet: any) => {
+      const coords = toilet.location?.coordinates || toilet.business?.location?.coordinates;
+      if (!coords) return;
+      const [lng, lat] = coords;
+      const dist = calculateDistance(location.latitude, location.longitude, lat, lng);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = toilet;
+      }
+    });
+
+    if (!nearest) {
+      Alert.alert('Kein WC gefunden', 'Es konnten keine WCs in Ihrer Nähe gefunden werden.');
+      return;
+    }
+
+    const coords = nearest.location?.coordinates || nearest.business?.location?.coordinates;
+    if (!coords) return;
+    const [lng, lat] = coords;
+
+    setNearestToiletCoords({ latitude: lat, longitude: lng });
+    setSelectedToilet(nearest);
+    bottomSheetRef.current?.expand();
+
+    if (mapRef.current) {
+      mapRef.current.fitToCoordinates(
+        [
+          { latitude: location.latitude, longitude: location.longitude },
+          { latitude: lat, longitude: lng },
+        ],
+        { edgePadding: { top: 120, right: 60, bottom: 380, left: 60 }, animated: true }
+      );
+    }
+  }, [location, toilets, calculateDistance]);
 
   /**
    * Filter toilets by search query
@@ -623,13 +686,10 @@ export default function MapScreen() {
   if (!userLocation) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-        <Searchbar
-          placeholder="Konum alınıyor..."
-          value=""
-          loading
-          style={styles.searchBar}
-        />
+        <ActivityIndicator size="large" color="#0891b2" />
+        <PaperText variant="bodyMedium" style={{ marginTop: 12, color: '#64748b' }}>
+          Standort wird ermittelt...
+        </PaperText>
       </View>
     );
   }
@@ -646,6 +706,19 @@ export default function MapScreen() {
         showsCompass={false}
         toolbarEnabled={false}
       >
+        {/* Navigation Polyline — user to nearest toilet */}
+        {nearestToiletCoords && location && (
+          <Polyline
+            coordinates={[
+              { latitude: location.latitude, longitude: location.longitude },
+              nearestToiletCoords,
+            ]}
+            strokeColor="#0891b2"
+            strokeWidth={3}
+            lineDashPattern={[8, 6]}
+          />
+        )}
+
         {/* Toilet Markers */}
         {filteredToilets.length > 0 ? (
           filteredToilets.map((toilet: any) => {
@@ -666,7 +739,7 @@ export default function MapScreen() {
         ) : (
           <View style={{ position: 'absolute', top: 100, left: 20, right: 20, backgroundColor: 'rgba(255,255,255,0.9)', padding: 16, borderRadius: 8 }}>
             <Text style={{ textAlign: 'center', color: '#666' }}>
-              {toiletsLoading ? 'Yükleniyor...' : toilets.length === 0 ? 'Yakınınızda tuvalet bulunamadı' : 'Arama sonucu bulunamadı'}
+              {toiletsLoading ? 'Wird geladen...' : toilets.length === 0 ? 'Keine WCs in Ihrer Nähe gefunden' : 'Keine Suchergebnisse'}
             </Text>
           </View>
         )}
@@ -674,33 +747,64 @@ export default function MapScreen() {
 
       {/* Search Bar Overlay */}
       <View style={styles.searchContainer}>
-        <Searchbar
-          placeholder="Tuvalet veya mekan ara..."
-          onChangeText={(text) => {
-            setSearchQuery(text);
-            if (!text.trim()) {
-              setSearchSuggestions([]);
-              setShowSuggestions(false);
-              setSearchedLocation(null);
-            }
-          }}
-          value={searchQuery}
-          style={styles.searchBar}
-          elevation={4}
-          icon="map-search"
-          clearIcon="close"
-          loading={isSearchingLocation}
-          onSubmitEditing={handleSearchSubmit}
-        />
-      </View>
+        <View style={styles.searchInputWrapper}>
+          <MaterialCommunityIcons name="map-search" size={20} color="#0891b2" style={styles.searchIcon} />
+          <TextInput
+            placeholder="WC oder Ort suchen..."
+            placeholderTextColor="#9ca3af"
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (!text.trim()) {
+                setSearchSuggestions([]);
+                setShowSuggestions(false);
+                setSearchedLocation(null);
+              }
+            }}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
+            style={styles.searchInput}
+          />
+          {isSearchingLocation ? (
+            <ActivityIndicator size="small" color="#0891b2" style={styles.searchRight} />
+          ) : searchQuery ? (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                setSearchSuggestions([]);
+                setShowSuggestions(false);
+                setSearchedLocation(null);
+              }}
+              style={styles.searchRight}
+              activeOpacity={0.6}
+            >
+              <MaterialCommunityIcons name="close-circle" size={18} color="#9ca3af" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
-      {/* Center on User FAB */}
-      <FAB
-        icon="crosshairs-gps"
-        style={styles.locationFab}
-        onPress={centerOnUser}
-        size="medium"
-        />
+        {/* Location Suggestions Dropdown */}
+        {showSuggestions && searchSuggestions.length > 0 && (
+          <View style={styles.suggestionsCard}>
+            {searchSuggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={suggestion.displayName + index}
+                onPress={() => handleSuggestionSelect(suggestion)}
+                style={[
+                  styles.suggestionItem,
+                  index < searchSuggestions.length - 1 && styles.suggestionDivider,
+                ]}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="map-marker-outline" size={16} color="#0891b2" style={{ marginRight: 8 }} />
+                <Text style={styles.suggestionText} numberOfLines={1}>
+                  {suggestion.displayName}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
 
       {/* Bottom Sheet for Toilet Details */}
       <BottomSheet
@@ -740,6 +844,7 @@ export default function MapScreen() {
             <BusinessCard
               business={item.business}
               distance={item.distance}
+              minFee={minFeeByBusinessId[item.business._id]}
               onPress={handleBusinessPress}
             />
           )}
@@ -747,7 +852,7 @@ export default function MapScreen() {
           ListHeaderComponent={
             <View style={styles.businessListHeader}>
               <PaperText variant="headlineSmall" style={styles.businessListTitle}>
-                Yakındaki Tuvaletler
+                WCs in der Nähe
               </PaperText>
               {businessesLoading && businesses.length === 0 && (
                 <ActivityIndicator size="small" style={styles.businessListLoading} />
@@ -758,7 +863,7 @@ export default function MapScreen() {
             businessesLoading ? (
               <View style={styles.businessListEmpty}>
                 <ActivityIndicator size="large" />
-                <Text style={styles.businessListEmptyText}>Tuvaletler yükleniyor...</Text>
+                <Text style={styles.businessListEmptyText}>WCs werden geladen...</Text>
               </View>
             ) : businessesError ? (
               <View style={styles.businessListEmpty}>
@@ -766,9 +871,9 @@ export default function MapScreen() {
               </View>
             ) : (
               <View style={styles.businessListEmpty}>
-                <Text style={styles.businessListEmptyText}>Tuvalet bulunamadı</Text>
+                <Text style={styles.businessListEmptyText}>Keine WCs gefunden</Text>
                 {searchQuery && (
-                  <Text style={styles.businessListEmptySubtext}>Farklı bir arama terimi deneyin</Text>
+                  <Text style={styles.businessListEmptySubtext}>Versuchen Sie einen anderen Suchbegriff</Text>
                 )}
               </View>
             )
@@ -781,6 +886,23 @@ export default function MapScreen() {
           }
         />
       </BottomSheet>
+
+      {/* Navigate to Nearest WC FAB — rendered after sheets so it appears on top */}
+      <FAB
+        icon="navigation-variant"
+        style={styles.navigationFab}
+        onPress={handleNavigateToNearest}
+        size="medium"
+        color="#fff"
+      />
+
+      {/* Center on User FAB */}
+      <FAB
+        icon="crosshairs-gps"
+        style={styles.locationFab}
+        onPress={centerOnUser}
+        size="medium"
+      />
     </GestureHandlerRootView>
   );
 }
@@ -805,9 +927,70 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 1,
   },
-  searchBar: {
-    borderRadius: 12,
-    elevation: 4,
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    height: 52,
+    elevation: 6,
+    shadowColor: '#0891b2',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(8,145,178,0.12)',
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#0f172a',
+    paddingVertical: 0,
+    height: 52,
+  },
+  searchRight: {
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  suggestionsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    marginTop: 6,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(8,145,178,0.08)',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  suggestionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: '#0f172a',
+    flex: 1,
+  },
+  navigationFab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 160,
+    backgroundColor: '#0891b2',
+    elevation: 6,
   },
   locationFab: {
     position: 'absolute',
