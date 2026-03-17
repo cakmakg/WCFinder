@@ -68,7 +68,7 @@ export const useAuth = () => {
       } else {
         // Do NOT redirect here — routing decisions should be handled by root/index screens.
         // Avoid causing navigation side-effects when a component mounts (e.g., Profile screen).
-        console.debug('[useAuth] No stored auth found in secure storage; skipping redirect in hook.');
+        if (__DEV__) console.debug('[useAuth] No stored auth found in secure storage; skipping redirect in hook.');
       }
     } catch (error) {
       console.error('Auth initialization error:', error);
@@ -87,7 +87,7 @@ export const useAuth = () => {
         await api.get('/auth/logout');
       } catch (error) {
         // Ignore logout API errors (some backends don't have logout endpoint)
-        console.log('Logout API call failed (non-critical):', error);
+        if (__DEV__) console.log('Logout API call failed (non-critical):', error);
       }
 
       // Clear secure storage

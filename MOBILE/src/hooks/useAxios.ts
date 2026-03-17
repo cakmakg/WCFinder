@@ -1,8 +1,8 @@
 /**
  * useAxios Hook for React Native
- * 
+ *
  * Provides axios instances with token management
- * Uses AsyncStorage for token persistence
+ * Uses expo-secure-store for hardware-backed token persistence (not AsyncStorage)
  */
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -66,7 +66,7 @@ const useAxios = () => {
         const fullURL = `${config.baseURL}${config.url}`;
         const safeData = config.data ? maskSensitiveData(config.data) : config.data;
         
-        console.log("📤 [Public] Request:", {
+        if (__DEV__) console.log("📤 [Public] Request:", {
           method: config.method?.toUpperCase(),
           url: config.url,
           baseURL: config.baseURL,
@@ -84,7 +84,7 @@ const useAxios = () => {
     // Response interceptor
     instance.interceptors.response.use(
       (response) => {
-        console.log("✅ [Public] Response:", {
+        if (__DEV__) console.log("✅ [Public] Response:", {
           status: response.status,
           url: response.config?.url,
           data: response.data,
