@@ -1,6 +1,6 @@
 // components/layout/AppBar/HomeAppBar.jsx
 import React from 'react';
-import { AppBar, Toolbar, IconButton, Avatar, Box, Button, useMediaQuery, useTheme } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Avatar, Box, Button, useMediaQuery } from '@mui/material';
 import { Logo } from '../Logo';
 import { UserMenu } from './UserMenu';
 import { LanguageSelector } from './LanguageSelector';

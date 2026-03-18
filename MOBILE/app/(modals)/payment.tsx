@@ -166,9 +166,7 @@ export default function PaymentScreen() {
       if (!bookingData.date) {
         throw new Error('Buchungsdatum fehlt');
       }
-      const parsedDate = bookingData.date instanceof Date
-        ? bookingData.date
-        : new Date(bookingData.date);
+      const parsedDate = new Date(bookingData.date);
       if (isNaN(parsedDate.getTime())) {
         throw new Error('Ungültiges Buchungsdatum');
       }
@@ -530,9 +528,7 @@ export default function PaymentScreen() {
                     setLoading(false);
                     return;
                   }
-                  const parsedDatePaypal = bookingData.date instanceof Date
-                    ? bookingData.date
-                    : new Date(bookingData.date);
+                  const parsedDatePaypal = new Date(bookingData.date);
                   if (isNaN(parsedDatePaypal.getTime())) {
                     setError('Ungültiges Buchungsdatum');
                     setLoading(false);

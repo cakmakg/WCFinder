@@ -20,7 +20,7 @@ export const setGlobalSnackbar = (snackbar: typeof globalSnackbar) => {
 export const toastSuccessNotify = (msg: string) => {
   if (globalSnackbar) {
     globalSnackbar.show(msg, 'success');
-  } else {
+  } else if (__DEV__) {
     console.log('✅', msg);
   }
 };
@@ -28,7 +28,7 @@ export const toastSuccessNotify = (msg: string) => {
 export const toastErrorNotify = (msg: string) => {
   if (globalSnackbar) {
     globalSnackbar.show(msg, 'error');
-  } else {
+  } else if (__DEV__) {
     console.error('❌', msg);
   }
 };
@@ -36,7 +36,7 @@ export const toastErrorNotify = (msg: string) => {
 export const toastWarnNotify = (msg: string) => {
   if (globalSnackbar) {
     globalSnackbar.show(msg, 'warning');
-  } else {
+  } else if (__DEV__) {
     console.warn('⚠️', msg);
   }
 };

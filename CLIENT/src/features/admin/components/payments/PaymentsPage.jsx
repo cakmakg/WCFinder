@@ -42,7 +42,6 @@ import {
 } from "@mui/icons-material";
 import { adminService } from "../../services/adminService";
 import { DateRangePicker, ExportButton } from "../shared";
-import { formatDate as formatDateHelper } from "../../utils/dateHelpers";
 
 const PaymentsPage = () => {
   const [payments, setPayments] = useState([]);
@@ -166,13 +165,13 @@ const PaymentsPage = () => {
     switch (status) {
       case "succeeded":
       case "paid":
-        return { bg: "#16a34a15", color: "#16a34a", label: "Başarılı" };
+        return { bg: "#16a34a15", color: "#16a34a", label: "Erfolgreich" };
       case "pending":
-        return { bg: "#f59e0b15", color: "#f59e0b", label: "Bekliyor" };
+        return { bg: "#f59e0b15", color: "#f59e0b", label: "Ausstehend" };
       case "failed":
-        return { bg: "#dc262615", color: "#dc2626", label: "Başarısız" };
+        return { bg: "#dc262615", color: "#dc2626", label: "Fehlgeschlagen" };
       case "refunded":
-        return { bg: "#6b728015", color: "#6b7280", label: "İade Edildi" };
+        return { bg: "#6b728015", color: "#6b7280", label: "Erstattet" };
       default:
         return { bg: "#6b728015", color: "#6b7280", label: status };
     }
@@ -222,10 +221,10 @@ const PaymentsPage = () => {
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
           <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
-            Ödeme Yönetimi
+            Zahlungsverwaltung
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Tüm ödemeleri görüntüleyin ve yönetin
+            Alle Zahlungen anzeigen und verwalten
           </Typography>
         </Box>
         <Button
@@ -234,7 +233,7 @@ const PaymentsPage = () => {
           onClick={fetchPayments}
           disabled={loading}
         >
-          Yenile
+          Aktualisieren
         </Button>
       </Box>
 
@@ -244,7 +243,7 @@ const PaymentsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Toplam Ödeme
+                Gesamte Zahlungen
               </Typography>
               <Typography variant="h5" fontWeight={700}>
                 {stats.total}
@@ -256,7 +255,7 @@ const PaymentsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Başarılı
+                Erfolgreich
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#16a34a" }}>
                 {stats.succeeded}
@@ -268,7 +267,7 @@ const PaymentsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Bekleyen
+                Ausstehend
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#f59e0b" }}>
                 {stats.pending}
@@ -280,7 +279,7 @@ const PaymentsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Toplam Gelir
+                Gesamtumsatz
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#0891b2" }}>
                 {formatCurrency(stats.totalRevenue)}
@@ -292,7 +291,7 @@ const PaymentsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Ortalama
+                Durchschnitt
               </Typography>
               <Typography variant="h5" fontWeight={700}>
                 {formatCurrency(stats.averagePayment)}
@@ -309,7 +308,7 @@ const PaymentsPage = () => {
             <TextField
               fullWidth
               size="small"
-              placeholder="Ara (İşletme, Kullanıcı, ID)..."
+              placeholder="Suchen (Betrieb, Benutzer, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -323,18 +322,18 @@ const PaymentsPage = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>Durum</InputLabel>
+              <InputLabel>Status</InputLabel>
               <Select
                 value={statusFilter}
-                label="Durum"
+                label="Status"
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="all">Tümü</MenuItem>
-                <MenuItem value="succeeded">Başarılı</MenuItem>
-                <MenuItem value="paid">Ödendi</MenuItem>
-                <MenuItem value="pending">Bekleyen</MenuItem>
-                <MenuItem value="failed">Başarısız</MenuItem>
-                <MenuItem value="refunded">İade Edildi</MenuItem>
+                <MenuItem value="all">Alle</MenuItem>
+                <MenuItem value="succeeded">Erfolgreich</MenuItem>
+                <MenuItem value="paid">Bezahlt</MenuItem>
+                <MenuItem value="pending">Ausstehend</MenuItem>
+                <MenuItem value="failed">Fehlgeschlagen</MenuItem>
+                <MenuItem value="refunded">Erstattet</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -381,7 +380,7 @@ const PaymentsPage = () => {
                     direction={orderBy === "createdAt" ? order : "asc"}
                     onClick={() => handleRequestSort("createdAt")}
                   >
-                    Tarih
+                    Datum
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -390,36 +389,36 @@ const PaymentsPage = () => {
                     direction={orderBy === "businessId" ? order : "asc"}
                     onClick={() => handleRequestSort("businessId")}
                   >
-                    İşletme
+                    Betrieb
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>Kullanıcı</TableCell>
+                <TableCell>Benutzer</TableCell>
                 <TableCell align="right">
                   <TableSortLabel
                     active={orderBy === "amount"}
                     direction={orderBy === "amount" ? order : "asc"}
                     onClick={() => handleRequestSort("amount")}
                   >
-                    Tutar
+                    Betrag
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>Ödeme Yöntemi</TableCell>
-                <TableCell>Durum</TableCell>
+                <TableCell>Zahlungsmethode</TableCell>
+                <TableCell>Status</TableCell>
                 <TableCell>Payment Intent ID</TableCell>
-                <TableCell align="center">İşlemler</TableCell>
+                <TableCell align="center">Aktionen</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    <Typography>Yükleniyor...</Typography>
+                    <Typography>Laden...</Typography>
                   </TableCell>
                 </TableRow>
               ) : paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
-                    <Typography color="text.secondary">Kayıt bulunamadı</Typography>
+                    <Typography color="text.secondary">Keine Einträge gefunden</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -481,20 +480,20 @@ const PaymentsPage = () => {
             setPage(0);
           }}
           rowsPerPageOptions={[10, 25, 50, 100]}
-          labelRowsPerPage="Sayfa başına:"
+          labelRowsPerPage="Zeilen pro Seite:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
         />
       </Paper>
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Ödeme Detayları</DialogTitle>
+        <DialogTitle>Zahlungsdetails</DialogTitle>
         <DialogContent>
           {selectedPayment && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Ödeme ID
+                  Zahlungs-ID
                 </Typography>
                 <Typography variant="body1" sx={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
                   {selectedPayment._id}
@@ -510,7 +509,7 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  İşletme
+                  Betrieb
                 </Typography>
                 <Typography variant="body1">
                   {selectedPayment.businessId?.businessName || "N/A"}
@@ -518,7 +517,7 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Kullanıcı
+                  Benutzer
                 </Typography>
                 <Typography variant="body1">
                   {selectedPayment.userId?.username || selectedPayment.userId?.email || "N/A"}
@@ -526,7 +525,7 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Tutar
+                  Betrag
                 </Typography>
                 <Typography variant="body1" fontWeight={600} sx={{ fontSize: "1.2rem", color: "#0891b2" }}>
                   {formatCurrency(selectedPayment.amount)}
@@ -534,7 +533,7 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Durum
+                  Status
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
                   <Chip
@@ -549,7 +548,7 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Ödeme Yöntemi
+                  Zahlungsmethode
                 </Typography>
                 <Typography variant="body1">
                   {selectedPayment.paymentMethod || "N/A"}
@@ -557,7 +556,7 @@ const PaymentsPage = () => {
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="caption" color="text.secondary">
-                  Oluşturulma Tarihi
+                  Erstellungsdatum
                 </Typography>
                 <Typography variant="body1">
                   {formatDate(selectedPayment.createdAt)}
@@ -567,7 +566,7 @@ const PaymentsPage = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Kapat</Button>
+          <Button onClick={() => setViewDialogOpen(false)}>Schließen</Button>
         </DialogActions>
       </Dialog>
     </Box>

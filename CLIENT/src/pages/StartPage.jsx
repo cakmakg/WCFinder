@@ -4,14 +4,24 @@ import { Box } from "@mui/material";
 import AuthModal from "../components/Authmodal";
 import StartPageHeader from "../components/startPage/StartPageHeader";
 import StartPageHero from "../components/startPage/StartPageHero";
+import StatsSection from "../components/startPage/StatsSection";
 import HowItWorksSection from "../components/startPage/HowItWorksSection";
 import AboutUsSection from "../components/startPage/AboutUsSection";
 import FeaturesSection from "../components/startPage/FeaturesSection";
 import ReviewsSection from "../components/startPage/ReviewsSection";
+import FAQSection from "../components/startPage/FAQSection";
 import StartPageFooter from "../components/startPage/StartPageFooter";
 import PartnerRegistrationModal from "../components/startPage/PartnerRegistrationModal";
 import SEOHead from "../components/SEO/SEOHead";
-import { generateOrganizationSchema, generateWebSiteSchema } from "../utils/seoHelpers";
+import {
+  generateOrganizationSchema,
+  generateWebSiteSchema,
+  generateServiceSchema,
+  generateFAQSchema,
+  generateHowToSchema,
+  generateAggregateRatingSchema,
+  generateSpeakableSchema,
+} from "../utils/seoHelpers";
 
 const StartPage = () => {
   const navigate = useNavigate();
@@ -21,10 +31,8 @@ const StartPage = () => {
   const [isSearching, setIsSearching] = useState(false);
 
   const handlePartnerClick = useCallback(() => {
-    // Production-safe state update
     setPartnerModalOpen(true);
   }, []);
-  
 
   useEffect(() => {
     if (location.state?.openLoginModal) {
@@ -36,9 +44,16 @@ const StartPage = () => {
     navigate("/home");
   };
 
-  // SEO için structured data
-  const organizationSchema = generateOrganizationSchema();
-  const websiteSchema = generateWebSiteSchema();
+  // GEO + Knowledge Graph — 7 structured data schemas
+  const schemas = [
+    generateOrganizationSchema(),    // KG anchor — entity definition
+    generateWebSiteSchema(),         // SearchAction
+    generateServiceSchema(),         // Hizmet tanımı + pricing
+    generateFAQSchema(),             // Question intent targeting
+    generateHowToSchema(),           // AI Overviews — Schritt-für-Schritt
+    generateAggregateRatingSchema(), // Rating entity
+    generateSpeakableSchema(),       // Voice / AI assistant
+  ].filter(Boolean);
 
   return (
     <Box
@@ -52,14 +67,15 @@ const StartPage = () => {
       }}
     >
       <SEOHead
-        title="WCFinder - Find Toilets Near You | Tuvalet Bulucu | WC Finder"
-        description="Find clean, accessible toilets near you. WCFinder helps you locate public restrooms, WC facilities, and toiletten in your area. Book and reserve toilets easily. Tuvalet bulucu, WC finder, public toilet booking."
-        keywords="toilet, wc, tuvalet, toiletten, public restroom, bathroom finder, wc finder, tuvalet bulucu, toilet near me, toilet booking, wc booking, public toilet, restroom finder, toilet reservation, tuvalet rezervasyonu"
+        title="WCFinder – Öffentliche Toiletten finden & buchen | Saubere WC-Anlage in deiner Nähe"
+        description="WCFinder ist Deutschlands Buchungsplattform für saubere, barrierefreie öffentliche Toiletten. Finde und buche WC-Anlagen in deiner Stadt ab €1,60. Über 500 Partner-Standorte in 50+ deutschen Städten."
+        keywords="öffentliche toilette, toilette buchen, wc finder, wc buchen, saubere toilette deutschland, public toilet booking, toilette in der nähe, barrierefreie toilette, wc buchung, toilette reservieren, wcfinder"
         url="/"
-        structuredData={[organizationSchema, websiteSchema].filter(Boolean)}
+        locale="de_DE"
+        structuredData={schemas}
       />
-      
-      {/* ✅ ASYMMETRIC DESIGN: Decorative background elements */}
+
+      {/* Decorative background blobs */}
       <Box
         sx={{
           position: "absolute",
@@ -67,7 +83,8 @@ const StartPage = () => {
           right: 0,
           width: { xs: "200px", md: "400px" },
           height: { xs: "200px", md: "400px" },
-          background: "linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(6,182,212,0.05) 100%)",
+          background:
+            "linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(6,182,212,0.05) 100%)",
           borderRadius: "50%",
           filter: "blur(60px)",
           zIndex: 0,
@@ -81,7 +98,8 @@ const StartPage = () => {
           left: 0,
           width: { xs: "150px", md: "300px" },
           height: { xs: "150px", md: "300px" },
-          background: "linear-gradient(135deg, rgba(20,184,166,0.1) 0%, rgba(8,145,178,0.05) 100%)",
+          background:
+            "linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(14,116,144,0.05) 100%)",
           borderRadius: "50%",
           filter: "blur(60px)",
           zIndex: 0,
@@ -90,14 +108,27 @@ const StartPage = () => {
       />
 
       <Box sx={{ position: "relative", zIndex: 1 }}>
-        <StartPageHeader onLoginClick={() => setAuthModalOpen(true)} />
-        <StartPageHero isSearching={isSearching} setIsSearching={setIsSearching} />
-        
-        {/* ✅ ASYMMETRIC: Alternating section layouts */}
+        <StartPageHeader
+          onLoginClick={() => setAuthModalOpen(true)}
+          onPartnerClick={handlePartnerClick}
+        />
+        <StartPageHero
+          isSearching={isSearching}
+          setIsSearching={setIsSearching}
+          onPartnerClick={handlePartnerClick}
+        />
+
+        {/* Data-rich stats — immediately after hero for authority signal */}
+        <StatsSection />
+
         <HowItWorksSection onBookNow={handleBookNow} />
         <AboutUsSection onBookNow={handleBookNow} onPartnerClick={handlePartnerClick} />
         <FeaturesSection />
         <ReviewsSection />
+
+        {/* FAQ — before footer for question intent targeting */}
+        <FAQSection />
+
         <StartPageFooter onPartnerClick={handlePartnerClick} />
       </Box>
 
@@ -107,12 +138,7 @@ const StartPage = () => {
         redirectAfterLogin={location.state?.from || "/home"}
         businessName={location.state?.businessName}
       />
-      
-      {partnerModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '10px', zIndex: 10000 }}>
-          Modal State: {partnerModalOpen ? 'OPEN' : 'CLOSED'}
-        </div>
-      )}
+
       <PartnerRegistrationModal
         open={partnerModalOpen}
         onClose={() => {

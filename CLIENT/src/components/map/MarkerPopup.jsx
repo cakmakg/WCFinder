@@ -15,7 +15,7 @@ const STATUS_CONFIG = {
   default:   { color: '#dc2626', label: 'Außer Betrieb' },
 };
 
-export const MarkerPopup = ({ toiletItem, theme, isMobile }) => {
+export const MarkerPopup = ({ toiletItem }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser, token } = useSelector((state) => state.auth);

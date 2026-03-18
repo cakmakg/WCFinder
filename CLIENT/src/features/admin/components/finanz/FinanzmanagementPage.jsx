@@ -1,5 +1,5 @@
 // features/admin/components/finanz/FinanzmanagementPage.jsx
-// Basit Finanzmanagement - İşletme Aylık Raporları ve Rechnungen
+// Finanzmanagement - Monatliche Geschäftsberichte und Rechnungen
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -42,35 +42,42 @@ import {
   Refresh as RefreshIcon,
   CheckCircle as PaidIcon,
   Schedule as PendingIcon,
-  Visibility as ViewIcon
+  Visibility as ViewIcon,
+  AccountBalance as BankIcon,
+  Send as PayoutIcon,
 } from '@mui/icons-material';
 import { monthlyReportService } from '../../services/monthlyReportService';
 import { invoiceService } from '../../services/invoiceService';
+import { payoutService } from '../../services/payoutService';
+import { adminService } from '../../services/adminService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
 
 /**
- * Basit FinanzmanagementPage
- * - İşletme aylık raporları listesi
- * - Tek tıkla Rechnung oluştur/görüntüle
- * - PDF indir
+ * FinanzmanagementPage
+ * - Monatliche Geschäftsberichte
+ * - Rechnung erstellen / anzeigen
+ * - PDF herunterladen
  */
 const FinanzmanagementPage = () => {
   // State
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [businessesMap, setBusinessesMap] = useState({});
+  const [payouts, setPayouts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
   const [monthFilter, setMonthFilter] = useState('all');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
+
   // Dialog state
   const [selectedReport, setSelectedReport] = useState(null);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [creatingPayout, setCreatingPayout] = useState(false);
 
   // Fetch data
   useEffect(() => {
@@ -80,15 +87,23 @@ const FinanzmanagementPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch monthly reports
-      const reportResponse = await monthlyReportService.getReports({ limit: 500 });
+
+      const [reportResponse, invoiceResponse, businessResponse, payoutResponse] = await Promise.all([
+        monthlyReportService.getReports({ limit: 500 }).catch(() => ({ result: [] })),
+        invoiceService.getInvoices().catch(() => ({ result: [] })),
+        adminService.getAllBusinesses().catch(() => ({ result: [] })),
+        payoutService.getBusinessesWithPayouts().catch(() => ({ result: [] })),
+      ]);
+
       setReports(reportResponse?.result || []);
-      
-      // Fetch invoices to check which reports have invoices
-      const invoiceResponse = await invoiceService.getInvoices();
       setInvoices(invoiceResponse?.result || []);
-      
+
+      // Build businessId → business map (includes bankAccount)
+      const bMap = {};
+      (businessResponse?.result || []).forEach(b => { bMap[b._id] = b; });
+      setBusinessesMap(bMap);
+
+      setPayouts(payoutResponse?.result || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toastErrorNotify('Fehler beim Laden der Daten');
@@ -100,6 +115,65 @@ const FinanzmanagementPage = () => {
   // Get invoice for report (if exists)
   const getInvoiceForReport = (reportId) => {
     return invoices.find(inv => inv.monthlyReportId === reportId);
+  };
+
+  // Get bank account for a report's business
+  const getBankAccountForReport = (report) => {
+    const business = businessesMap[report?.businessId];
+    return business?.bankAccount || null;
+  };
+
+  // Find payout matching a report's business + period
+  const getPayoutForReport = (report) => {
+    if (!report || !payouts.length) return null;
+    return payouts.find(p =>
+      p.businessId === report.businessId || p.businessId?._id === report.businessId
+    );
+  };
+
+  // Create payout for a report
+  const handleCreatePayout = async (report) => {
+    if (!report) return;
+    try {
+      setCreatingPayout(true);
+      const startDate = new Date(report.year, report.month - 1, 1).toISOString();
+      const endDate = new Date(report.year, report.month, 0).toISOString();
+
+      await payoutService.createPayout({
+        businessId: report.businessId,
+        amount: report.financials?.businessRevenue || 0,
+        paymentMethod: 'bank_transfer',
+        periodStart: startDate,
+        periodEnd: endDate,
+        notes: `Auszahlung ${monthNames[report.month - 1]} ${report.year}`,
+      });
+      toastSuccessNotify('Auszahlung erstellt');
+      await fetchData();
+    } catch (error) {
+      console.error('Error creating payout:', error);
+      toastErrorNotify(error.response?.data?.message || 'Fehler beim Erstellen der Auszahlung');
+    } finally {
+      setCreatingPayout(false);
+    }
+  };
+
+  // Mark payout as completed
+  const handleCompletePayout = async (payoutId) => {
+    if (!payoutId) return;
+    try {
+      setCreatingPayout(true);
+      await payoutService.completePayout(payoutId, {
+        transactionReference: `MANUAL-${Date.now()}`,
+        notes: 'Manuell überwiesen',
+      });
+      toastSuccessNotify('Auszahlung als abgeschlossen markiert');
+      await fetchData();
+    } catch (error) {
+      console.error('Error completing payout:', error);
+      toastErrorNotify(error.response?.data?.message || 'Fehler beim Abschließen');
+    } finally {
+      setCreatingPayout(false);
+    }
   };
 
   // Filter reports
@@ -231,59 +305,80 @@ const FinanzmanagementPage = () => {
   return (
     <Box>
       {/* Header */}
-      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+      <Paper
+        sx={{
+          mb: 3,
+          p: 3,
+          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          borderRadius: '16px',
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
         <Box>
-          <Typography variant="h5" fontWeight={600}>
-            💰 Finanzmanagement
+          <Typography variant="h5" fontWeight={700} sx={{ color: 'white' }}>
+            Finanzmanagement
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
             Monatliche Geschäftsberichte und Rechnungen
           </Typography>
         </Box>
         <Button
-          variant="outlined"
+          variant="contained"
           startIcon={<RefreshIcon />}
           onClick={fetchData}
+          sx={{
+            bgcolor: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
+            borderRadius: '12px',
+            textTransform: 'none',
+            fontWeight: 600,
+          }}
         >
           Aktualisieren
         </Button>
-      </Box>
+      </Paper>
 
       {/* Summary Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined">
+          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #0891b2' }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary">Berichte</Typography>
-              <Typography variant="h5" fontWeight={600}>{totals.reportCount}</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>Berichte</Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#0f172a' }}>{totals.reportCount}</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined">
+          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #0891b2' }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary">Gesamtumsatz</Typography>
-              <Typography variant="h5" fontWeight={600} color="primary.main">
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>Gesamtumsatz</Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#0891b2' }}>
                 {formatCurrency(totals.totalRevenue)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined">
+          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #6366f1' }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary">Platform Gebühr</Typography>
-              <Typography variant="h5" fontWeight={600} color="info.main">
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>Plattformgebühr</Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#6366f1' }}>
                 {formatCurrency(totals.platformFee)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card variant="outlined">
+          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #16a34a' }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary">Geschäftsanteil</Typography>
-              <Typography variant="h5" fontWeight={600} color="success.main">
+              <Typography variant="caption" color="text.secondary" fontWeight={500}>Geschäftsanteil</Typography>
+              <Typography variant="h5" fontWeight={700} sx={{ color: '#16a34a' }}>
                 {formatCurrency(totals.businessRevenue)}
               </Typography>
             </CardContent>
@@ -292,7 +387,7 @@ const FinanzmanagementPage = () => {
       </Grid>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 2 }}>
+      <Paper sx={{ p: 2, mb: 2, borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={4}>
             <TextField
@@ -335,7 +430,7 @@ const FinanzmanagementPage = () => {
             >
               <MenuItem value="all">Alle Monate</MenuItem>
               {monthNames.map((name, idx) => (
-                <MenuItem key={idx} value={idx + 1}>{name}</MenuItem>
+                <MenuItem key={name} value={idx + 1}>{name}</MenuItem>
               ))}
             </TextField>
           </Grid>
@@ -348,22 +443,23 @@ const FinanzmanagementPage = () => {
       </Paper>
 
       {/* Reports Table */}
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: 'grey.50' }}>
+            <TableRow sx={{ bgcolor: '#f8fafc' }}>
               <TableCell><strong>Geschäft</strong></TableCell>
               <TableCell><strong>Zeitraum</strong></TableCell>
               <TableCell align="right"><strong>Umsatz</strong></TableCell>
               <TableCell align="right"><strong>Geschäftsanteil</strong></TableCell>
               <TableCell align="center"><strong>Rechnung</strong></TableCell>
+              <TableCell align="center"><strong>Auszahlung</strong></TableCell>
               <TableCell align="center"><strong>Aktion</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredReports.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
                     Keine Berichte gefunden
                   </Typography>
@@ -377,7 +473,7 @@ const FinanzmanagementPage = () => {
                   const hasInvoice = !!invoice;
                   
                   return (
-                    <TableRow key={report._id} hover>
+                    <TableRow key={report._id} hover sx={{ borderLeft: `3px solid ${hasInvoice ? '#16a34a' : '#f59e0b'}` }}>
                       <TableCell>
                         <Box display="flex" alignItems="center" gap={1}>
                           <BusinessIcon fontSize="small" color="action" />
@@ -424,6 +520,32 @@ const FinanzmanagementPage = () => {
                         )}
                       </TableCell>
                       <TableCell align="center">
+                        {(() => {
+                          const payout = getPayoutForReport(report);
+                          if (!payout) {
+                            return (
+                              <Chip
+                                icon={<PendingIcon fontSize="small" />}
+                                label="Offen"
+                                size="small"
+                                color="default"
+                                variant="outlined"
+                              />
+                            );
+                          }
+                          const display = payoutService.getPayoutStatusDisplay(payout.status);
+                          return (
+                            <Chip
+                              icon={payout.status === 'completed' ? <PaidIcon fontSize="small" /> : <PendingIcon fontSize="small" />}
+                              label={display.label}
+                              size="small"
+                              color={display.color}
+                              variant="outlined"
+                            />
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell align="center">
                         <Tooltip title={hasInvoice ? "Rechnung anzeigen & PDF" : "Rechnung erstellen"}>
                           <IconButton
                             color={hasInvoice ? "success" : "primary"}
@@ -456,16 +578,23 @@ const FinanzmanagementPage = () => {
       </TableContainer>
 
       {/* Invoice Dialog */}
-      <Dialog 
-        open={invoiceDialogOpen} 
+      <Dialog
+        open={invoiceDialogOpen}
         onClose={() => setInvoiceDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden' } }}
       >
-        <DialogTitle>
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+            color: 'white',
+            py: 2.5,
+          }}
+        >
           <Box display="flex" alignItems="center" gap={1}>
-            <InvoiceIcon color="primary" />
-            <Typography variant="h6">Rechnung</Typography>
+            <InvoiceIcon sx={{ color: 'white' }} />
+            <Typography variant="h6" fontWeight={700} sx={{ color: 'white' }}>Rechnung</Typography>
           </Box>
         </DialogTitle>
         <DialogContent dividers>
@@ -484,7 +613,7 @@ const FinanzmanagementPage = () => {
                 
                 return (
                   <Stack spacing={2}>
-                    <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+                    <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                       <Grid container spacing={2}>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Rechnungsnummer</Typography>
@@ -524,7 +653,7 @@ const FinanzmanagementPage = () => {
                     
                     <Divider />
                     
-                    <Box sx={{ bgcolor: 'primary.50', p: 2, borderRadius: 1 }}>
+                    <Box sx={{ backgroundColor: '#f0f9ff', borderLeft: '3px solid #0891b2', borderRadius: '12px', p: 2 }}>
                       <Grid container spacing={2}>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Netto</Typography>
@@ -542,6 +671,113 @@ const FinanzmanagementPage = () => {
                         </Grid>
                       </Grid>
                     </Box>
+
+                    <Divider />
+
+                    {/* Bank account info */}
+                    {(() => {
+                      const bank = getBankAccountForReport(selectedReport);
+                      return (
+                        <Box>
+                          <Box display="flex" alignItems="center" gap={1} mb={1}>
+                            <BankIcon fontSize="small" sx={{ color: '#0891b2' }} />
+                            <Typography variant="subtitle2">Bankverbindung des Inhabers</Typography>
+                          </Box>
+                          {bank?.iban ? (
+                            <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                              <Grid container spacing={1.5}>
+                                <Grid item xs={6}>
+                                  <Typography variant="caption" color="text.secondary">Kontoinhaber</Typography>
+                                  <Typography variant="body2" fontWeight={500}>{bank.accountHolder || '—'}</Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                  <Typography variant="caption" color="text.secondary">Bankname</Typography>
+                                  <Typography variant="body2" fontWeight={500}>{bank.bankName || '—'}</Typography>
+                                </Grid>
+                                <Grid item xs={8}>
+                                  <Typography variant="caption" color="text.secondary">IBAN</Typography>
+                                  <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>{bank.iban}</Typography>
+                                </Grid>
+                                <Grid item xs={4}>
+                                  <Typography variant="caption" color="text.secondary">BIC</Typography>
+                                  <Typography variant="body2" fontWeight={500} sx={{ fontFamily: 'monospace' }}>{bank.bic || '—'}</Typography>
+                                </Grid>
+                              </Grid>
+                            </Box>
+                          ) : (
+                            <Alert severity="warning" sx={{ borderRadius: '12px' }}>
+                              Keine Bankverbindung hinterlegt. Der Inhaber muss seine Bankdaten im Profil eingeben.
+                            </Alert>
+                          )}
+                        </Box>
+                      );
+                    })()}
+
+                    <Divider />
+
+                    {/* Payout actions */}
+                    {(() => {
+                      const payout = getPayoutForReport(selectedReport);
+                      if (payout?.status === 'completed') {
+                        return (
+                          <Alert icon={<PaidIcon />} severity="success" sx={{ borderRadius: '12px' }}>
+                            Auszahlung abgeschlossen — {formatCurrency(payout.amount)}
+                            {payout.completedAt && ` am ${new Date(payout.completedAt).toLocaleDateString('de-DE')}`}
+                          </Alert>
+                        );
+                      }
+                      if (payout?.status === 'pending' || payout?.status === 'processing') {
+                        return (
+                          <Box sx={{ textAlign: 'center' }}>
+                            <Alert severity="info" sx={{ borderRadius: '12px', mb: 1.5 }}>
+                              Auszahlung erstellt — {formatCurrency(payout.amount)} (ausstehend)
+                            </Alert>
+                            <Button
+                              variant="contained"
+                              startIcon={creatingPayout ? <CircularProgress size={18} color="inherit" /> : <PaidIcon />}
+                              onClick={() => handleCompletePayout(payout._id)}
+                              disabled={creatingPayout}
+                              sx={{
+                                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                '&:hover': { background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)' },
+                              }}
+                            >
+                              Als ausgezahlt markieren
+                            </Button>
+                          </Box>
+                        );
+                      }
+                      // No payout yet
+                      const bank = getBankAccountForReport(selectedReport);
+                      return (
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Button
+                            variant="contained"
+                            startIcon={creatingPayout ? <CircularProgress size={18} color="inherit" /> : <PayoutIcon />}
+                            onClick={() => handleCreatePayout(selectedReport)}
+                            disabled={creatingPayout || !bank?.iban}
+                            sx={{
+                              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+                              borderRadius: '12px',
+                              textTransform: 'none',
+                              fontWeight: 600,
+                              px: 3,
+                              '&:hover': { background: 'linear-gradient(135deg, #0e7490 0%, #155e75 100%)' },
+                            }}
+                          >
+                            Auszahlung erstellen ({formatCurrency(selectedReport?.financials?.businessRevenue || 0)})
+                          </Button>
+                          {!bank?.iban && (
+                            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                              Bankverbindung fehlt — Auszahlung nicht möglich
+                            </Typography>
+                          )}
+                        </Box>
+                      );
+                    })()}
                   </Stack>
                 );
               })()}
@@ -554,9 +790,17 @@ const FinanzmanagementPage = () => {
           </Button>
           <Button
             variant="contained"
-            startIcon={downloading ? <CircularProgress size={20} /> : <DownloadIcon />}
+            startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
             onClick={handleDownloadPDF}
             disabled={downloading || !getInvoiceForReport(selectedReport?._id)}
+            sx={{
+              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              '&:hover': { background: 'linear-gradient(135deg, #0e7490 0%, #155e75 100%)' },
+            }}
           >
             PDF Herunterladen
           </Button>
@@ -579,9 +823,9 @@ const FinanzmanagementPage = () => {
             zIndex: 9999
           }}
         >
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <CircularProgress sx={{ mb: 2 }} />
-            <Typography>Rechnung wird erstellt...</Typography>
+          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: '16px' }}>
+            <CircularProgress sx={{ mb: 2, color: '#0891b2' }} />
+            <Typography fontWeight={600} sx={{ color: '#0f172a' }}>Rechnung wird erstellt...</Typography>
           </Paper>
         </Box>
       )}

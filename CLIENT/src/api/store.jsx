@@ -8,11 +8,7 @@ const store = configureStore({
     auth: authReducer,
     crud: crudReducer,
   },
+  devTools: import.meta.env.DEV,
 });
-
-// Debug için
-if (typeof window !== 'undefined') {
-  window.store = store;
-}
 
 export default store;

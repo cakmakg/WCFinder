@@ -68,13 +68,13 @@ export default function ListScreen() {
 
     const query = searchQuery.toLowerCase();
     return businesses.filter((business) =>
-      business.name.toLowerCase().includes(query) ||
-      business.address?.toLowerCase().includes(query)
+      (business.name?.toLowerCase().includes(query) ?? false) ||
+      (typeof business.address === 'string' && business.address.toLowerCase().includes(query))
     );
   }, [businesses, searchQuery]);
 
   // Calculate distance for each business
-  const businessesWithDistance = useMemo(() => {
+  const businessesWithDistance = useMemo<Array<{ business: Business; distance?: number }>>(() => {
     if (!filteredBusinesses || !Array.isArray(filteredBusinesses)) return [];
     if (!location) return filteredBusinesses.map(b => ({ business: b }));
 

@@ -8,7 +8,7 @@ import SendIcon from "@mui/icons-material/Send";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import ClearIcon from "@mui/icons-material/Clear";
 
-const StartPageHero = ({ isSearching, setIsSearching }) => {
+const StartPageHero = ({ isSearching, setIsSearching, onPartnerClick }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -144,9 +144,9 @@ const StartPageHero = ({ isSearching, setIsSearching }) => {
               <Box
                 sx={{
                   backgroundColor: "white",
-                  borderRadius: 4,
+                  borderRadius: '16px',
                   p: { xs: 3, md: 4 },
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
                   position: "relative",
                   zIndex: 2,
                   backdropFilter: "blur(10px)",
@@ -175,7 +175,7 @@ const StartPageHero = ({ isSearching, setIsSearching }) => {
                   {t("startPage.subtitle") || "Buche ab € 1.60 pro Tag"}
                 </Typography>
 
-                {/* Arama Formu */}
+                {/* Search form */}
                 <TextField
                   fullWidth
                   variant="outlined"
@@ -226,16 +226,16 @@ const StartPageHero = ({ isSearching, setIsSearching }) => {
                       </InputAdornment>
                     ),
                     sx: {
-                      borderRadius: 2,
+                      borderRadius: '12px',
                       backgroundColor: "#f8fafc",
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#e2e8f0",
                       },
                       "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#14b8a6",
+                        borderColor: "#0891b2",
                       },
                       "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#14b8a6",
+                        borderColor: "#0891b2",
                       },
                     },
                   }}
@@ -248,18 +248,18 @@ const StartPageHero = ({ isSearching, setIsSearching }) => {
                   disabled={isSearching}
                   startIcon={!isSearching && <SendIcon />}
                   sx={{
-                    backgroundColor: "#14b8a6", // Teal color
+                    background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
                     color: "white",
                     py: 1.5,
                     fontSize: "1rem",
                     fontWeight: 600,
-                    borderRadius: 2,
+                    borderRadius: '12px',
                     textTransform: "none",
-                    boxShadow: "0 4px 14px rgba(20,184,166,0.3)",
+                    boxShadow: "0 4px 14px rgba(8,145,178,0.3)",
                     "&:hover": {
-                      backgroundColor: "#0d9488",
+                      background: "linear-gradient(135deg, #0e7490 0%, #155e75 100%)",
                       transform: "translateY(-2px)",
-                      boxShadow: "0 8px 24px rgba(20,184,166,0.4)",
+                      boxShadow: "0 8px 24px rgba(8,145,178,0.4)",
                     },
                     "&:disabled": {
                       backgroundColor: "#cbd5e1",
@@ -276,6 +276,37 @@ const StartPageHero = ({ isSearching, setIsSearching }) => {
                     t("startPage.searchButton") || "Suche"
                   )}
                 </Button>
+
+                {/* Partner werden CTA */}
+                <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#64748b', mb: 1, fontSize: '0.8rem' }}
+                  >
+                    Sie haben ein Geschäft?
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    onClick={onPartnerClick}
+                    size="small"
+                    sx={{
+                      borderColor: '#0891b2',
+                      color: '#0891b2',
+                      fontWeight: 600,
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontSize: '0.85rem',
+                      px: 3,
+                      '&:hover': {
+                        backgroundColor: '#0891b2',
+                        color: 'white',
+                        borderColor: '#0891b2',
+                      },
+                    }}
+                  >
+                    Partner werden
+                  </Button>
+                </Box>
               </Box>
             </motion.div>
           </Grid>

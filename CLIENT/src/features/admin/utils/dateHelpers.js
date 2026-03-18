@@ -11,7 +11,6 @@ import {
   subDays,
   subWeeks,
   subMonths,
-  addDays,
   differenceInDays,
   parseISO,
   isValid
@@ -57,12 +56,13 @@ export const getPresetRange = (preset) => {
         endDate: endOfDay(now)
       };
 
-    case 'yesterday':
+    case 'yesterday': {
       const yesterday = subDays(now, 1);
       return {
         startDate: startOfDay(yesterday),
         endDate: endOfDay(yesterday)
       };
+    }
 
     case 'last7days':
       return {
@@ -82,12 +82,13 @@ export const getPresetRange = (preset) => {
         endDate: endOfWeek(now, { locale: de })
       };
 
-    case 'lastWeek':
+    case 'lastWeek': {
       const lastWeek = subWeeks(now, 1);
       return {
         startDate: startOfWeek(lastWeek, { locale: de }),
         endDate: endOfWeek(lastWeek, { locale: de })
       };
+    }
 
     case 'month':
       return {
@@ -95,12 +96,13 @@ export const getPresetRange = (preset) => {
         endDate: endOfMonth(now)
       };
 
-    case 'lastMonth':
+    case 'lastMonth': {
       const lastMonth = subMonths(now, 1);
       return {
         startDate: startOfMonth(lastMonth),
         endDate: endOfMonth(lastMonth)
       };
+    }
 
     case 'year':
       return {
@@ -108,12 +110,13 @@ export const getPresetRange = (preset) => {
         endDate: endOfYear(now)
       };
 
-    case 'lastYear':
+    case 'lastYear': {
       const lastYear = subMonths(now, 12);
       return {
         startDate: startOfYear(lastYear),
         endDate: endOfYear(lastYear)
       };
+    }
 
     default:
       // Default to current month

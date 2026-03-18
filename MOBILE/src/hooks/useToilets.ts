@@ -48,7 +48,7 @@ export const useToilets = (params?: UseToiletsParams, options?: { enabled?: bool
 
       // If location params are provided, fetch businesses first, then their toilets
       if (params?.latitude && params?.longitude) {
-        console.log('[useToilets] Fetching businesses by location first...');
+        if (__DEV__) console.log('[useToilets] Fetching businesses by location first...');
         
         // Fetch businesses by location
         const businesses = await businessService.getAll({
@@ -58,7 +58,7 @@ export const useToilets = (params?: UseToiletsParams, options?: { enabled?: bool
           limit: params.limit || 100,
         });
 
-        console.log('[useToilets] Found businesses:', businesses.length);
+        if (__DEV__) console.log('[useToilets] Found businesses:', businesses.length);
 
         if (businesses.length === 0) {
           setToilets([]);
@@ -78,7 +78,7 @@ export const useToilets = (params?: UseToiletsParams, options?: { enabled?: bool
           const response = await api.get(`/toilets?businessIds=${businessIdsQuery}`);
           const fetchedToilets = response.data?.result || response.data?.data || [];
 
-          console.log('[useToilets] Fetched toilets in batch:', fetchedToilets.length);
+          if (__DEV__) console.log('[useToilets] Fetched toilets in batch:', fetchedToilets.length);
 
           // Add business info to each toilet
           const toiletsWithBusiness = fetchedToilets.map((toilet: any) => {
@@ -106,7 +106,7 @@ export const useToilets = (params?: UseToiletsParams, options?: { enabled?: bool
 
           allToilets.push(...toiletsWithBusiness);
         } catch (err: any) {
-          console.warn('[useToilets] Batch fetch failed, trying individual requests with delay...', err);
+          if (__DEV__) console.warn('[useToilets] Batch fetch failed, trying individual requests with delay...', err);
 
           // Fallback: Fetch individually with delay to avoid rate limiting
           for (let i = 0; i < businessIds.length; i++) {
@@ -152,22 +152,22 @@ export const useToilets = (params?: UseToiletsParams, options?: { enabled?: bool
                 console.error('[useToilets] Rate limit hit, stopping requests');
                 break;
               }
-              console.warn(`[useToilets] Failed to fetch toilets for business ${businessId}:`, err);
+              if (__DEV__) console.warn(`[useToilets] Failed to fetch toilets for business ${businessId}:`, err);
             }
           }
         }
 
-        console.log('[useToilets] Total fetched toilets:', allToilets.length);
+        if (__DEV__) console.log('[useToilets] Total fetched toilets:', allToilets.length);
         setToilets(allToilets);
       } else {
         // No location params - fetch all toilets
         const endpoint = `/toilets${params?.limit ? `?limit=${params.limit}` : ''}`;
-        console.log('[useToilets] Fetching all toilets:', endpoint);
+        if (__DEV__) console.log('[useToilets] Fetching all toilets:', endpoint);
 
         const response = await api.get(endpoint);
         const toiletsData = response.data?.data || response.data?.result || response.data || [];
 
-        console.log('[useToilets] Fetched toilets:', toiletsData.length);
+        if (__DEV__) console.log('[useToilets] Fetched toilets:', toiletsData.length);
         setToilets(Array.isArray(toiletsData) ? toiletsData : []);
       }
     } catch (err: any) {

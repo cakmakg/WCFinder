@@ -111,7 +111,7 @@ export const logError = (error, context = 'Unknown', metadata = {}) => {
   
   // In production, send to logging service
   // In development, log to console
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     // TODO: Integrate with logging service (e.g., Sentry, LogRocket)
     console.error('[ERROR]', logData);
   } else {

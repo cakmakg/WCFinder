@@ -22,6 +22,7 @@ import {
   StoreOutlined as StoreIcon,
   SaveOutlined as SaveIcon,
   ArrowBackOutlined as BackIcon,
+  AccountBalanceOutlined as BankIcon,
 } from "@mui/icons-material";
 import businessService from "../services/businessService";
 
@@ -85,6 +86,10 @@ export default function OwnerProfilePage() {
     openingHours: "",
     phone: "",
     ustIdNr: "",
+    accountHolder: "",
+    iban: "",
+    bic: "",
+    bankName: "",
   });
 
   useEffect(() => {
@@ -112,6 +117,10 @@ export default function OwnerProfilePage() {
           openingHours: b.openingHours || "",
           phone: b.phone || "",
           ustIdNr: b.ustIdNr || "",
+          accountHolder: b.bankAccount?.accountHolder || "",
+          iban: b.bankAccount?.iban || "",
+          bic: b.bankAccount?.bic || "",
+          bankName: b.bankAccount?.bankName || "",
         });
       }
     } catch {
@@ -141,6 +150,12 @@ export default function OwnerProfilePage() {
         openingHours: form.openingHours,
         phone: form.phone,
         ustIdNr: form.ustIdNr,
+        bankAccount: {
+          accountHolder: form.accountHolder,
+          iban: form.iban,
+          bic: form.bic,
+          bankName: form.bankName,
+        },
       });
       setSuccess(true);
     } catch (err) {
@@ -375,6 +390,61 @@ export default function OwnerProfilePage() {
                     fullWidth
                     size="small"
                     placeholder="Mo–Fr 08:00–20:00; Sa 09:00–18:00"
+                    sx={fieldSx}
+                  />
+                </Grid>
+              </Grid>
+
+              {/* Bankverbindung */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: "#94a3b8", fontWeight: 600 }}>
+                    BANKVERBINDUNG
+                  </Typography>
+                </Divider>
+              </Grid>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Kontoinhaber"
+                    value={form.accountHolder}
+                    onChange={handleChange("accountHolder")}
+                    fullWidth
+                    size="small"
+                    placeholder="Max Mustermann"
+                    sx={fieldSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Bankname"
+                    value={form.bankName}
+                    onChange={handleChange("bankName")}
+                    fullWidth
+                    size="small"
+                    placeholder="Deutsche Bank"
+                    sx={fieldSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    label="IBAN"
+                    value={form.iban}
+                    onChange={handleChange("iban")}
+                    fullWidth
+                    size="small"
+                    placeholder="DE89 3704 0044 0532 0130 00"
+                    sx={fieldSx}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label="BIC"
+                    value={form.bic}
+                    onChange={handleChange("bic")}
+                    fullWidth
+                    size="small"
+                    placeholder="COBADEFFXXX"
                     sx={fieldSx}
                   />
                 </Grid>

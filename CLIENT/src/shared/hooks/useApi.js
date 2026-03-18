@@ -9,7 +9,7 @@ import { handleApiError } from "../utils/errorHandler";
  * Generic API call hook
  * @param {boolean} requiresAuth - Auth token gerektirir mi?
  */
-export const useApi = (requiresAuth = true) => {
+export const useApi = (_requiresAuth = true) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 

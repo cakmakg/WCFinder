@@ -33,7 +33,7 @@ import { ExportButton } from '../shared';
  * BusinessPerformanceTable Component
  * Sortable table showing business performance metrics
  */
-const BusinessPerformanceTable = ({ data = [], dateRange }) => {
+const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
   const [orderBy, setOrderBy] = useState('totalRevenue');
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(0);

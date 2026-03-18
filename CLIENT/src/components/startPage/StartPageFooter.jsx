@@ -29,7 +29,7 @@ const StartPageFooter = ({ onPartnerClick }) => {
                 sx={{
                   width: 36,
                   height: 36,
-                  background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
+                  background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
                   borderRadius: 2,
                   display: "flex",
                   alignItems: "center",
@@ -89,12 +89,12 @@ const StartPageFooter = ({ onPartnerClick }) => {
                     e.preventDefault();
                     e.stopPropagation();
                   }
-                  // Production-safe handler - direkt fonksiyon çağrısı
+                  // Production-safe handler - direct function call
                   const handler = onPartnerClick;
                   if (handler && typeof handler === 'function') {
                     try {
                       handler();
-                    } catch (error) {
+                    } catch {
                       // Silent error handling for production
                     }
                   }

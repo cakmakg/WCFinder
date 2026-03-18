@@ -21,12 +21,9 @@ api.interceptors.request.use(
     
     // Token yoksa uyarı ver
     if (!token) {
-      console.error('❌ [paymentService] No token found in localStorage');
-      console.error('❌ [paymentService] Request will fail:', {
-        url: config.url,
-        method: config.method,
-        fullURL: `${config.baseURL}${config.url}`
-      });
+      if (import.meta.env.DEV) {
+        console.error('[paymentService] No token found in localStorage, request will fail:', config.url);
+      }
     } else {
       // Token'ı temizle (boşluk vs. varsa)
       token = token.trim();
@@ -37,21 +34,18 @@ api.interceptors.request.use(
       }
       
       config.headers.Authorization = `Bearer ${token}`;
-      
-      console.log('🔐 [paymentService] Request with token:', {
-        url: config.url,
-        method: config.method?.toUpperCase(),
-        hasToken: !!token,
-        tokenLength: token.length,
-        tokenPrefix: token.substring(0, 30) + '...',
-        authorizationHeader: config.headers.Authorization.substring(0, 40) + '...'
-      });
+
+      if (import.meta.env.DEV) {
+        console.log('[paymentService] Request:', config.method?.toUpperCase(), config.url);
+      }
     }
     
     return config;
   },
   (error) => {
-    console.error('❌ [paymentService] Request interceptor error:', error);
+    if (import.meta.env.DEV) {
+      console.error('[paymentService] Request interceptor error:', error.message);
+    }
     return Promise.reject(error);
   }
 );
@@ -59,27 +53,17 @@ api.interceptors.request.use(
 // Response interceptor - 401 hatası için token refresh
 api.interceptors.response.use(
   (response) => {
-    console.log('✅ [paymentService] Response received:', {
-      status: response.status,
-      url: response.config?.url
-    });
+    if (import.meta.env.DEV) {
+      console.log('[paymentService] Response:', response.status, response.config?.url);
+    }
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      const token = localStorage.getItem('token');
-      console.error('❌ [paymentService] 401 Unauthorized Error:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        hasToken: !!token,
-        tokenLength: token?.length,
-        authorizationHeader: error.config?.headers?.Authorization?.substring(0, 40) + '...'
-      });
-      
-      // Token geçersiz veya süresi dolmuş
-      console.warn('⚠️ [paymentService] Removing invalid token and redirecting to login');
+      if (import.meta.env.DEV) {
+        console.error('[paymentService] 401 Unauthorized:', error.config?.url);
+        console.warn('[paymentService] Removing invalid token and redirecting to login');
+      }
       
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
@@ -92,11 +76,9 @@ api.interceptors.response.use(
         }
       }
     } else {
-      console.error('❌ [paymentService] Response error:', {
-        status: error.response?.status,
-        url: error.config?.url,
-        message: error.response?.data?.message || error.message
-      });
+      if (import.meta.env.DEV) {
+        console.error('[paymentService] Response error:', error.response?.status, error.config?.url);
+      }
     }
     return Promise.reject(error);
   }

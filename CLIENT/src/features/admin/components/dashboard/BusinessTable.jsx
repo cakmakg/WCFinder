@@ -95,7 +95,7 @@ const BusinessTable = ({ data, loading }) => {
     >
       <Box sx={{ p: 2.5, borderBottom: "1px solid #e5e7eb" }}>
         <Typography variant="h6" fontWeight={600} sx={{ color: "#111827", fontSize: "1rem" }}>
-          İşletme Satışları
+          Betriebsumsätze
         </Typography>
       </Box>
       <TableContainer>
@@ -108,7 +108,7 @@ const BusinessTable = ({ data, loading }) => {
                   direction={orderBy === "businessName" ? order : "asc"}
                   onClick={() => handleRequestSort("businessName")}
                 >
-                  İşletme Adı
+                  Betriebsname
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -117,7 +117,7 @@ const BusinessTable = ({ data, loading }) => {
                   direction={orderBy === "owner" ? order : "asc"}
                   onClick={() => handleRequestSort("owner")}
                 >
-                  Sahip
+                  Inhaber
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">
@@ -126,7 +126,7 @@ const BusinessTable = ({ data, loading }) => {
                   direction={orderBy === "dailySales" ? order : "asc"}
                   onClick={() => handleRequestSort("dailySales")}
                 >
-                  Günlük Satış
+                  Tagesumsatz
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">
@@ -135,7 +135,7 @@ const BusinessTable = ({ data, loading }) => {
                   direction={orderBy === "monthlySales" ? order : "asc"}
                   onClick={() => handleRequestSort("monthlySales")}
                 >
-                  Aylık Satış
+                  Monatsumsatz
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">
@@ -144,7 +144,7 @@ const BusinessTable = ({ data, loading }) => {
                   direction={orderBy === "totalSales" ? order : "asc"}
                   onClick={() => handleRequestSort("totalSales")}
                 >
-                  Toplam Satış
+                  Gesamtumsatz
                 </TableSortLabel>
               </TableCell>
             </TableRow>
@@ -172,7 +172,7 @@ const BusinessTable = ({ data, loading }) => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25, 50]}
-        labelRowsPerPage="Sayfa başına:"
+        labelRowsPerPage="Pro Seite:"
         labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
       />
     </Paper>

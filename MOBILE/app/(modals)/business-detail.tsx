@@ -90,7 +90,7 @@ export default function BusinessDetailScreen() {
       });
     } catch (err: any) {
       console.error('Booking error:', err);
-      setBookingError(err.message || 'Failed to process booking');
+      setBookingError(err.message || 'Buchung konnte nicht verarbeitet werden');
     } finally {
       setBookingLoading(false);
     }
@@ -108,7 +108,7 @@ export default function BusinessDetailScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>Wird geladen...</Text>
       </View>
     );
   }
@@ -117,9 +117,9 @@ export default function BusinessDetailScreen() {
     return (
       <View style={styles.errorContainer}>
         <MaterialCommunityIcons name="alert-circle" size={64} color="#EF4444" />
-        <Text style={styles.errorText}>{error || 'Business not found'}</Text>
+        <Text style={styles.errorText}>{error || 'Geschäft nicht gefunden'}</Text>
         <Button onPress={handleBackPress} mode="contained">
-          Go Back
+          Zurück
         </Button>
       </View>
     );
@@ -214,7 +214,7 @@ export default function BusinessDetailScreen() {
         {/* Location Section */}
         {address && (
           <View style={styles.infoSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Location</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Standort</Text>
             <View style={styles.infoItem}>
               <MaterialCommunityIcons name="map-marker" size={20} color="#666" />
               <Text variant="bodyMedium" style={styles.infoText}>
@@ -227,7 +227,7 @@ export default function BusinessDetailScreen() {
         {/* Opening Hours Section */}
         {business.openingHours && (
           <View style={styles.infoSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Opening Hours</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Öffnungszeiten</Text>
             <View style={styles.infoItem}>
               <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
               <Text variant="bodyMedium" style={styles.infoText}>
@@ -244,12 +244,12 @@ export default function BusinessDetailScreen() {
           </View>
         ) : toilets.length > 0 && (
           <View style={styles.infoSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>Facilities</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Einrichtungen</Text>
             <View style={styles.facilitiesGrid}>
               <View style={styles.facilityItem}>
                 <MaterialCommunityIcons name="counter" size={24} color={theme.colors.primary} />
                 <Text variant="bodySmall" style={styles.facilityText}>
-                  {toilets.length} {toilets.length === 1 ? 'Toilet' : 'Toilets'}
+                  {toilets.length} {toilets.length === 1 ? 'Toilette' : 'Toiletten'}
                 </Text>
               </View>
               <View style={styles.facilityItem}>
@@ -262,7 +262,7 @@ export default function BusinessDetailScreen() {
                 <View style={styles.facilityItem}>
                   <MaterialCommunityIcons name="wheelchair-accessibility" size={24} color={theme.colors.primary} />
                   <Text variant="bodySmall" style={styles.facilityText}>
-                    Accessible
+                    Barrierefrei
                   </Text>
                 </View>
               )}
@@ -270,7 +270,7 @@ export default function BusinessDetailScreen() {
                 <View style={styles.facilityItem}>
                   <MaterialCommunityIcons name="baby-carriage" size={24} color={theme.colors.primary} />
                   <Text variant="bodySmall" style={styles.facilityText}>
-                    Baby Care
+                    Wickeltisch
                   </Text>
                 </View>
               )}
@@ -281,7 +281,7 @@ export default function BusinessDetailScreen() {
         {/* Description Section */}
         {business.description && (
           <View style={styles.infoSection}>
-            <Text variant="titleMedium" style={styles.sectionTitle}>About</Text>
+            <Text variant="titleMedium" style={styles.sectionTitle}>Über uns</Text>
             <Text variant="bodyMedium" style={styles.descriptionText}>
               {business.description}
             </Text>
@@ -309,7 +309,7 @@ export default function BusinessDetailScreen() {
           <View style={styles.bottomBarContent}>
             <View style={styles.priceInfo}>
               <Text variant="titleMedium" style={styles.priceText}>
-                € {toilets[0]?.fee?.toFixed(2) || '0.00'} / Day
+                € {toilets[0]?.fee?.toFixed(2) || '0.00'} / Tag
               </Text>
             </View>
             <Button

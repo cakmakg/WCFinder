@@ -53,7 +53,7 @@ export const calculateBusinessSales = (business, usages) => {
   };
 };
 
-export const generateMonthlyTrend = (usages, users, businesses) => {
+export const generateMonthlyTrend = (usages, _users, _businesses) => {
   const monthlyTrend = [];
   const now = new Date();
   const germanMonths = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];

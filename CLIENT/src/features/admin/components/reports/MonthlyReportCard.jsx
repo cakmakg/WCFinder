@@ -21,7 +21,7 @@ import {
  * MonthlyReportCard Component
  * Displays monthly summary statistics
  */
-const MonthlyReportCard = ({ year, month, usages = [], payments = [] }) => {
+const MonthlyReportCard = ({ year, month, usages = [], _payments = [] }) => {
   // Calculate monthly statistics
   const stats = useMemo(() => {
     const monthStart = new Date(year, month - 1, 1);

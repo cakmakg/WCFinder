@@ -225,10 +225,10 @@ const UsersTable = ({ users, usages, payments, loading }) => {
     >
       <Box sx={{ p: 2.5, borderBottom: "1px solid #e5e7eb" }}>
         <Typography variant="h6" fontWeight={600} sx={{ color: "#111827", fontSize: "1rem" }}>
-          Kullanıcı Yönetimi
+          Benutzerverwaltung
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-          Toplam {users.length} kullanıcı
+          Gesamt {users.length} Benutzer
         </Typography>
       </Box>
       <TableContainer>
@@ -242,7 +242,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   direction={orderBy === "username" ? order : "asc"}
                   onClick={() => handleRequestSort("username")}
                 >
-                  Kullanıcı
+                  Benutzer
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -260,7 +260,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   direction={orderBy === "role" ? order : "asc"}
                   onClick={() => handleRequestSort("role")}
                 >
-                  Rol
+                  Rolle
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">
@@ -269,7 +269,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   direction={orderBy === "totalBookings" ? order : "asc"}
                   onClick={() => handleRequestSort("totalBookings")}
                 >
-                  Rezervasyonlar
+                  Buchungen
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">
@@ -278,7 +278,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   direction={orderBy === "totalSpent" ? order : "asc"}
                   onClick={() => handleRequestSort("totalSpent")}
                 >
-                  Toplam Harcama
+                  Gesamtausgaben
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -287,7 +287,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   direction={orderBy === "createdAt" ? order : "asc"}
                   onClick={() => handleRequestSort("createdAt")}
                 >
-                  Kayıt Tarihi
+                  Registrierungsdatum
                 </TableSortLabel>
               </TableCell>
               <TableCell>
@@ -296,7 +296,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   direction={orderBy === "lastActivity" ? order : "asc"}
                   onClick={() => handleRequestSort("lastActivity")}
                 >
-                  Son Aktivite
+                  Letzte Aktivität
                 </TableSortLabel>
               </TableCell>
             </TableRow>
@@ -328,7 +328,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                           </Typography>
                           {!row.isActive && (
                             <Chip
-                              label="Pasif"
+                              label="Inaktiv"
                               size="small"
                               sx={{ height: 16, fontSize: "0.6rem", mt: 0.5 }}
                               color="error"
@@ -344,7 +344,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={row.role === "admin" ? "Admin" : row.role === "owner" ? "İşletme Sahibi" : "Kullanıcı"}
+                        label={row.role === "admin" ? "Admin" : row.role === "owner" ? "Betriebsinhaber" : "Benutzer"}
                         size="small"
                         sx={{
                           bgcolor: `${getRoleColor(row.role)}15`,
@@ -358,7 +358,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                         {row.totalBookings}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                        {row.completedBookings} tamamlandı
+                        {row.completedBookings} abgeschlossen
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
@@ -366,7 +366,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                         {formatCurrency(row.totalSpent)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                        {row.successfulPayments} ödeme
+                        {row.successfulPayments} Zahlungen
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -390,13 +390,13 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                               <Card sx={{ mb: 2 }}>
                                 <CardContent>
                                   <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                    İstatistikler
+                                    Statistiken
                                   </Typography>
                                   <Grid container spacing={2} sx={{ mt: 1 }}>
                                     <Grid item xs={6}>
                                       <Box>
                                         <Typography variant="caption" color="text.secondary">
-                                          Toplam Rezervasyon
+                                          Gesamte Buchungen
                                         </Typography>
                                         <Typography variant="h6" fontWeight={600}>
                                           {row.totalBookings}
@@ -406,7 +406,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                     <Grid item xs={6}>
                                       <Box>
                                         <Typography variant="caption" color="text.secondary">
-                                          Tamamlanan
+                                          Abgeschlossen
                                         </Typography>
                                         <Typography variant="h6" fontWeight={600} sx={{ color: "#16a34a" }}>
                                           {row.completedBookings}
@@ -416,7 +416,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                     <Grid item xs={6}>
                                       <Box>
                                         <Typography variant="caption" color="text.secondary">
-                                          Bekleyen
+                                          Ausstehend
                                         </Typography>
                                         <Typography variant="h6" fontWeight={600} sx={{ color: "#f59e0b" }}>
                                           {row.pendingBookings}
@@ -426,7 +426,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                     <Grid item xs={6}>
                                       <Box>
                                         <Typography variant="caption" color="text.secondary">
-                                          İptal Edilen
+                                          Storniert
                                         </Typography>
                                         <Typography variant="h6" fontWeight={600} sx={{ color: "#dc2626" }}>
                                           {row.cancelledBookings}
@@ -443,24 +443,24 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                               <Card sx={{ mb: 2 }}>
                                 <CardContent>
                                   <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                    Ödeme Özeti
+                                    Zahlungsübersicht
                                   </Typography>
                                   <Box sx={{ mt: 2 }}>
                                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                                      <Typography variant="body2">Toplam Ödeme:</Typography>
+                                      <Typography variant="body2">Gesamte Zahlungen:</Typography>
                                       <Typography variant="body2" fontWeight={600}>
                                         {row.totalPayments}
                                       </Typography>
                                     </Box>
                                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                                      <Typography variant="body2">Başarılı Ödeme:</Typography>
+                                      <Typography variant="body2">Erfolgreiche Zahlungen:</Typography>
                                       <Typography variant="body2" fontWeight={600} sx={{ color: "#16a34a" }}>
                                         {row.successfulPayments}
                                       </Typography>
                                     </Box>
                                     <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, pt: 2, borderTop: "1px solid #e5e7eb" }}>
                                       <Typography variant="body2" fontWeight={600}>
-                                        Toplam Harcama:
+                                        Gesamtausgaben:
                                       </Typography>
                                       <Typography variant="h6" fontWeight={700} sx={{ color: "#0891b2" }}>
                                         {formatCurrency(row.totalSpent)}
@@ -476,7 +476,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                               <Card>
                                 <CardContent>
                                   <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                    Son Ödemeler
+                                    Letzte Zahlungen
                                   </Typography>
                                   {userPayments.length > 0 ? (
                                     <Box sx={{ mt: 2 }}>
@@ -504,9 +504,9 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                             <Chip
                                               label={
                                                 payment.status === "succeeded" || payment.status === "paid"
-                                                  ? "Başarılı"
+                                                  ? "Erfolgreich"
                                                   : payment.status === "pending"
-                                                  ? "Bekliyor"
+                                                  ? "Ausstehend"
                                                   : payment.status
                                               }
                                               size="small"
@@ -533,13 +533,13 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                       ))}
                                       {userPayments.length > 5 && (
                                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                                          +{userPayments.length - 5} daha fazla ödeme
+                                          +{userPayments.length - 5} weitere Zahlungen
                                         </Typography>
                                       )}
                                     </Box>
                                   ) : (
                                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                      Henüz ödeme yapılmamış
+                                      Noch keine Zahlungen vorhanden
                                     </Typography>
                                   )}
                                 </CardContent>
@@ -551,7 +551,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                               <Card>
                                 <CardContent>
                                   <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                    Son Rezervasyonlar
+                                    Letzte Buchungen
                                   </Typography>
                                   {userUsages.length > 0 ? (
                                     <Box sx={{ mt: 2 }}>
@@ -572,7 +572,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                               {usage.businessId?.businessName || 
                                                usage.businessId?.name || 
                                                usage.businessName || 
-                                               "İşletme"}
+                                               "Betrieb"}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
                                               {formatDateTime(usage.startTime || usage.createdAt)}
@@ -585,13 +585,13 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                             <Chip
                                               label={
                                                 usage.status === "completed"
-                                                  ? "Tamamlandı"
+                                                  ? "Abgeschlossen"
                                                   : usage.status === "pending"
-                                                  ? "Bekliyor"
+                                                  ? "Ausstehend"
                                                   : usage.status === "confirmed"
-                                                  ? "Onaylandı"
+                                                  ? "Bestätigt"
                                                   : usage.status === "cancelled"
-                                                  ? "İptal"
+                                                  ? "Storniert"
                                                   : usage.status
                                               }
                                               size="small"
@@ -620,13 +620,13 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                       ))}
                                       {userUsages.length > 5 && (
                                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                                          +{userUsages.length - 5} daha fazla rezervasyon
+                                          +{userUsages.length - 5} weitere Buchungen
                                         </Typography>
                                       )}
                                     </Box>
                                   ) : (
                                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                      Henüz rezervasyon yapılmamış
+                                      Noch keine Buchungen vorhanden
                                     </Typography>
                                   )}
                                 </CardContent>
@@ -651,7 +651,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25, 50]}
-        labelRowsPerPage="Sayfa başına:"
+        labelRowsPerPage="Zeilen pro Seite:"
         labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
       />
     </Paper>

@@ -111,7 +111,7 @@ const ReportsPage = () => {
   }, [businesses, usages, dateRange]);
 
   // Revenue trend
-  const revenueTrend = useMemo(() => {
+  const _revenueTrend = useMemo(() => {
     return reportService.calculateRevenueTrend(usages, 'daily', 30);
   }, [usages]);
 
@@ -226,9 +226,9 @@ const ReportsPage = () => {
             }
           }}
         >
-          {tabs.map((tab, index) => (
+          {tabs.map((tab) => (
             <Tab
-              key={index}
+              key={tab.label}
               label={tab.label}
               icon={tab.icon}
               iconPosition="start"
@@ -247,8 +247,8 @@ const ReportsPage = () => {
                     Monatliche Übersicht
                   </Typography>
                   <Grid container spacing={2}>
-                    {getLastMonths(6).map((month, index) => (
-                      <Grid item xs={12} sm={6} md={4} key={index}>
+                    {getLastMonths(6).map((month) => (
+                      <Grid item xs={12} sm={6} md={4} key={`${month.year}-${month.month}`}>
                         <MonthlyReportCard
                           year={month.year}
                           month={month.month}

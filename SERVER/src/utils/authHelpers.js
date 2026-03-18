@@ -12,20 +12,22 @@ const logger = require("./logger");
 
 /**
  * Email normalize et (lowercase + trim)
- * @param {string} email 
+ * @param {string} email
  * @returns {string|null} Normalized email veya null
  */
 const normalizeEmail = (email) => {
-    return email ? email.trim().toLowerCase() : null;
+    if (!email || typeof email !== 'string') return null;
+    return email.trim().toLowerCase();
 };
 
 /**
  * Username normalize et (trim)
- * @param {string} username 
+ * @param {string} username
  * @returns {string|null} Normalized username veya null
  */
 const normalizeUsername = (username) => {
-    return username ? username.trim() : null;
+    if (!username || typeof username !== 'string') return null;
+    return username.trim();
 };
 
 /**

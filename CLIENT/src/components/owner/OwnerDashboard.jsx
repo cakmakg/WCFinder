@@ -19,8 +19,6 @@ import {
   People,
   AccountBalanceWallet,
 } from "@mui/icons-material";
-import { useTranslation } from "react-i18next";
-
 const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
   <Card
     sx={{
@@ -75,8 +73,6 @@ const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => (
 );
 
 const OwnerDashboard = ({ ownerStats, financialData }) => {
-  const { t } = useTranslation();
-
   const formatCurrency = (value) => {
     return `€${Number(value).toLocaleString("de-DE", {
       minimumFractionDigits: 2,
@@ -140,8 +136,8 @@ const OwnerDashboard = ({ ownerStats, financialData }) => {
     <Box>
       {/* Stats Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} lg={3} key={index}>
+        {stats.map((stat) => (
+          <Grid item xs={12} sm={6} lg={3} key={stat.title}>
             <StatCard {...stat} />
           </Grid>
         ))}
@@ -157,9 +153,9 @@ const OwnerDashboard = ({ ownerStats, financialData }) => {
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {recentActivity.length > 0 ? (
-                recentActivity.map((activity, index) => (
+                recentActivity.map((activity) => (
                   <Box
-                    key={index}
+                    key={activity._id || activity.id || `${activity.type}-${activity.createdAt}`}
                     sx={{
                       display: "flex",
                       alignItems: "center",
@@ -221,7 +217,7 @@ const OwnerDashboard = ({ ownerStats, financialData }) => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {topToilets.length > 0 ? (
                 topToilets.map((toilet, index) => (
-                  <Box key={index}>
+                  <Box key={toilet._id || toilet.id || toilet.name}>
                     <Box
                       sx={{
                         display: "flex",

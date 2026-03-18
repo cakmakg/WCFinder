@@ -86,7 +86,7 @@ const BusinessDetail = () => {
           err.message ||
           t('businessDetail.businessLoadError');
 
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.error('Error fetching business detail:', {
             businessId: id,
             status: err.response?.status,

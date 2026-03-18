@@ -16,7 +16,6 @@ export const UserMenu = ({
   onAdminPanelClick,
   onLogoutClick,
   currentUser,
-  theme,
 }) => {
   const { t } = useTranslation();
   return (

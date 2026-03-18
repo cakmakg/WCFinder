@@ -25,7 +25,7 @@ import {
 import { payoutService } from '../../services/payoutService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { formatDate } from '../../utils/dateHelpers';
-import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
+import { toastErrorNotify } from '../../../../helper/ToastNotify';
 
 /**
  * PayoutCreateDialog Component

@@ -84,7 +84,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
 
   const statusInfo = invoiceService.getInvoiceStatusDisplay(invoice.status);
   const daysUntilDue = invoiceService.getDaysUntilDue(invoice);
-  const canEdit = invoiceService.canEditInvoice(invoice.status);
+  const _canEdit = invoiceService.canEditInvoice(invoice.status);
   const canCancel = invoiceService.canCancelInvoice(invoice.status);
   const availableStatuses = invoiceService.getAvailableStatuses(invoice.status);
 
@@ -328,8 +328,8 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
               </Typography>
               {xrechnungValidation.errors?.length > 0 && (
                 <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                  {xrechnungValidation.errors.map((error, idx) => (
-                    <li key={idx}><Typography variant="caption">{error}</Typography></li>
+                  {xrechnungValidation.errors.map((error) => (
+                    <li key={error}><Typography variant="caption">{error}</Typography></li>
                   ))}
                 </ul>
               )}
@@ -450,7 +450,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
               </TableHead>
               <TableBody>
                 {invoice.positionen?.map((pos, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={pos._id || pos.positionsnummer || `pos-${index}`}>
                     <TableCell>{pos.positionsnummer || index + 1}</TableCell>
                     <TableCell>{pos.beschreibung}</TableCell>
                     <TableCell align="center">{pos.menge}</TableCell>
@@ -616,7 +616,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
               ) : (
                 <List dense>
                   {auditLog.map((entry, index) => (
-                    <ListItem key={index} divider={index < auditLog.length - 1}>
+                    <ListItem key={entry._id || entry.timestamp || `audit-${index}`} divider={index < auditLog.length - 1}>
                       <ListItemIcon>
                         <HistoryIcon fontSize="small" color="action" />
                       </ListItemIcon>

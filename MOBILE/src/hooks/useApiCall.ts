@@ -36,7 +36,7 @@ const useApiCall = () => {
     errorMessage,
     requiresAuth = true,
   }: ApiCallOptions) => {
-    console.log("🚀 [useApiCall] Starting API call:", {
+    if (__DEV__) console.log("🚀 [useApiCall] Starting API call:", {
       url,
       method: method.toUpperCase(),
       requiresAuth,
@@ -52,7 +52,7 @@ const useApiCall = () => {
       // Select axios instance based on auth requirement
       const axiosInstance = requiresAuth ? axiosWithToken : axiosPublic;
       
-      console.log("🔍 [useApiCall] Selected axios instance:", {
+      if (__DEV__) console.log("🔍 [useApiCall] Selected axios instance:", {
         type: requiresAuth ? 'axiosWithToken' : 'axiosPublic',
         baseURL: axiosInstance.defaults.baseURL,
         finalURL: `${axiosInstance.defaults.baseURL}${url}`,
@@ -60,13 +60,16 @@ const useApiCall = () => {
       
       let response;
       
+      const m = method.toLowerCase();
       try {
-        if (method.toLowerCase() === 'get' || method.toLowerCase() === 'delete') {
-          console.log("📡 [useApiCall] Making request:", method.toLowerCase(), url);
-          response = await axiosInstance[method.toLowerCase()](url);
+        if (m === 'get' || m === 'delete') {
+          if (__DEV__) console.log("📡 [useApiCall] Making request:", m, url);
+          response = m === 'get' ? await axiosInstance.get(url) : await axiosInstance.delete(url);
         } else {
-          console.log("📡 [useApiCall] Making request:", method.toLowerCase(), url, "with body:", maskSensitiveData(body));
-          response = await axiosInstance[method.toLowerCase()](url, body);
+          if (__DEV__) console.log("📡 [useApiCall] Making request:", m, url, "with body:", maskSensitiveData(body));
+          if (m === 'put') response = await axiosInstance.put(url, body);
+          else if (m === 'patch') response = await axiosInstance.patch(url, body);
+          else response = await axiosInstance.post(url, body);
         }
       } catch (requestError: any) {
         console.error("❌ [useApiCall] Request failed:", {
@@ -81,11 +84,11 @@ const useApiCall = () => {
       const { data } = response;
       const status = response.status;
       
-      console.log(`✅ API Call Success [${method.toUpperCase()} ${url}]:`, { status, data });
+      if (__DEV__) console.log(`✅ API Call Success [${method.toUpperCase()} ${url}]:`, { status, data });
       
       // Handle 204 No Content
       if (status === 204) {
-        console.log(`✅ 204 No Content - Success without body [${method.toUpperCase()} ${url}]`);
+        if (__DEV__) console.log(`✅ 204 No Content - Success without body [${method.toUpperCase()} ${url}]`);
         if (successAction) {
           dispatch(successAction(null));
         }
@@ -157,7 +160,7 @@ const useApiCall = () => {
       }
       
       // Throw enhanced error
-      const enhancedError = new Error(message);
+      const enhancedError = new Error(message ?? undefined);
       (enhancedError as any).response = error.response;
       (enhancedError as any).status = status;
       (enhancedError as any).originalError = error;

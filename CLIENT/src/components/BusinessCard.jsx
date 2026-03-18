@@ -10,7 +10,6 @@ import {
   CardActionArea,
   Box,
   Chip,
-  useTheme
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -29,7 +28,6 @@ const TYPE_COLORS = {
 
 const BusinessCard = ({ business, isSelected }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
   const navigate = useNavigate();
   const { currentUser, token } = useSelector((state) => state.auth);
 

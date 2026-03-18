@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Grid,
   Paper,
@@ -71,6 +71,11 @@ const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile }) 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [error, setError] = useState(null);
+  const deleteInputRef = useRef(null);
+
+  useEffect(() => {
+    if (deleteDialogOpen) deleteInputRef.current?.focus();
+  }, [deleteDialogOpen]);
 
   const handleSave = () => {
     onUpdateProfile(profileData);
@@ -253,9 +258,9 @@ const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile }) 
 
             {paymentMethods.length > 0 ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {paymentMethods.map((payment, index) => (
+                {paymentMethods.map((payment) => (
                   <Box
-                    key={index}
+                    key={payment._id || `${payment.paymentMethod}-${payment.paymentProvider}`}
                     sx={{
                       p: 2,
                       borderLeft: '3px solid #0891b2',
@@ -387,7 +392,7 @@ const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile }) 
             onChange={(e) => { setDeleteConfirmText(e.target.value); setError(null); }}
             placeholder="LÖSCHEN"
             sx={{ mt: 1, ...fieldSx }}
-            autoFocus
+            inputRef={deleteInputRef}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>

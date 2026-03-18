@@ -35,7 +35,7 @@ export const useOffline = () => {
     }
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) unsubscribe();
     };
   }, []);
 

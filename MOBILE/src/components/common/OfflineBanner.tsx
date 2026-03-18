@@ -14,7 +14,7 @@ interface OfflineBannerProps {
 }
 
 export const OfflineBanner: React.FC<OfflineBannerProps> = ({
-  message = 'İnternet bağlantısı yok',
+  message = 'Keine Internetverbindung',
 }) => {
   const isOnline = useIsOnline();
   const [slideAnim] = React.useState(new Animated.Value(-60));

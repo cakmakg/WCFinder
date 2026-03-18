@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l \"C:\\\\Users\\\\Gokhan\\\\Desktop\\\\WCFinder\\\\MOBILE\\\\src\"/**/*.ts \"C:\\\\Users\\\\Gokhan\\\\Desktop\\\\WCFinder\\\\MOBILE\\\\src\"/**/*.tsx)",
+      "Bash(npm install --save-dev jest jest-expo @testing-library/react-native @testing-library/jest-native ts-jest @types/jest)",
+      "Bash(npm install --save-dev jest jest-expo ts-jest @types/jest --legacy-peer-deps)",
+      "Bash(npx jest --forceExit)",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\(''jest-expo/jest-preset''\\), null, 2\\)\\)\")",
+      "Bash(npm ls jest-expo)",
+      "Bash(npm view jest-expo versions --json)",
+      "Bash(node -e \"const v=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/dev/stdin'',''utf8''\\)\\); console.log\\(v.filter\\(x=>x.startsWith\\(''54.''\\)\\).join\\('', ''\\)\\)\")",
+      "Bash(npm view jest-expo@\"~54.0.0\" version)",
+      "Bash(npm view jest-expo@54.0.17 peerDependencies)",
+      "Bash(npm view jest-expo@54.0.17 dependencies)",
+      "Bash(npm install --save-dev jest-expo@~54.0.0 jest@^29.7.0 @types/jest@^29.5.0 --legacy-peer-deps)",
+      "Bash(node -e \"console.log\\(''jest:'', require\\(''jest/package.json''\\).version, ''jest-expo:'', require\\(''jest-expo/package.json''\\).version\\)\")",
+      "Bash(npm install --save-dev ts-jest@^29.2.0 --legacy-peer-deps)",
+      "Bash(xargs grep -l \"owner\\\\|Owner\\\\|dashboard\\\\|Dashboard\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm test)",
+      "Bash(bash production-test-runner.sh)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm test -- --passWithNoTests)",
+      "Bash(npm run lint)",
+      "Bash(claude mcp add n8n-mcp -e MCP_MODE=stdio -e LOG_LEVEL=error -e DISABLE_CONSOLE_OUTPUT=true -- npx n8n-mcp)"
+    ]
+  }
+}

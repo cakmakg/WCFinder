@@ -16,23 +16,11 @@ const useAuthCall = () => {
   const dispatch = useDispatch();
   const apiCall = useApiCall();
 
-  /**
-   * Masks sensitive data (password) before logging
-   * @param {object} data - Data to mask
-   * @returns {object} - Masked data
-   */
-  const maskSensitiveData = (data) => {
-    if (!data || typeof data !== 'object') return data;
-    const safe = { ...data };
-    if (safe.password) safe.password = '***REDACTED***';
-    return safe;
-  };
-
   const login = async (userInfo) => {
-    // ✅ SECURITY: Never log password in plain text
-    console.log("🔐 [useAuthCall] Login called with:", maskSensitiveData(userInfo));
+    if (import.meta.env.DEV) {
+      console.log("🔐 [useAuthCall] Login called for:", userInfo?.username || userInfo?.email);
+    }
     try {
-      console.log("🔐 [useAuthCall] Calling apiCall with url: /auth/login");
       const data = await apiCall({
         url: "/auth/login",
         method: "post",
@@ -43,19 +31,19 @@ const useAuthCall = () => {
         successMessage: "Giriş işlemi başarılı.",
         requiresAuth: false,
       });
-      
-      console.log('🔐 Login response:', data);
-      
+
+      if (import.meta.env.DEV) {
+        console.log('🔐 Login success, token received:', !!data?.bearer?.accessToken || !!data?.token);
+      }
+
       if (data?.bearer?.accessToken || data?.token) {
-        // Login sonrası yönlendirme
-        // Eğer location.state.from varsa oraya git, yoksa /home'a git
         const redirectTo = location.state?.from || '/home';
         setTimeout(() => navigate(redirectTo, { replace: true }), 100);
       }
-      
+
       return data;
     } catch (error) {
-      console.error('❌ Login failed:', error);
+      if (import.meta.env.DEV) console.error('❌ Login failed:', error.message);
       throw error;
     }
   };
@@ -72,12 +60,11 @@ const useAuthCall = () => {
         successMessage: "Kayıt işlemi başarılı.",
         requiresAuth: false,
       });
-      
-      // Register sonrası login sayfasına yönlendir
+
       navigate("/login");
       return data;
     } catch (error) {
-      console.error('❌ Register failed:', error);
+      if (import.meta.env.DEV) console.error('❌ Register failed:', error.message);
       throw error;
     }
   };
@@ -94,10 +81,9 @@ const useAuthCall = () => {
         requiresAuth: true,
       });
     } catch (error) {
-      console.error('❌ Logout API failed:', error);
+      if (import.meta.env.DEV) console.error('❌ Logout API failed:', error.message);
       dispatch(logoutSuccess());
     } finally {
-      // Logout sonrası StartPage'e git
       navigate("/");
     }
   };

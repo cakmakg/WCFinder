@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   Container,
   Box,
@@ -15,7 +14,6 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import useApiCall from '../hook/useApiCall';
 
 const ForgotPasswordPage = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const apiCall = useApiCall();
   const [email, setEmail] = useState('');
@@ -41,7 +39,9 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    console.log('📧 [ForgotPasswordPage] Submitting email:', email);
+    if (import.meta.env.DEV) {
+      console.log('[ForgotPasswordPage] Submitting forgot-password request');
+    }
     setLoading(true);
     try {
       const response = await apiCall({
@@ -51,16 +51,22 @@ const ForgotPasswordPage = () => {
         requiresAuth: false,
       });
 
-      console.log('✅ [ForgotPasswordPage] Email sent successfully:', response);
+      if (import.meta.env.DEV) {
+        console.log('[ForgotPasswordPage] Forgot-password request succeeded');
+      }
       setSuccess(true);
     } catch (err) {
-      console.error('❌ [ForgotPasswordPage] Forgot password error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[ForgotPasswordPage] Forgot-password error:', err.message);
+      }
       // Backend always returns success for security, but show error if API call fails
       if (err.response?.status === 400 || err.response?.status === 500) {
         setError(err.response?.data?.message || 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
       } else {
         // Even if there's an error, show success message for security
-        console.log('⚠️ [ForgotPasswordPage] Showing success message despite error (security)');
+        if (import.meta.env.DEV) {
+          console.log('[ForgotPasswordPage] Showing success message despite error (security)');
+        }
         setSuccess(true);
       }
     } finally {
@@ -111,7 +117,6 @@ const ForgotPasswordPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
-              autoFocus
             />
 
             <Button

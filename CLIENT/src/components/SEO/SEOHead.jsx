@@ -58,12 +58,6 @@ const SEOHead = ({
       }
     };
 
-    // Remove existing meta tags first (to avoid duplicates)
-    const removeMetaTags = (selector) => {
-      const existing = document.querySelectorAll(selector);
-      existing.forEach(el => el.remove());
-    };
-
     // Basic Meta Tags
     setMetaTag('description', description);
     setMetaTag('keywords', keywords);

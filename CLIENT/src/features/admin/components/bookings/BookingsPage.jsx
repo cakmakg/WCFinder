@@ -178,13 +178,13 @@ const BookingsPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "completed":
-        return { bg: "#16a34a15", color: "#16a34a", label: "Tamamlandı" };
+        return { bg: "#16a34a15", color: "#16a34a", label: "Abgeschlossen" };
       case "pending":
-        return { bg: "#f59e0b15", color: "#f59e0b", label: "Bekliyor" };
+        return { bg: "#f59e0b15", color: "#f59e0b", label: "Ausstehend" };
       case "confirmed":
-        return { bg: "#0891b215", color: "#0891b2", label: "Onaylandı" };
+        return { bg: "#0891b215", color: "#0891b2", label: "Bestätigt" };
       case "cancelled":
-        return { bg: "#dc262615", color: "#dc2626", label: "İptal Edildi" };
+        return { bg: "#dc262615", color: "#dc2626", label: "Storniert" };
       default:
         return { bg: "#6b728015", color: "#6b7280", label: status };
     }
@@ -230,10 +230,10 @@ const BookingsPage = () => {
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
           <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
-            Rezervasyon Yönetimi
+            Buchungsverwaltung
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Tüm rezervasyonları görüntüleyin ve yönetin
+            Alle Buchungen anzeigen und verwalten
           </Typography>
         </Box>
         <Button
@@ -242,7 +242,7 @@ const BookingsPage = () => {
           onClick={fetchBookings}
           disabled={loading}
         >
-          Yenile
+          Aktualisieren
         </Button>
       </Box>
 
@@ -252,7 +252,7 @@ const BookingsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Toplam
+                Gesamt
               </Typography>
               <Typography variant="h5" fontWeight={700}>
                 {stats.total}
@@ -264,7 +264,7 @@ const BookingsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Tamamlanan
+                Abgeschlossen
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#16a34a" }}>
                 {stats.completed}
@@ -276,7 +276,7 @@ const BookingsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Bekleyen
+                Ausstehend
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#f59e0b" }}>
                 {stats.pending}
@@ -288,7 +288,7 @@ const BookingsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                İptal Edilen
+                Storniert
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#dc2626" }}>
                 {stats.cancelled}
@@ -300,7 +300,7 @@ const BookingsPage = () => {
           <Card>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
-                Toplam Gelir
+                Gesamtumsatz
               </Typography>
               <Typography variant="h5" fontWeight={700} sx={{ color: "#0891b2" }}>
                 {formatCurrency(stats.totalRevenue)}
@@ -317,7 +317,7 @@ const BookingsPage = () => {
             <TextField
               fullWidth
               size="small"
-              placeholder="Ara (İşletme, Kullanıcı, ID)..."
+              placeholder="Suchen (Betrieb, Benutzer, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -331,17 +331,17 @@ const BookingsPage = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>Durum</InputLabel>
+              <InputLabel>Status</InputLabel>
               <Select
                 value={statusFilter}
-                label="Durum"
+                label="Status"
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="all">Tümü</MenuItem>
-                <MenuItem value="pending">Bekleyen</MenuItem>
-                <MenuItem value="confirmed">Onaylandı</MenuItem>
-                <MenuItem value="completed">Tamamlandı</MenuItem>
-                <MenuItem value="cancelled">İptal Edildi</MenuItem>
+                <MenuItem value="all">Alle</MenuItem>
+                <MenuItem value="pending">Ausstehend</MenuItem>
+                <MenuItem value="confirmed">Bestätigt</MenuItem>
+                <MenuItem value="completed">Abgeschlossen</MenuItem>
+                <MenuItem value="cancelled">Storniert</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -388,7 +388,7 @@ const BookingsPage = () => {
                     direction={orderBy === "createdAt" ? order : "asc"}
                     onClick={() => handleRequestSort("createdAt")}
                   >
-                    Tarih
+                    Datum
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>
@@ -397,34 +397,34 @@ const BookingsPage = () => {
                     direction={orderBy === "businessId" ? order : "asc"}
                     onClick={() => handleRequestSort("businessId")}
                   >
-                    İşletme
+                    Betrieb
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>Kullanıcı</TableCell>
+                <TableCell>Benutzer</TableCell>
                 <TableCell align="right">
                   <TableSortLabel
                     active={orderBy === "totalFee"}
                     direction={orderBy === "totalFee" ? order : "asc"}
                     onClick={() => handleRequestSort("totalFee")}
                   >
-                    Tutar
+                    Betrag
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>Durum</TableCell>
-                <TableCell align="center">İşlemler</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell align="center">Aktionen</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    <Typography>Yükleniyor...</Typography>
+                    <Typography>Laden...</Typography>
                   </TableCell>
                 </TableRow>
               ) : paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    <Typography color="text.secondary">Kayıt bulunamadı</Typography>
+                    <Typography color="text.secondary">Keine Einträge gefunden</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -485,26 +485,26 @@ const BookingsPage = () => {
             setPage(0);
           }}
           rowsPerPageOptions={[10, 25, 50, 100]}
-          labelRowsPerPage="Sayfa başına:"
+          labelRowsPerPage="Einträge pro Seite:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
         />
       </Paper>
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Rezervasyon Detayları</DialogTitle>
+        <DialogTitle>Buchungsdetails</DialogTitle>
         <DialogContent>
           {selectedUsage && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Rezervasyon ID
+                  Buchungs-ID
                 </Typography>
                 <Typography variant="body1">{selectedUsage._id}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  İşletme
+                  Betrieb
                 </Typography>
                 <Typography variant="body1">
                   {selectedUsage.businessId?.businessName || "N/A"}
@@ -512,7 +512,7 @@ const BookingsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Kullanıcı
+                  Benutzer
                 </Typography>
                 <Typography variant="body1">
                   {selectedUsage.userId?.username || selectedUsage.userId?.email || "N/A"}
@@ -520,7 +520,7 @@ const BookingsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Tutar
+                  Betrag
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
                   {formatCurrency(selectedUsage.totalFee)}
@@ -528,7 +528,7 @@ const BookingsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Durum
+                  Status
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
                   <Chip
@@ -543,7 +543,7 @@ const BookingsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Oluşturulma Tarihi
+                  Erstellungsdatum
                 </Typography>
                 <Typography variant="body1">
                   {formatDate(selectedUsage.createdAt)}
@@ -552,7 +552,7 @@ const BookingsPage = () => {
               {selectedUsage.startTime && (
                 <Grid item xs={12} sm={6}>
                   <Typography variant="caption" color="text.secondary">
-                    Başlangıç
+                    Startzeit
                   </Typography>
                   <Typography variant="body1">
                     {formatDate(selectedUsage.startTime)}
@@ -563,22 +563,22 @@ const BookingsPage = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Kapat</Button>
+          <Button onClick={() => setViewDialogOpen(false)}>Schließen</Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Rezervasyonu Sil</DialogTitle>
+        <DialogTitle>Buchung löschen</DialogTitle>
         <DialogContent>
           <Typography>
-            Bu rezervasyonu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            Sind Sie sicher, dass Sie diese Buchung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>İptal</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Abbrechen</Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
-            Sil
+            Löschen
           </Button>
         </DialogActions>
       </Dialog>

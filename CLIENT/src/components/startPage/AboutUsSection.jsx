@@ -1,12 +1,18 @@
 import React from "react";
-import { Box, Container, Grid, Typography, Button } from "@mui/material";
+import { Box, Container, Grid, Typography, Button, Chip } from "@mui/material";
 import WcIcon from "@mui/icons-material/Wc";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import VerifiedIcon from "@mui/icons-material/Verified";
+import AccessibleIcon from "@mui/icons-material/Accessible";
+import SecurityIcon from "@mui/icons-material/Security";
 
 const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
   return (
     <Box
+      component="section"
       id="uber-uns"
+      aria-labelledby="about-heading"
+      className="speakable-about"
       sx={{
         py: { xs: 6, md: 10 },
         backgroundColor: "#f8fafc",
@@ -14,7 +20,7 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
         overflow: "hidden",
       }}
     >
-      {/* ✅ ASYMMETRIC: Decorative element on the left */}
+      {/* Decorative blob */}
       <Box
         sx={{
           position: "absolute",
@@ -22,16 +28,17 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
           left: "-150px",
           width: "400px",
           height: "400px",
-          background: "linear-gradient(135deg, rgba(20,184,166,0.08) 0%, transparent 100%)",
+          background:
+            "linear-gradient(135deg, rgba(8,145,178,0.08) 0%, transparent 100%)",
           borderRadius: "50%",
           filter: "blur(50px)",
           zIndex: 0,
         }}
       />
-      
+
       <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
-        {/* ✅ ASYMMETRIC: Reversed grid order (image on right, text on left) */}
         <Grid container spacing={6} alignItems="center">
+          {/* Visual */}
           <Grid item xs={12} md={7} sx={{ order: { xs: 2, md: 1 } }}>
             <Box
               sx={{
@@ -44,15 +51,10 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
                 justifyContent: "center",
                 mx: { xs: "auto", md: 0 },
                 position: "relative",
-                ml: { md: "auto" }, // ✅ ASYMMETRIC: Push to right
+                ml: { md: "auto" },
               }}
             >
-              <WcIcon
-                sx={{
-                  fontSize: { xs: 80, md: 120 },
-                  color: "#0891b2",
-                }}
-              />
+              <WcIcon sx={{ fontSize: { xs: 80, md: 120 }, color: "#0891b2" }} />
               <Box
                 sx={{
                   position: "absolute",
@@ -62,22 +64,22 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
                 }}
               >
                 <LocationOnIcon
-                  sx={{
-                    fontSize: { xs: 40, md: 60 },
-                    color: "#0891b2",
-                  }}
+                  sx={{ fontSize: { xs: 40, md: 60 }, color: "#0891b2" }}
                 />
               </Box>
             </Box>
           </Grid>
 
+          {/* Content */}
           <Grid item xs={12} md={5} sx={{ order: { xs: 1, md: 2 } }}>
             <Typography
+              component="h2"
+              id="about-heading"
               variant="h3"
               sx={{
-                fontWeight: "bold",
-                color: "#1e293b",
-                mb: 3,
+                fontWeight: 800,
+                color: "#0f172a",
+                mb: 2.5,
                 fontSize: { xs: "1.75rem", md: "2.5rem" },
                 textAlign: { xs: "center", md: "left" },
               }}
@@ -85,28 +87,21 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
               Über uns
             </Typography>
 
+            {/* Entity-rich description — AI/GEO readable */}
             <Typography
               variant="body1"
               sx={{
                 color: "#64748b",
                 mb: 2,
                 fontSize: { xs: "0.95rem", md: "1.05rem" },
-                lineHeight: 1.7,
+                lineHeight: 1.75,
               }}
             >
-              Du bist unterwegs in der Stadt und brauchst dringend eine saubere Toilette?
-            </Typography>
-
-            <Typography
-              variant="body1"
-              sx={{
-                color: "#64748b",
-                mb: 2,
-                fontSize: { xs: "0.95rem", md: "1.05rem" },
-                lineHeight: 1.7,
-              }}
-            >
-              Du möchtest sicher sein, dass die Toilette verfügbar und sauber ist, bevor du ankommst?
+              <strong style={{ color: "#0f172a" }}>WCFinder</strong> ist
+              Deutschlands führende Online-Buchungsplattform für saubere,
+              barrierefreie öffentliche Toiletten. Wir verbinden Nutzer mit
+              geprüften WC-Anlagen in Cafés, Restaurants, Hotels und Geschäften
+              in über 50 deutschen Städten.
             </Typography>
 
             <Typography
@@ -115,29 +110,69 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
                 color: "#64748b",
                 mb: 3,
                 fontSize: { xs: "0.95rem", md: "1.05rem" },
-                lineHeight: 1.7,
+                lineHeight: 1.75,
               }}
             >
-              Du suchst eine bequeme Lösung, um öffentliche Toiletten zu finden und zu reservieren?
+              Ob in Berlin, Hamburg, München oder Köln – mit WCFinder finden und
+              reservieren Sie in weniger als 2 Minuten eine saubere Toilette in
+              Ihrer Nähe. Buchen und bezahlen Sie sicher online, ohne Wartezeit
+              vor Ort.
             </Typography>
+
+            {/* Trust badges */}
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
+              <Chip
+                icon={<VerifiedIcon sx={{ fontSize: 16 }} />}
+                label="Seit 2024 in Deutschland"
+                size="small"
+                sx={{
+                  backgroundColor: "rgba(8,145,178,0.08)",
+                  color: "#0891b2",
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  "& .MuiChip-icon": { color: "#0891b2" },
+                }}
+              />
+              <Chip
+                icon={<SecurityIcon sx={{ fontSize: 16 }} />}
+                label="DSGVO-konform"
+                size="small"
+                sx={{
+                  backgroundColor: "rgba(8,145,178,0.08)",
+                  color: "#0891b2",
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  "& .MuiChip-icon": { color: "#0891b2" },
+                }}
+              />
+              <Chip
+                icon={<AccessibleIcon sx={{ fontSize: 16 }} />}
+                label="Barrierefreie Optionen"
+                size="small"
+                sx={{
+                  backgroundColor: "rgba(8,145,178,0.08)",
+                  color: "#0891b2",
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  "& .MuiChip-icon": { color: "#0891b2" },
+                }}
+              />
+            </Box>
 
             <Box
               sx={{
-                backgroundColor: "white",
+                backgroundColor: "#f0f9ff",
                 p: 3,
-                borderRadius: 2,
-                borderLeft: "4px solid #0891b2",
+                borderRadius: "14px",
+                borderLeft: "3px solid #0891b2",
                 mb: 3,
               }}
             >
               <Typography
                 variant="h6"
-                sx={{
-                  fontWeight: "bold",
-                  color: "#0891b2",
-                }}
+                sx={{ fontWeight: 700, color: "#0891b2", lineHeight: 1.4 }}
               >
-                Die Lösung für alle deine Probleme ist WCFinder
+                Die Lösung für saubere öffentliche Toiletten in Deutschland.
               </Typography>
             </Box>
 
@@ -147,16 +182,18 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
                 size="large"
                 onClick={onBookNow}
                 sx={{
-                  backgroundColor: "#0891b2",
+                  background:
+                    "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
                   color: "white",
                   px: 5,
                   py: 1.5,
                   fontSize: "1.05rem",
                   fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: 2,
+                  borderRadius: "12px",
                   "&:hover": {
-                    backgroundColor: "#0e7490",
+                    background:
+                      "linear-gradient(135deg, #0e7490 0%, #155e75 100%)",
                   },
                 }}
               >
@@ -171,14 +208,12 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
                     e.preventDefault();
                     e.stopPropagation();
                   }
-                  // Production-safe handler - direkt fonksiyon çağrısı
                   const handler = onPartnerClick;
-                  if (handler && typeof handler === 'function') {
+                  if (handler && typeof handler === "function") {
                     try {
                       handler();
-                    } catch (error) {
-                      // Silent error handling for production
-                      // Error'u logla ama kullanıcıya gösterme
+                    } catch {
+                      // silent
                     }
                   }
                 }}
@@ -190,7 +225,7 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
                   fontSize: "1.05rem",
                   fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: 2,
+                  borderRadius: "12px",
                   "&:hover": {
                     backgroundColor: "#0891b2",
                     color: "white",
@@ -209,4 +244,3 @@ const AboutUsSection = ({ onBookNow, onPartnerClick }) => {
 };
 
 export default AboutUsSection;
-

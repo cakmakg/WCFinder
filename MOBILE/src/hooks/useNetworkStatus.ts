@@ -45,7 +45,7 @@ export const useNetworkStatus = () => {
         details: state.details,
       });
 
-      console.log('[NetworkStatus] Initial state:', {
+      if (__DEV__) console.log('[NetworkStatus] Initial state:', {
         isConnected: state.isConnected,
         isInternetReachable: state.isInternetReachable,
         type: state.type,
@@ -63,7 +63,7 @@ export const useNetworkStatus = () => {
 
       setNetworkStatus(newStatus);
 
-      console.log('[NetworkStatus] State changed:', {
+      if (__DEV__) console.log('[NetworkStatus] State changed:', {
         isConnected: newStatus.isConnected,
         isInternetReachable: newStatus.isInternetReachable,
         type: newStatus.type,

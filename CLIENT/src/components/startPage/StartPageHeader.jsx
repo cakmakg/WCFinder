@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import WcIcon from "@mui/icons-material/Wc";
 
-const StartPageHeader = ({ onLoginClick }) => {
+const StartPageHeader = ({ onLoginClick, onPartnerClick }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -33,7 +33,7 @@ const StartPageHeader = ({ onLoginClick }) => {
             sx={{
               width: 36,
               height: 36,
-              background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
+              background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
               borderRadius: 2,
               display: "flex",
               alignItems: "center",
@@ -81,6 +81,21 @@ const StartPageHeader = ({ onLoginClick }) => {
               {t("startPage.reviews")}
             </Typography>
             <Button
+              variant="text"
+              onClick={onPartnerClick}
+              sx={{
+                color: "#0891b2",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                textTransform: "none",
+                "&:hover": {
+                  backgroundColor: "rgba(8,145,178,0.08)",
+                },
+              }}
+            >
+              Für Unternehmen
+            </Button>
+            <Button
               variant="outlined"
               onClick={onLoginClick}
               sx={{
@@ -88,7 +103,7 @@ const StartPageHeader = ({ onLoginClick }) => {
                 color: "#0891b2",
                 fontWeight: 600,
                 borderWidth: 1.5,
-                borderRadius: 2,
+                borderRadius: '12px',
                 px: 2.5,
                 py: 0.75,
                 fontSize: "0.875rem",
@@ -105,26 +120,43 @@ const StartPageHeader = ({ onLoginClick }) => {
         )}
 
         {isMobile && (
-          <Button
-            variant="outlined"
-            onClick={onLoginClick}
-            size="small"
-            sx={{
-              borderColor: "#0891b2",
-              color: "#0891b2",
-              fontWeight: 600,
-              borderWidth: 1.5,
-              borderRadius: 2,
-              fontSize: "0.8rem",
-              "&:hover": {
-                backgroundColor: "#0891b2",
-                color: "white",
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Button
+              variant="text"
+              onClick={onPartnerClick}
+              size="small"
+              sx={{
+                color: "#0891b2",
+                fontWeight: 600,
+                fontSize: "0.75rem",
+                textTransform: "none",
+                minWidth: "auto",
+                px: 1,
+              }}
+            >
+              Partner
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={onLoginClick}
+              size="small"
+              sx={{
+                borderColor: "#0891b2",
+                color: "#0891b2",
+                fontWeight: 600,
                 borderWidth: 1.5,
-              },
-            }}
-          >
-            {t("startPage.loginButtonMobile")}
-          </Button>
+                borderRadius: '12px',
+                fontSize: "0.8rem",
+                "&:hover": {
+                  backgroundColor: "#0891b2",
+                  color: "white",
+                  borderWidth: 1.5,
+                },
+              }}
+            >
+              {t("startPage.loginButtonMobile")}
+            </Button>
+          </Box>
         )}
       </Toolbar>
     </AppBar>

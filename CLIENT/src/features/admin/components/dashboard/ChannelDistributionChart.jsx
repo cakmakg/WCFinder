@@ -41,7 +41,7 @@ const ChannelDistributionChart = ({ data, loading }) => {
             outerRadius={110}
             paddingAngle={2}
             dataKey="value"
-            label={({ name, percent }) => {
+            label={({ _name, percent }) => {
               if (percent < 0.05) return '';
               return `${(percent * 100).toFixed(0)}%`;
             }}
@@ -69,7 +69,7 @@ const ChannelDistributionChart = ({ data, loading }) => {
       </ResponsiveContainer>
       <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', mt: 2 }}>
         {data.map((item, index) => (
-          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box key={item.name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box
               sx={{
                 width: 12,

@@ -22,6 +22,7 @@ import ProfileTab from '../components/bookings/ProfileTab';
 import BookingDetailsModal from '../components/bookings/BookingDetailsModal';
 import { useBookings } from '../hooks/useBookings';
 import { useBookingDetails } from '../hooks/useBookingDetails';
+import { getUserData } from '../utils/userStorage';
 import useApiCall from '../hook/useApiCall';
 import useAuthCall from '../hook/useAuthCall';
 import { userUpdateSuccess, clearAuth } from '../features/authSlice';
@@ -38,7 +39,6 @@ const MyBookingsPage = () => {
 
   const localStorageUser = useMemo(() => {
     try {
-      const { getUserData } = require('../utils/userStorage');
       return getUserData();
     } catch {
       return null;

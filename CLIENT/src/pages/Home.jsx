@@ -22,7 +22,6 @@ import SEOHead from '../components/SEO/SEOHead';
 export default function Home() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   
   const navigate = useNavigate();
   const location = useLocation();

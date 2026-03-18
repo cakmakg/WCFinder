@@ -194,7 +194,7 @@ const PayoutHistoryTable = () => {
   };
 
   // Handle export
-  const handleExport = async (format) => {
+  const _handleExport = async (format) => {
     const columns = [
       { key: 'createdAt', label: 'Datum' },
       { key: 'businessName', label: 'Geschäft' },

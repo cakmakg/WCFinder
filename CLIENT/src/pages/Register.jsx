@@ -116,11 +116,13 @@ const Register = () => {
               <Box component="form" onSubmit={(e) => { e.preventDefault(); }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Box>
-                    <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                    <Box component="label" htmlFor="reg-username" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                       Benutzername
                     </Box>
                     <input
+                      id="reg-username"
                       name="username"
+                      aria-label="Benutzername"
                       value={values.username}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -133,11 +135,13 @@ const Register = () => {
 
                   <Box sx={{ display: "flex", gap: 2 }}>
                     <Box sx={{ flex: 1 }}>
-                      <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                      <Box component="label" htmlFor="reg-firstName" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                         Vorname
                       </Box>
                       <input
+                        id="reg-firstName"
                         name="firstName"
+                        aria-label="Vorname"
                         value={values.firstName}
                         onChange={handleChange}
                         onBlur={handleBlur}
@@ -148,11 +152,13 @@ const Register = () => {
                       )}
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                      <Box component="label" htmlFor="reg-lastName" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                         Nachname
                       </Box>
                       <input
+                        id="reg-lastName"
                         name="lastName"
+                        aria-label="Nachname"
                         value={values.lastName}
                         onChange={handleChange}
                         onBlur={handleBlur}
@@ -165,12 +171,14 @@ const Register = () => {
                   </Box>
 
                   <Box>
-                    <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                    <Box component="label" htmlFor="reg-email" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                       E-Mail-Adresse
                     </Box>
                     <input
+                      id="reg-email"
                       name="email"
                       type="email"
+                      aria-label="E-Mail-Adresse"
                       value={values.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -182,12 +190,14 @@ const Register = () => {
                   </Box>
 
                   <Box>
-                    <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                    <Box component="label" htmlFor="reg-password" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                       Kennwort
                     </Box>
                     <input
+                      id="reg-password"
                       name="password"
                       type="password"
+                      aria-label="Kennwort"
                       value={values.password}
                       onChange={handleChange}
                       onBlur={handleBlur}

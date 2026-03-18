@@ -124,7 +124,7 @@ const OwnerPanel = () => {
       } catch {
         setPendingPayout(0);
       }
-    } catch (err) {
+    } catch {
       setError("Fehler beim Laden der Daten.");
     } finally {
       setLoading(false);

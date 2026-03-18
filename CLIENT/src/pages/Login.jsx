@@ -13,7 +13,7 @@ import AuthImage from "../components/AuthImage";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import useAuthCall from "../hook/useAuthCall";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 const Login = () => {
@@ -21,12 +21,12 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useSelector((state) => state.auth);
-  
-  // Login sayfasına gelirken gönderilen state'i al
+  const [pendingApproval, setPendingApproval] = useState(false);
+
   const from = location.state?.from || '/';
   const businessName = location.state?.businessName;
 
-  // Kullanıcı zaten login yapmışsa redirect et
+  // Redirect if user is already logged in
   useEffect(() => {
     if (currentUser) {
       navigate(from, { replace: true });
@@ -66,13 +66,19 @@ const Login = () => {
             <LockIcon size="30" />
           </Avatar>
           <Typography variant="h4" align="center" mb={2} color="secondary.main">
-            SIGN IN
+            ANMELDEN
           </Typography>
 
-          {/* İşletmeye gitmek için login yapması gerektiğini bildiren mesaj */}
+          {/* Info message when redirected from a business page */}
           {businessName && (
             <Alert severity="info" sx={{ mb: 3 }}>
               Bitte melden Sie sich an, um <strong>{businessName}</strong> zu buchen
+            </Alert>
+          )}
+
+          {pendingApproval && (
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              Ihr Konto wartet noch auf die Genehmigung durch den Administrator. Sie erhalten eine E-Mail, sobald Ihr Konto aktiviert wurde.
             </Alert>
           )}
 
@@ -80,13 +86,14 @@ const Login = () => {
             initialValues={{ email: "", password: "" }}
             validationSchema={loginSchema}
             onSubmit={async (values, actions) => {
+              setPendingApproval(false);
               try {
-                console.log('🔐 [Login] Form submit with values:', { email: values.email, hasPassword: !!values.password });
                 await login(values);
                 actions.resetForm();
               } catch (error) {
-                console.error('❌ [Login] Login failed:', error);
-                // Error zaten useApiCall içinde toast ile gösteriliyor
+                if (error?.response?.status === 403 && error?.response?.data?.code === "ACCOUNT_PENDING_APPROVAL") {
+                  setPendingApproval(true);
+                }
               } finally {
                 actions.setSubmitting(false);
               }
@@ -96,12 +103,14 @@ const Login = () => {
               <Box component="form" onSubmit={handleSubmit}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Box>
-                    <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                    <Box component="label" htmlFor="login-email" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                       E-Mail-Adresse
                     </Box>
                     <input
+                      id="login-email"
                       name="email"
                       type="email"
+                      aria-label="E-Mail-Adresse"
                       value={values.email}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -114,12 +123,14 @@ const Login = () => {
                   </Box>
 
                   <Box>
-                    <Box component="label" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
+                    <Box component="label" htmlFor="login-password" sx={{ display: 'block', mb: 0.5, fontSize: 14, color: 'text.secondary' }}>
                       Kennwort
                     </Box>
                     <input
+                      id="login-password"
                       name="password"
                       type="password"
+                      aria-label="Kennwort"
                       value={values.password}
                       onChange={handleChange}
                       onBlur={handleBlur}
@@ -137,7 +148,7 @@ const Login = () => {
                     variant="contained"
                     disabled={isSubmitting}
                     sx={{
-                      background: "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
+                      background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
                       py: 1.5,
                       fontSize: "1rem",
                       fontWeight: 600,
@@ -151,7 +162,7 @@ const Login = () => {
             )}
           </Formik>
 
-          {/* Passwort vergessen linki form dışında - form submit sorununu önler */}
+          {/* Forgot password link — outside form to avoid submit issues */}
           <Box sx={{ textAlign: "center", marginTop: "1rem" }}>
             <Typography
               component="span"
@@ -180,7 +191,7 @@ const Login = () => {
                 if (navFunction && typeof navFunction === 'function') {
                   try {
                     navFunction('/forgot-password');
-                  } catch (navError) {
+                  } catch {
                     // Fallback: direct navigation
                     if (typeof window !== 'undefined') {
                       window.location.href = '/forgot-password';
@@ -223,7 +234,7 @@ const Login = () => {
                 },
               }}
             >
-              Don't have an account? Sign Up
+              Noch kein Konto? Jetzt registrieren
             </Typography>
           </Box>
         </Grid>

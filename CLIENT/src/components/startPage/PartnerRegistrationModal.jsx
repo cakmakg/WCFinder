@@ -15,6 +15,9 @@ import {
   Stepper,
   Step,
   StepLabel,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import PersonIcon from '@mui/icons-material/Person';
@@ -25,9 +28,9 @@ const steps = ['Owner Informationen', 'Geschäftsinformationen'];
 const PartnerRegistrationModal = ({ open, onClose }) => {
   const apiCall = useApiCall();
   
-  // Modal state değişikliklerini izle (production-safe)
+  // Track modal state changes (production-safe)
   useEffect(() => {
-    // Modal açıldığında body scroll'unu engelle
+    // Prevent body scroll when modal is open
     if (open) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -42,7 +45,7 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  // Owner bilgileri
+  // Owner information
   const [ownerData, setOwnerData] = useState({
     username: '',
     email: '',
@@ -52,7 +55,7 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
     lastName: '',
   });
 
-  // Business bilgileri
+  // Business information
   const [businessData, setBusinessData] = useState({
     businessName: '',
     businessType: '',
@@ -61,10 +64,6 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
       city: '',
       postalCode: '',
       country: 'Deutschland',
-    },
-    location: {
-      latitude: '',
-      longitude: '',
     },
     openingHours: '',
     phone: '',
@@ -114,16 +113,9 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
   };
 
   const validateBusinessStep = () => {
-    if (!businessData.businessName || !businessData.businessType || !businessData.address.street || 
-        !businessData.address.city || !businessData.address.postalCode || !businessData.location.latitude || 
-        !businessData.location.longitude) {
+    if (!businessData.businessName || !businessData.businessType || !businessData.address.street ||
+        !businessData.address.city || !businessData.address.postalCode) {
       setError('Bitte füllen Sie alle Pflichtfelder aus.');
-      return false;
-    }
-    const lat = parseFloat(businessData.location.latitude);
-    const lng = parseFloat(businessData.location.longitude);
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setError('Bitte geben Sie gültige Koordinaten ein (Breitengrad: -90 bis 90, Längengrad: -180 bis 180).');
       return false;
     }
     return true;
@@ -151,7 +143,7 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
     setError(null);
 
     try {
-      // Backend'e gönderilecek data
+      // Data to send to backend
       const submissionData = {
         owner: {
           username: ownerData.username,
@@ -164,13 +156,6 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
           businessName: businessData.businessName,
           businessType: businessData.businessType,
           address: businessData.address,
-          location: {
-            type: 'Point',
-            coordinates: [
-              parseFloat(businessData.location.longitude),
-              parseFloat(businessData.location.latitude),
-            ],
-          },
           openingHours: businessData.openingHours || undefined,
           phone: businessData.phone || undefined,
           ustIdNr: businessData.ustIdNr || undefined,
@@ -213,10 +198,6 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
           postalCode: '',
           country: 'Deutschland',
         },
-        location: {
-          latitude: '',
-          longitude: '',
-        },
         openingHours: '',
         phone: '',
         ustIdNr: '',
@@ -238,7 +219,7 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
         }}
         PaperProps={{
           sx: {
-            borderRadius: 3,
+            borderRadius: '16px',
           },
         }}
       >
@@ -368,21 +349,25 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Geschäftstyp *"
-                      value={businessData.businessType}
-                      onChange={handleBusinessChange('businessType')}
-                      required
-                    >
-                      <MenuItem value="Cafe">Cafe</MenuItem>
-                      <MenuItem value="Restaurant">Restaurant</MenuItem>
-                      <MenuItem value="Hotel">Hotel</MenuItem>
-                      <MenuItem value="Shop">Shop</MenuItem>
-                      <MenuItem value="Gas Station">Tankstelle</MenuItem>
-                      <MenuItem value="Other">Andere</MenuItem>
-                    </TextField>
+                    <FormControl fullWidth required>
+                      <InputLabel id="business-type-label">Geschäftstyp</InputLabel>
+                      <Select
+                        labelId="business-type-label"
+                        value={businessData.businessType}
+                        label="Geschäftstyp"
+                        onChange={handleBusinessChange('businessType')}
+                        MenuProps={{
+                          sx: { zIndex: 10000 },
+                        }}
+                      >
+                        <MenuItem value="Cafe">Cafe</MenuItem>
+                        <MenuItem value="Restaurant">Restaurant</MenuItem>
+                        <MenuItem value="Hotel">Hotel</MenuItem>
+                        <MenuItem value="Shop">Shop</MenuItem>
+                        <MenuItem value="Gas Station">Tankstelle</MenuItem>
+                        <MenuItem value="Other">Andere</MenuItem>
+                      </Select>
+                    </FormControl>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <TextField
@@ -428,28 +413,6 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
                       required
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Breitengrad (Latitude) *"
-                      type="number"
-                      value={businessData.location.latitude}
-                      onChange={handleBusinessChange('location.latitude')}
-                      required
-                      helperText="z.B. 52.5200"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Längengrad (Longitude) *"
-                      type="number"
-                      value={businessData.location.longitude}
-                      onChange={handleBusinessChange('location.longitude')}
-                      required
-                      helperText="z.B. 13.4050"
-                    />
-                  </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -493,7 +456,7 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
               variant="contained"
               disabled={loading}
               sx={{
-                background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
                 '&:hover': {
                   background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)',
                 },
@@ -514,7 +477,7 @@ const PartnerRegistrationModal = ({ open, onClose }) => {
             onClick={handleClose}
             variant="contained"
             sx={{
-              background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
             }}
           >
             Schließen

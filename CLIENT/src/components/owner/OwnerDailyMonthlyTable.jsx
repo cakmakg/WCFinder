@@ -23,7 +23,7 @@ import EuroIcon from '@mui/icons-material/Euro';
  * @param {string} viewMode - 'daily' or 'monthly'
  * @param {Date} selectedDate - Selected date for filtering
  */
-export const OwnerDailyMonthlyTable = ({ ownerStats, viewMode = "daily", selectedDate = new Date() }) => {
+export const OwnerDailyMonthlyTable = ({ ownerStats, viewMode = "daily" }) => {
   // Process data based on view mode
   const tableData = useMemo(() => {
     if (!ownerStats || !ownerStats.usage?.byDay) return [];
@@ -133,9 +133,9 @@ export const OwnerDailyMonthlyTable = ({ ownerStats, viewMode = "daily", selecte
             </TableRow>
           </TableHead>
           <TableBody>
-            {tableData.map((row, index) => (
-              <TableRow 
-                key={index}
+            {tableData.map((row) => (
+              <TableRow
+                key={row._id || row.date || row.label}
                 sx={{ 
                   '&:hover': { 
                     bgcolor: '#f8fafc',

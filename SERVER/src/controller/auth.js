@@ -102,16 +102,20 @@ module.exports = {
             throw new AuthenticationError("incorrect username/email or password.");
         }
 
-        // Account status check
+        // Account status check — pending approval gets a specific message
         if (!user.isActive) {
-            logger.warn('Login attempt failed - inactive account', { 
+            logger.warn('Login attempt failed - inactive account', {
                 userId: user._id,
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                ip: req.ip 
+                ip: req.ip
             });
-            throw new AuthenticationError("This account is not active.");
+            return res.status(403).json({
+                error: true,
+                code: "ACCOUNT_PENDING_APPROVAL",
+                message: "Ihr Konto wartet noch auf die Genehmigung durch den Administrator. Sie erhalten eine E-Mail, sobald Ihr Konto aktiviert wurde.",
+            });
         }
 
         // ✅ Token management (DRY: helper function kullan)

@@ -127,6 +127,22 @@ export const businessService = {
     const response = await api.get(`/business/${id}/reviews`);
     return response.data?.data || response.data || [];
   },
+
+  /**
+   * Get the authenticated owner's business (requires auth)
+   */
+  getMyBusiness: async (): Promise<Business> => {
+    const response = await api.get('/business/my');
+    return response.data?.result || response.data?.data || response.data;
+  },
+
+  /**
+   * Update the authenticated owner's business (requires auth)
+   */
+  updateMyBusiness: async (data: Partial<Business> & Record<string, any>): Promise<Business> => {
+    const response = await api.put('/business/my', data);
+    return response.data?.result || response.data?.data || response.data;
+  },
 };
 
 export default businessService;

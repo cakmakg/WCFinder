@@ -80,8 +80,8 @@ module.exports = (err, req, res, next) => {
         });
     }
 
-    // Mongoose validation error
-    if (err.name === 'ValidationError') {
+    // Mongoose validation error (has .errors property with field details)
+    if (err.name === 'ValidationError' && err.errors) {
         statusCode = 400;
         message = 'Validation Error';
         errorDetails = Object.values(err.errors).map(e => ({

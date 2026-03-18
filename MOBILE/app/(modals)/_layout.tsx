@@ -25,6 +25,10 @@ export default function ModalLayout() {
         name="payment-success"
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="owner-profile"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }

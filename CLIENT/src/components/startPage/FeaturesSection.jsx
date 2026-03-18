@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Container, Grid, Typography, Card, CardContent } from "@mui/material";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import MapIcon from "@mui/icons-material/Map";
@@ -104,12 +105,12 @@ const FeaturesSection = () => {
         {/* ✅ ASYMMETRIC: Staggered grid layout */}
         <Grid container spacing={3}>
           {features.map((feature, index) => (
-            <Grid 
-              item 
-              xs={12} 
-              sm={6} 
-              md={4} 
-              key={index}
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              key={feature.title}
               sx={{
                 // ✅ ASYMMETRIC: Alternate card alignment
                 display: "flex",
@@ -127,11 +128,11 @@ const FeaturesSection = () => {
                     height: "100%",
                     width: "100%",
                     maxWidth: { md: index % 3 === 1 ? "95%" : "100%" }, // ✅ ASYMMETRIC: Center cards slightly smaller
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                    borderRadius: 3,
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                    borderRadius: '14px',
                     transition: "all 0.3s ease",
-                    borderLeft: index % 2 === 0 ? "4px solid #0891b2" : "none",
-                    borderRight: index % 2 === 1 ? "4px solid #14b8a6" : "none",
+                    borderLeft: index % 2 === 0 ? "3px solid #0891b2" : "none",
+                    borderRight: index % 2 === 1 ? "3px solid #0891b2" : "none",
                     "&:hover": {
                       transform: "translateY(-4px) rotate(0.5deg)", // ✅ ASYMMETRIC: Slight rotation on hover
                       boxShadow: "0 8px 24px rgba(0,0,0,0.12)",

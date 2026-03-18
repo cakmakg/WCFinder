@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   Container,
   Box,
@@ -15,7 +14,6 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import useApiCall from '../hook/useApiCall';
 
 const ResetPasswordPage = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const apiCall = useApiCall();
@@ -124,7 +122,6 @@ const ResetPasswordPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
-              autoFocus
               helperText="Mindestens 8 Zeichen, Groß- und Kleinbuchstaben, Zahl und Sonderzeichen"
             />
 

@@ -75,7 +75,7 @@ module.exports = {
         }
 
         // SECURITY: Only allow safe fields — no owner/approvalStatus change
-        const allowed = ['businessName', 'businessType', 'address', 'openingHours', 'phone', 'ustIdNr'];
+        const allowed = ['businessName', 'businessType', 'address', 'openingHours', 'phone', 'ustIdNr', 'bankAccount'];
         const updateData = {};
         for (const key of allowed) {
             if (req.body[key] !== undefined) updateData[key] = req.body[key];
@@ -382,6 +382,25 @@ module.exports = {
                 email: ownerUser.email 
             });
 
+            // Geocode address to get coordinates
+            const addressStr = `${business.address.street}, ${business.address.postalCode} ${business.address.city}, ${business.address.country || 'Deutschland'}`;
+            let coordinates = [0, 0]; // [longitude, latitude] default
+            try {
+                const geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addressStr)}&format=json&limit=1`;
+                const geocodeRes = await fetch(geocodeUrl, {
+                    headers: { 'User-Agent': 'WCFinder/1.0' },
+                });
+                const geocodeData = await geocodeRes.json();
+                if (geocodeData && geocodeData.length > 0) {
+                    coordinates = [parseFloat(geocodeData[0].lon), parseFloat(geocodeData[0].lat)];
+                    logger.info('Address geocoded successfully', { address: addressStr, coordinates });
+                } else {
+                    logger.warn('Geocoding returned no results', { address: addressStr });
+                }
+            } catch (geocodeError) {
+                logger.warn('Geocoding failed, using default coordinates', { address: addressStr, error: geocodeError.message });
+            }
+
             // Create business (approvalStatus: 'pending')
             const businessData = {
                 owner: ownerUser._id,
@@ -395,7 +414,7 @@ module.exports = {
                 },
                 location: {
                     type: 'Point',
-                    coordinates: business.location.coordinates,
+                    coordinates,
                 },
                 approvalStatus: 'pending',
                 openingHours: business.openingHours?.trim() || undefined,

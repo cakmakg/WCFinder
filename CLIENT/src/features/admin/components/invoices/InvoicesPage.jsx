@@ -126,21 +126,6 @@ const InvoicesPage = () => {
     }
   };
   
-  // Component Error Display
-  if (componentError) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          <Typography variant="h6">Fehler beim Laden der Rechnungen</Typography>
-          <Typography variant="body2">{componentError}</Typography>
-        </Alert>
-        <Button variant="contained" onClick={() => { setComponentError(null); fetchInvoices(); }}>
-          Erneut versuchen
-        </Button>
-      </Box>
-    );
-  }
-
   // Filtered and sorted invoices
   const filteredInvoices = useMemo(() => {
     let result = [...invoices];
@@ -352,6 +337,21 @@ const InvoicesPage = () => {
       'Status': invoiceService.getInvoiceStatusDisplay(invoice.status).label
     }));
   }, [filteredInvoices]);
+
+  // Component Error Display (after all hooks)
+  if (componentError) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          <Typography variant="h6">Fehler beim Laden der Rechnungen</Typography>
+          <Typography variant="body2">{componentError}</Typography>
+        </Alert>
+        <Button variant="contained" onClick={() => { setComponentError(null); fetchInvoices(); }}>
+          Erneut versuchen
+        </Button>
+      </Box>
+    );
+  }
 
   // Loading state
   if (loading && invoices.length === 0) {

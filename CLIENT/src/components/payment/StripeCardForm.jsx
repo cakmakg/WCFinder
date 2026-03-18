@@ -103,9 +103,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
       }
 
       if (import.meta.env.DEV) {
-        console.log('📤 [StripeCardForm] Confirming payment intent...', {
-          paymentMethodId: paymentMethod.id
-        });
+        console.log('[StripeCardForm] Confirming payment intent...');
       }
 
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
@@ -116,20 +114,10 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
       );
 
       if (import.meta.env.DEV) {
-        console.log('📥 [StripeCardForm] Payment confirmation response:', {
-          error: confirmError ? {
-            type: confirmError.type,
-            code: confirmError.code,
-            message: confirmError.message,
-            decline_code: confirmError.decline_code,
-            param: confirmError.param
-          } : null,
-          paymentIntent: paymentIntent ? {
-            id: paymentIntent.id,
-            status: paymentIntent.status,
-            amount: paymentIntent.amount,
-            currency: paymentIntent.currency
-          } : null
+        console.log('[StripeCardForm] Payment confirmation response:', {
+          hasError: !!confirmError,
+          errorCode: confirmError?.code,
+          status: paymentIntent?.status,
         });
       }
 
@@ -157,13 +145,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         }
 
         if (import.meta.env.DEV) {
-          console.error('❌ [StripeCardForm] Payment confirmation error:', {
-            type: confirmError.type,
-            code: confirmError.code,
-            message: confirmError.message,
-            decline_code: confirmError.decline_code,
-            param: confirmError.param
-          });
+          console.error('[StripeCardForm] Payment confirmation error:', confirmError.code, confirmError.type);
         }
 
         throw new Error(errorMessage);
@@ -171,12 +153,12 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
 
       if (paymentIntent.status === 'succeeded') {
         if (import.meta.env.DEV) {
-          console.log('✅ [StripeCardForm] Payment succeeded:', paymentIntent.id);
+          console.log('[StripeCardForm] Payment succeeded');
         }
         onSuccess(paymentIntent);
       } else {
         if (import.meta.env.DEV) {
-          console.error('❌ [StripeCardForm] Payment intent status is not succeeded:', paymentIntent.status);
+          console.error('[StripeCardForm] Payment intent status is not succeeded:', paymentIntent.status);
         }
         throw new Error(`Zahlung fehlgeschlagen. Status: ${paymentIntent.status}`);
       }

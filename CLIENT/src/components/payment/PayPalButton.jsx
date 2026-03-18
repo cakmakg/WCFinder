@@ -5,7 +5,7 @@ import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js';
 import { Box, Alert, CircularProgress } from '@mui/material';
 import paymentService from '../../services/paymentService';
 
-export const PayPalButton = ({ usageId, amount, onSuccess, onError }) => {
+export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
   const [error, setError] = useState(null);
   const [{ isResolved, isPending, isRejected }] = usePayPalScriptReducer();
 

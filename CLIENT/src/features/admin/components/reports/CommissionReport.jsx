@@ -47,7 +47,7 @@ const COLORS = ['#0891b2', '#16a34a', '#f59e0b', '#dc2626', '#8b5cf6', '#ec4899'
  * CommissionReport Component
  * Displays commission statistics and breakdown
  */
-const CommissionReport = ({ payments = [], dateRange }) => {
+const CommissionReport = ({ payments = [], _dateRange }) => {
   // Calculate commission statistics
   const commissionStats = useMemo(() => {
     return reportService.calculateCommissionStats(payments);

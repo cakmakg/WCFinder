@@ -59,7 +59,7 @@ export const ToiletDetailsSheet: React.FC<ToiletDetailsSheetProps> = ({
 
   // Get business info
   const business = toilet.business || {};
-  const businessName = business.name || business.businessName || 'Unknown';
+  const businessName = business.name || business.businessName || 'Unbekannt';
   const businessType = business.businessType || toilet.businessType || '';
   const address = typeof business.address === 'string'
     ? business.address
@@ -94,7 +94,7 @@ export const ToiletDetailsSheet: React.FC<ToiletDetailsSheetProps> = ({
 
           {distance !== null && (
             <View style={styles.distanceBadge}>
-              <MaterialCommunityIcons name="map-marker-distance" size={20} color="#6200EE" />
+              <MaterialCommunityIcons name="map-marker-distance" size={20} color="#0891b2" />
               <Text variant="titleMedium" style={styles.distanceText}>
                 {formatDistance(distance)}
               </Text>
@@ -120,7 +120,7 @@ export const ToiletDetailsSheet: React.FC<ToiletDetailsSheetProps> = ({
           <MaterialCommunityIcons name="cash" size={24} color="#00C853" />
           <View style={styles.detailContent}>
             <Text variant="bodySmall" style={styles.detailLabel}>
-              Usage Fee
+              Nutzungsgebühr
             </Text>
             <Text variant="titleMedium" style={styles.detailValue}>
               €{fee.toFixed(2)}
@@ -140,11 +140,11 @@ export const ToiletDetailsSheet: React.FC<ToiletDetailsSheetProps> = ({
                   : 'human-male-female'
               }
               size={24}
-              color="#6200EE"
+              color="#0891b2"
             />
             <View style={styles.detailContent}>
               <Text variant="bodySmall" style={styles.detailLabel}>
-                Type
+                Typ
               </Text>
               <Text variant="titleMedium" style={styles.detailValue}>
                 {toilet.genderPreference.charAt(0).toUpperCase() +
@@ -166,7 +166,7 @@ export const ToiletDetailsSheet: React.FC<ToiletDetailsSheetProps> = ({
               Status
             </Text>
             <Text variant="titleMedium" style={styles.detailValue}>
-              {toilet.isAvailable !== false ? 'Available' : 'Occupied'}
+              {toilet.isAvailable !== false ? 'Verfügbar' : 'Belegt'}
             </Text>
           </View>
         </Surface>
@@ -181,7 +181,7 @@ export const ToiletDetailsSheet: React.FC<ToiletDetailsSheetProps> = ({
         labelStyle={styles.bookButtonLabel}
         icon="calendar-check"
       >
-        Reserve Now
+        Jetzt reservieren
       </Button>
 
       {/* Bottom Spacing */}
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   distanceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3E5F5',
+    backgroundColor: '#e0f7fa',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   distanceText: {
     marginLeft: 4,
     fontWeight: 'bold',
-    color: '#6200EE',
+    color: '#0891b2',
   },
   addressContainer: {
     flexDirection: 'row',

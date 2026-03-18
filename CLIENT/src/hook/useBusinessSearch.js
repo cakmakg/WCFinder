@@ -1,5 +1,5 @@
 // src/hooks/useBusinessSearch.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { searchLocation } from '../services/geocoding';
 
 export const useBusinessSearch = (onLocationFound) => {
@@ -7,52 +7,35 @@ export const useBusinessSearch = (onLocationFound) => {
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeout = useRef(null);
   const onLocationFoundRef = useRef(onLocationFound);
+  onLocationFoundRef.current = onLocationFound;
 
-  // onLocationFound callback'ini ref'te tut ki dependency array'de olmasın
-  useEffect(() => {
-    onLocationFoundRef.current = onLocationFound;
-  }, [onLocationFound]);
-
-  useEffect(() => {
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
-
-    if (search.trim().length > 2) {
-      searchTimeout.current = setTimeout(async () => {
-        setIsSearching(true);
-        const location = await searchLocation(search);
-        
-        if (location && onLocationFoundRef.current) {
-          onLocationFoundRef.current(location);
-        }
-        setIsSearching(false);
-      }, 1000);
+  const performSearch = useCallback(async (query) => {
+    if (query.trim().length > 2) {
+      setIsSearching(true);
+      const location = await searchLocation(query);
+      if (location && onLocationFoundRef.current) {
+        onLocationFoundRef.current(location);
+      }
+      setIsSearching(false);
     } else {
-      // Arama temizlendiğinde location'ı da temizle
       if (onLocationFoundRef.current) {
         onLocationFoundRef.current(null);
       }
     }
+  }, []);
 
-    return () => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-    };
-  }, [search]); // onLocationFound'ı dependency'den çıkardık
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => performSearch(search), 1000);
+    return () => { if (searchTimeout.current) clearTimeout(searchTimeout.current); };
+  }, [search, performSearch]);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearch("");
     if (onLocationFoundRef.current) {
       onLocationFoundRef.current(null);
     }
-  };
+  }, []);
 
-  return {
-    search,
-    setSearch,
-    isSearching,
-    clearSearch
-  };
+  return { search, setSearch, isSearching, clearSearch };
 };

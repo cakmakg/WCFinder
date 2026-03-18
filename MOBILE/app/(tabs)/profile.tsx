@@ -79,6 +79,28 @@ export default function ProfileScreen() {
 
       {/* Menu Section */}
       <View style={styles.menuSection}>
+        {isOwner && (
+          <>
+            <TouchableOpacity
+              onPress={() => router.push('/(modals)/owner-profile' as any)}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuIconBox}>
+                  <MaterialCommunityIcons name="store-edit-outline" size={22} color="#0891b2" />
+                </View>
+                <View style={styles.menuItemText}>
+                  <Text style={styles.menuItemTitle}>Mein Profil</Text>
+                  <Text style={styles.menuItemSubtitle}>Geschäftsdaten bearbeiten</Text>
+                </View>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color="#9ca3af" />
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
+          </>
+        )}
+
         <TouchableOpacity
           onPress={openMyBookings}
           style={styles.menuItem}

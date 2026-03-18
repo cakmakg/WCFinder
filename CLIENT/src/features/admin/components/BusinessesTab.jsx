@@ -61,7 +61,7 @@ const BusinessesTab = () => {
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("daily"); // 'daily' or 'monthly'
-  const [orderBy, setOrderBy] = useState("totalRevenue");
+  const [orderBy, _setOrderBy] = useState("totalRevenue");
   const [order, setOrder] = useState("desc");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);

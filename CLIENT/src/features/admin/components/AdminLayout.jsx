@@ -28,17 +28,11 @@ import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Business as BusinessIcon,
-  AddBusiness as AddBusinessIcon,
   Menu as MenuIcon,
   AccountCircle,
   Logout,
   EventNote as EventNoteIcon,
-  Payment as PaymentIcon,
   Settings as SettingsIcon,
-  Wc as WcIcon,
-  AccountBalance as PayoutIcon,
-  Receipt as InvoiceIcon,
-  Assessment as ReportsIcon,
   Euro as FinanzIcon,
 } from "@mui/icons-material";
 import useAuthCall from "../../../hook/useAuthCall";
@@ -47,7 +41,7 @@ const DRAWER_WIDTH = 280;
 
 const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const _isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
   const { logout } = useAuthCall();
@@ -78,55 +72,34 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
 
   const menuItems = [
     {
-      text: "Dashboard",
+      text: "Übersicht",
       icon: <DashboardIcon />,
       index: 0,
     },
     {
-      text: "Kullanıcılar",
+      text: "Benutzer",
       icon: <PeopleIcon />,
       index: 1,
     },
     {
-      text: "İşletmeler",
+      text: "Betriebe",
       icon: <BusinessIcon />,
       index: 2,
     },
     {
-      text: "Rezervasyonlar",
+      text: "Buchungen",
       icon: <EventNoteIcon />,
       index: 3,
     },
     {
-      text: "Ödemeler",
-      icon: <PaymentIcon />,
+      text: "Finanzen",
+      icon: <FinanzIcon />,
       index: 4,
     },
     {
-      text: "💰 Finanzmanagement",
-      icon: <FinanzIcon />,
-      index: 5,
-      highlight: true,
-    },
-    {
-      text: "Tuvaletler",
-      icon: <WcIcon />,
-      index: 6,
-    },
-    {
-      text: "Berichte",
-      icon: <ReportsIcon />,
-      index: 7,
-    },
-    {
-      text: "Business Management",
-      icon: <AddBusinessIcon />,
-      index: 8,
-    },
-    {
-      text: "Ayarlar",
+      text: "Einstellungen",
       icon: <SettingsIcon />,
-      index: 9,
+      index: 5,
     },
   ];
 
@@ -229,7 +202,7 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
                 <ListItemIcon>
                   <Logout fontSize="small" />
                 </ListItemIcon>
-                <ListItemText>Çıkış Yap</ListItemText>
+                <ListItemText>Abmelden</ListItemText>
               </MenuItem>
             </Menu>
           </Box>

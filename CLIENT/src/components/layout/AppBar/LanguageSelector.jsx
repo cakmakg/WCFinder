@@ -9,7 +9,6 @@ import {
   ListItemText,
   Box,
   Typography,
-  useTheme,
 } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import CheckIcon from '@mui/icons-material/Check';
@@ -25,7 +24,6 @@ const languages = [
 
 export const LanguageSelector = () => {
   const { i18n } = useTranslation();
-  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [currentLang, setCurrentLang] = useState(i18n.language || 'de');
   const open = Boolean(anchorEl);

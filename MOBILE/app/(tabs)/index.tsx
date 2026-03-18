@@ -119,11 +119,11 @@ export default function MapScreen() {
 
   // Debug: Log toilets data
   useEffect(() => {
-    console.log('[MapScreen] Toilets state:', {
+    if (__DEV__) console.log('[MapScreen] Toilets state:', {
       count: toilets.length,
       loading: toiletsLoading,
       error: toiletsError,
-      toiletsWithLocation: toilets.filter((t: any) => 
+      toiletsWithLocation: toilets.filter((t: any) =>
         !!(t.location?.coordinates || t.business?.location?.coordinates)
       ).length,
       sampleToilet: toilets[0] ? {
@@ -217,7 +217,7 @@ export default function MapScreen() {
       try {
         // Check current permission status first
         const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-        console.log('[MapScreen] Initial permission status:', currentStatus);
+        if (__DEV__) console.log('[MapScreen] Initial permission status:', currentStatus);
 
         let permissionStatus = currentStatus;
 
@@ -225,7 +225,7 @@ export default function MapScreen() {
         if (currentStatus !== 'granted') {
           const { status } = await Location.requestForegroundPermissionsAsync();
           permissionStatus = status;
-          console.log('[MapScreen] Permission request result:', status);
+          if (__DEV__) console.log('[MapScreen] Permission request result:', status);
         }
 
         if (permissionStatus !== 'granted') {
@@ -254,7 +254,7 @@ export default function MapScreen() {
             ]
           );
           // Default to a city center (e.g., Berlin) - ONLY if permission denied
-          console.log('[MapScreen] Permission denied, using default location (Berlin)');
+          if (__DEV__) console.log('[MapScreen] Permission denied, using default location (Berlin)');
           setUserLocation({
             latitude: 52.5200,
             longitude: 13.4050,
@@ -265,12 +265,12 @@ export default function MapScreen() {
         }
 
         // Permission granted - get actual location
-        console.log('[MapScreen] Permission granted, getting current location...');
+        if (__DEV__) console.log('[MapScreen] Permission granted, getting current location...');
         const location = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
 
-        console.log('[MapScreen] Got real user location:', {
+        if (__DEV__) console.log('[MapScreen] Got real user location:', {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
           accuracy: location.coords.accuracy,
@@ -285,7 +285,7 @@ export default function MapScreen() {
       } catch (error: any) {
         console.error('[MapScreen] Error getting location:', error.message || error);
         // Fallback location ONLY on error
-        console.log('[MapScreen] Using fallback location (Berlin) due to error');
+        if (__DEV__) console.log('[MapScreen] Using fallback location (Berlin) due to error');
         setUserLocation({
           latitude: 52.5200,
           longitude: 13.4050,
@@ -302,13 +302,13 @@ export default function MapScreen() {
    * Same navigation as List Screen's BusinessCard onPress
    */
   const handleMarkerPress = useCallback((toilet: any) => {
-    console.log('[MapScreen] Toilet marker pressed:', toilet.name);
+    if (__DEV__) console.log('[MapScreen] Toilet marker pressed:', toilet.name);
 
     // Get business ID from toilet
     const businessId = toilet.business?._id || toilet.businessId;
     
     if (!businessId) {
-      console.warn('[MapScreen] No business ID found for toilet:', toilet._id);
+      if (__DEV__) console.warn('[MapScreen] No business ID found for toilet:', toilet._id);
       // Fallback: show bottom sheet if no business ID
       setSelectedToilet(toilet);
       bottomSheetRef.current?.expand();
@@ -329,13 +329,13 @@ export default function MapScreen() {
   const handleBooking = useCallback(() => {
     if (!selectedToilet) return;
 
-    console.log('[MapScreen] Booking toilet:', selectedToilet.name);
+    if (__DEV__) console.log('[MapScreen] Booking toilet:', selectedToilet.name);
 
     // Get business ID from toilet
     const businessId = selectedToilet.business?._id || selectedToilet.businessId;
     
     if (!businessId) {
-      console.warn('[MapScreen] No business ID found for toilet:', selectedToilet._id);
+      if (__DEV__) console.warn('[MapScreen] No business ID found for toilet:', selectedToilet._id);
       return;
     }
 
@@ -353,11 +353,11 @@ export default function MapScreen() {
    */
   const centerOnUser = useCallback(async () => {
     try {
-      console.log('[MapScreen] Centering on user location...');
+      if (__DEV__) console.log('[MapScreen] Centering on user location...');
 
       // First, check current permission status (don't request yet)
       const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-      console.log('[MapScreen] Current permission status:', currentStatus);
+      if (__DEV__) console.log('[MapScreen] Current permission status:', currentStatus);
 
       // If permission is denied, show alert with option to open settings
       if (currentStatus === 'denied') {
@@ -391,7 +391,7 @@ export default function MapScreen() {
 
         // Fallback to cached location if available
         if (userLocation && mapRef.current) {
-          console.log('[MapScreen] Using cached location (permission denied)');
+          if (__DEV__) console.log('[MapScreen] Using cached location (permission denied)');
           mapRef.current.animateToRegion(userLocation, 1000);
         }
         return;
@@ -399,9 +399,9 @@ export default function MapScreen() {
     
       // If permission is not determined yet, request it
       if (currentStatus === 'undetermined') {
-        console.log('[MapScreen] Requesting permission...');
+        if (__DEV__) console.log('[MapScreen] Requesting permission...');
         const { status } = await Location.requestForegroundPermissionsAsync();
-        console.log('[MapScreen] Permission request result:', status);
+        if (__DEV__) console.log('[MapScreen] Permission request result:', status);
 
         if (status !== 'granted') {
           // Detect if running in Expo Go or standalone app
@@ -431,7 +431,7 @@ export default function MapScreen() {
 
           // Fallback to cached location if available
           if (userLocation && mapRef.current) {
-            console.log('[MapScreen] Using cached location (permission not granted)');
+            if (__DEV__) console.log('[MapScreen] Using cached location (permission not granted)');
             mapRef.current.animateToRegion(userLocation, 1000);
           }
           return;
@@ -441,7 +441,7 @@ export default function MapScreen() {
 
       // Try direct location API first (more reliable)
       try {
-        console.log('[MapScreen] Getting location via direct API...');
+        if (__DEV__) console.log('[MapScreen] Getting location via direct API...');
         const currentLocation = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
@@ -454,7 +454,7 @@ export default function MapScreen() {
             longitudeDelta: 0.01,
           };
 
-          console.log('[MapScreen] Got location via direct API:', region);
+          if (__DEV__) console.log('[MapScreen] Got location via direct API:', region);
           
           if (mapRef.current) {
             mapRef.current.animateToRegion(region, 1000);
@@ -467,16 +467,16 @@ export default function MapScreen() {
               longitudeDelta: 0.0421,
             });
             
-            console.log('[MapScreen] Map centered successfully');
+            if (__DEV__) console.log('[MapScreen] Map centered successfully');
             return; // Success, exit early
           }
         }
       } catch (directError: any) {
-        console.warn('[MapScreen] Direct location API failed:', directError.message);
+        if (__DEV__) console.warn('[MapScreen] Direct location API failed:', directError.message);
 
         // Try useLocation hook as fallback
         try {
-          console.log('[MapScreen] Trying useLocation hook...');
+          if (__DEV__) console.log('[MapScreen] Trying useLocation hook...');
           const freshLocation = await getCurrentLocation();
           
           if (freshLocation && mapRef.current) {
@@ -487,7 +487,7 @@ export default function MapScreen() {
               longitudeDelta: 0.01,
             };
 
-            console.log('[MapScreen] Got location via hook:', region);
+            if (__DEV__) console.log('[MapScreen] Got location via hook:', region);
             mapRef.current.animateToRegion(region, 1000);
             
             setUserLocation({
@@ -497,20 +497,20 @@ export default function MapScreen() {
               longitudeDelta: 0.0421,
             });
             
-            console.log('[MapScreen] Map centered via hook');
+            if (__DEV__) console.log('[MapScreen] Map centered via hook');
             return; // Success, exit early
           }
         } catch (hookError: any) {
-          console.warn('[MapScreen] useLocation hook also failed:', hookError.message);
+          if (__DEV__) console.warn('[MapScreen] useLocation hook also failed:', hookError.message);
         }
       }
       
       // Last fallback: use cached userLocation
       if (userLocation && mapRef.current) {
-        console.log('[MapScreen] Using cached userLocation as final fallback');
+        if (__DEV__) console.log('[MapScreen] Using cached userLocation as final fallback');
         mapRef.current.animateToRegion(userLocation, 1000);
       } else {
-        console.warn('[MapScreen] No location available');
+        if (__DEV__) console.warn('[MapScreen] No location available');
         Alert.alert(
           'Standort nicht gefunden',
           'Ihr Standort konnte nicht ermittelt werden. Bitte stellen Sie sicher, dass GPS aktiviert ist.',
@@ -521,7 +521,7 @@ export default function MapScreen() {
       console.error('[MapScreen] Error centering on user:', error.message || error);
 
       if (userLocation && mapRef.current) {
-        console.log('[MapScreen] Using cached location due to error');
+        if (__DEV__) console.log('[MapScreen] Using cached location due to error');
         mapRef.current.animateToRegion(userLocation, 1000);
       } else {
         Alert.alert(
@@ -586,7 +586,7 @@ export default function MapScreen() {
    */
   const filteredToilets = useMemo(() => {
     if (!searchQuery.trim()) {
-      console.log('[MapScreen] filteredToilets (no search):', toilets.length);
+      if (__DEV__) console.log('[MapScreen] filteredToilets (no search):', toilets.length);
       return toilets;
       }
 
@@ -605,7 +605,7 @@ export default function MapScreen() {
       );
     });
     
-    console.log('[MapScreen] filteredToilets (with search):', filtered.length);
+    if (__DEV__) console.log('[MapScreen] filteredToilets (with search):', filtered.length);
     return filtered;
   }, [toilets, searchQuery]);
 
@@ -724,7 +724,7 @@ export default function MapScreen() {
           filteredToilets.map((toilet: any) => {
             const hasLocation = !!(toilet.location?.coordinates || toilet.business?.location?.coordinates);
             if (!hasLocation) {
-              console.warn('[MapScreen] Skipping toilet without location:', toilet._id);
+              if (__DEV__) console.warn('[MapScreen] Skipping toilet without location:', toilet._id);
               return null;
             }
             return (

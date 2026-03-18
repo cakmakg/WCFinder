@@ -34,14 +34,14 @@ const PaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const bookingData = location.state;
-  const { token, currentUser } = useSelector((state) => state.auth);
+  const { token } = useSelector((state) => state.auth);
 
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [clientSecret, setClientSecret] = useState(null);
   const [paypalOrderId, setPaypalOrderId] = useState(null);
-  const [paymentId, setPaymentId] = useState(null); // ✅ Payment ID'yi sakla
+  const [_paymentId, setPaymentId] = useState(null); // ✅ Payment ID'yi sakla
 
   // Authentication kontrolü
   useEffect(() => {
@@ -143,8 +143,8 @@ const PaymentPage = () => {
                 )[0];
                 
                 if (import.meta.env.DEV) {
-                  console.log('✅ Found existing payment:', latestPayment._id);
-                  console.log('⚠️ Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
+                  console.log('[PaymentPage] Found existing pending payment');
+                  console.log('[PaymentPage] Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
                 }
                 errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
               }
@@ -171,7 +171,7 @@ const PaymentPage = () => {
         }
         
         if (import.meta.env.DEV) {
-          console.error('❌ Payment creation error:', errorData);
+          console.error('[PaymentPage] Stripe payment creation error, status:', response.status);
         }
         throw new Error(errorMessage);
       }
@@ -179,21 +179,23 @@ const PaymentPage = () => {
       const data = await response.json();
       // ✅ SECURITY: Sensitive data (clientSecret) loglanmıyor
       if (import.meta.env.DEV) {
-        console.log('✅ Stripe response received');
-        console.log('✅ PaymentId:', data.result?.paymentId);
-        console.log('✅ PaymentIntentStatus:', data.result?.paymentIntentStatus);
+        console.log('[PaymentPage] Stripe response received, status:', data.result?.paymentIntentStatus);
       }
       
       // ✅ Response formatını kontrol et
       if (!data.result || !data.result.clientSecret) {
-        console.error('❌ Invalid response format');
+        if (import.meta.env.DEV) {
+          console.error('[PaymentPage] Invalid Stripe response format');
+        }
         throw new Error('Ungültige Antwort vom Server. Bitte versuchen Sie es erneut.');
       }
       
       setClientSecret(data.result.clientSecret);
       setPaymentId(data.result.paymentId);
     } catch (err) {
-      console.error('❌ Stripe error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[PaymentPage] Stripe error:', err.message);
+      }
       const errorMessage = err.message || err.response?.data?.message || t('payment.paymentInitError');
       setError(errorMessage);
       // Hata durumunda clientSecret'ı sıfırla ki kullanıcı tekrar deneyebilsin
@@ -261,7 +263,7 @@ const PaymentPage = () => {
         }
         
         if (import.meta.env.DEV) {
-          console.error('❌ PayPal creation error:', errorData);
+          console.error('[PaymentPage] PayPal creation error, status:', response.status);
         }
         throw new Error(errorMessage);
       }
@@ -275,7 +277,9 @@ const PaymentPage = () => {
       setPaymentId(data.result.paymentId); // ✅ Payment ID'yi sakla
       return data.result.orderId;
     } catch (err) {
-      console.error('❌ PayPal error:', err);
+      if (import.meta.env.DEV) {
+        console.error('[PaymentPage] PayPal error:', err.message);
+      }
       const errorMessage = err.message || err.response?.data?.message || t('payment.paymentInitError');
       setError(errorMessage);
       // Hata durumunda paypalOrderId'yi sıfırla ki kullanıcı tekrar deneyebilsin
@@ -323,7 +327,7 @@ const PaymentPage = () => {
       const confirmedPaymentId = confirmData.result?.paymentId;
 
       if (import.meta.env.DEV) {
-        console.log('✅ Payment confirmed, usage created:', usageId);
+        console.log('[PaymentPage] Payment confirmed, usage created');
       }
 
       // ✅ Success sayfasına yönlendir
@@ -341,13 +345,17 @@ const PaymentPage = () => {
         },
       });
     } catch (err) {
-      console.error('❌ Error in handlePaymentSuccess:', err);
+      if (import.meta.env.DEV) {
+        console.error('[PaymentPage] Error in handlePaymentSuccess:', err.message);
+      }
       setError('Fehler beim Erstellen der Reservierung. Bitte kontaktieren Sie den Support.');
     }
   };
 
   const handlePaymentError = (error) => {
-    console.error('Payment error:', error);
+    if (import.meta.env.DEV) {
+      console.error('[PaymentPage] Payment error:', error?.message);
+    }
     setError(t('payment.paymentFailed'));
     // State'i sıfırla
     setClientSecret(null);

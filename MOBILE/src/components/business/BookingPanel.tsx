@@ -89,7 +89,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
       <Card style={styles.card}>
         <Card.Content>
           <Text variant="bodyMedium" style={styles.warningText}>
-            No toilets available for booking
+            Keine Toiletten zur Buchung verfügbar
           </Text>
         </Card.Content>
       </Card>
@@ -131,8 +131,8 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
   };
 
   const formatDate = (date: Date): string => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
     const day = days[date.getDay()];
     const month = months[date.getMonth()];
     const dayNum = date.getDate();
@@ -150,7 +150,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <MaterialCommunityIcons name="calendar" size={20} color={theme.colors.primary} />
-          <Text variant="titleMedium" style={styles.sectionTitle}>Date</Text>
+          <Text variant="titleMedium" style={styles.sectionTitle}>Datum</Text>
         </View>
         <TouchableOpacity
           style={styles.dateButton}
@@ -166,7 +166,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
 
       {/* Gender Selection */}
       <View style={styles.section}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>Gender</Text>
+        <Text variant="titleMedium" style={styles.sectionTitle}>Geschlecht</Text>
         <View style={styles.genderContainer}>
           <Chip
             selected={userGender === 'Male'}
@@ -180,7 +180,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
               userGender === 'Male' && styles.genderChipTextSelected
             ]}
           >
-            Male
+            Männlich
           </Chip>
           <Chip
             selected={userGender === 'Female'}
@@ -194,14 +194,14 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
               userGender === 'Female' && styles.genderChipTextSelected
             ]}
           >
-            Female
+            Weiblich
           </Chip>
         </View>
       </View>
 
       {/* Number of People */}
       <View style={styles.section}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>Number of People</Text>
+        <Text variant="titleMedium" style={styles.sectionTitle}>Anzahl der Personen</Text>
         <View style={styles.peopleContainer}>
           <IconButton
             icon="minus"
@@ -236,7 +236,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
           </View>
           <View style={styles.priceRow}>
             <Text variant="bodyMedium" style={styles.priceLabel}>
-              Service Fee
+              Servicegebühr
             </Text>
             <Text variant="bodyMedium" style={styles.priceValue}>
               € {serviceFee.toFixed(2)}
@@ -245,7 +245,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
           <Divider style={styles.divider} />
           <View style={styles.totalRow}>
             <Text variant="titleLarge" style={styles.totalLabel}>
-              Total
+              Gesamt
             </Text>
             <Text variant="titleLarge" style={[styles.totalValue, { color: theme.colors.primary }]}>
               € {total.toFixed(2)}
@@ -325,15 +325,15 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
   },
   genderChipSelected: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#2196F3',
+    backgroundColor: '#e0f7fa',
+    borderColor: '#0891b2',
   },
   genderChipText: {
     fontSize: 16,
     fontWeight: '600',
   },
   genderChipTextSelected: {
-    color: '#2196F3',
+    color: '#0891b2',
   },
   peopleContainer: {
     flexDirection: 'row',

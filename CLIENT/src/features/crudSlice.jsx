@@ -3,8 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   loading: false,
   error: false,
-  // Backend route'larına uygun isimlendirme - DEĞİŞTİ
-  business: [],  // Backend: /business (businesses değil!)
+  // Backend route'larına uygun isimlendirme
+  business: [],  // Backend: /business
   toilet: [],    // Backend: /toilet
   users: [],     // Backend: /users
 };
@@ -18,33 +18,30 @@ const crudSlice = createSlice({
       state.error = false;
     },
     getSuccess: (state, { payload }) => {
-       console.log('🟢 CRUD SLICE - getSuccess called');
-    console.log('Payload:', payload);
       state.loading = false;
       state.error = false;
-      
+
       const { url, data } = payload;
-      
+
       // Backend'den gelen data yapısını kontrol et
       let processedData;
       if (data && data.result) {
-        processedData = data.result; // Backend'iniz result field'ında veriyi döndürüyor
+        processedData = data.result;
       } else if (Array.isArray(data)) {
         processedData = data;
       } else {
         processedData = [];
       }
-      
-      console.log('Processed data length:', processedData.length);
-    console.log('Processed data:', processedData);
-      
+
       // URL'den state field'ını belirle
       const stateField = getStateFieldFromUrl(url);
-      if (stateField && state.hasOwnProperty(stateField)) {
+      if (stateField && Object.prototype.hasOwnProperty.call(state, stateField)) {
         state[stateField] = processedData;
-       console.log(`✅ Saved ${processedData.length} items to state.${stateField}`);
+        if (import.meta.env.DEV) {
+          console.log(`✅ Saved ${processedData.length} items to state.${stateField}`);
+        }
       } else {
-       console.error('❌ Invalid state field:', stateField);
+        if (import.meta.env.DEV) console.error('❌ Invalid state field:', stateField);
       }
     },
     fetchFail: (state) => {
@@ -54,23 +51,19 @@ const crudSlice = createSlice({
   },
 });
 
-// URL'den state field adını belirleyen fonksiyon - DEĞİŞTİ
+// URL'den state field adını belirleyen fonksiyon
 const getStateFieldFromUrl = (url) => {
   const cleanUrl = url.replace(/^\/+|\/+$/g, '');
-  
-  console.log('🔍 getStateFieldFromUrl - Input:', { url, cleanUrl });
-  
-  // Backend route'larınıza göre mapping - DÜZELTME!
+
+  // Backend route'larınıza göre mapping
   const urlMapping = {
-    'business': 'business',  // businesses DEĞİL, business!
-    'toilets': 'toilet',     // URL: /toilets, State: toilet
-    'toilet': 'toilet',      // Eski kullanım için backward compatibility
+    'business': 'business',
+    'toilets': 'toilet',
+    'toilet': 'toilet',
     'users': 'users',
   };
-  
-  const mappedField = urlMapping[cleanUrl] || cleanUrl;
-  console.log('🔍 getStateFieldFromUrl - Output:', mappedField);
-  return mappedField;
+
+  return urlMapping[cleanUrl] || cleanUrl;
 };
 
 export const { fetchStart, getSuccess, fetchFail } = crudSlice.actions;

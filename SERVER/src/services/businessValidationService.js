@@ -38,8 +38,8 @@ function validatePartnerRegistration(owner, business) {
     }
 
     // Business validation
-    if (!business.businessName || !business.businessType || !business.address || !business.location) {
-        throw new ValidationError("All business fields are required: businessName, businessType, address, location");
+    if (!business.businessName || !business.businessType || !business.address) {
+        throw new ValidationError("All business fields are required: businessName, businessType, address");
     }
 
     // Normalize ve validate owner input

@@ -55,8 +55,6 @@ export const STATUS_COLORS = {
   approved: CHART_COLORS.success,
   rejected: CHART_COLORS.error,
 
-  // Payout status
-  completed: CHART_COLORS.success
 };
 
 /**

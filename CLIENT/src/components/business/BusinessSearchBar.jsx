@@ -15,7 +15,6 @@ export const BusinessSearchBar = ({
   onSearchChange,
   onClear,
   isSearching,
-  theme
 }) => {
   const { t } = useTranslation();
   return (

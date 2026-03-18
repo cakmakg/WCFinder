@@ -184,7 +184,7 @@ const MonthlyReportsPage = () => {
         generateForm.month
       );
 
-      const { success, skipped, failed } = response.result || {};
+      const { success, skipped, failed: _failed } = response.result || {};
       toastSuccessNotify(
         `${success?.length || 0} Berichte erstellt, ${skipped?.length || 0} übersprungen`
       );
@@ -872,8 +872,8 @@ const MonthlyReportsPage = () => {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {selectedReport.toiletStats.map((toilet, index) => (
-                          <TableRow key={index}>
+                        {selectedReport.toiletStats.map((toilet) => (
+                          <TableRow key={toilet._id || toilet.toiletName}>
                             <TableCell>{toilet.toiletName}</TableCell>
                             <TableCell align="center">{toilet.usageCount}</TableCell>
                             <TableCell align="right">

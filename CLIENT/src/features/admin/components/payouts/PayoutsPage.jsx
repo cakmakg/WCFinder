@@ -33,7 +33,6 @@ import EuroIcon from '@mui/icons-material/Euro';
 import BusinessIcon from '@mui/icons-material/Business';
 import { payoutService } from '../../services/payoutService';
 import { formatCurrency } from '../../utils/exportHelpers';
-import { formatDate } from '../../utils/dateHelpers';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
 import PayoutCreateDialog from './PayoutCreateDialog';
 import PayoutHistoryTable from './PayoutHistoryTable';
@@ -123,7 +122,7 @@ const PayoutsPage = () => {
   };
 
   // Handle mark payout as complete
-  const handleCompletePayout = async (payoutId) => {
+  const _handleCompletePayout = async (payoutId) => {
     if (!confirm('Auszahlung als abgeschlossen markieren?')) {
       return;
     }
