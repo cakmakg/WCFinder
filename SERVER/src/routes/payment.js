@@ -12,7 +12,6 @@ const {
     createPayPalOrder,
     capturePayPalOrder,
     confirmStripePayment,
-    stripeWebhook,
     refundPayment,
     myPayments
 } = require('../controller/payment');
@@ -21,8 +20,9 @@ const paymentLimiter = require('../middleware/paymentRateLimit');
 
 // URL: /payments
 
-// ✅ YENİ: Webhook (Auth bypass gerekli - Stripe/PayPal'dan geliyor)
-router.post('/webhook/stripe', stripeWebhook);
+// ℹ️ Stripe webhook (/payments/webhook/stripe) index.js'de global body parser'dan
+//    ÖNCE express.raw ile mount edilir (imza doğrulaması ham gövde gerektirir).
+//    Burada tekrar tanımlanMAZ; aksi halde parse edilmiş gövde imzayı bozar.
 
 // ✅ YENİ: Kullanıcı kendi ödemelerini görebilir
 router.get('/my-payments', isLogin, myPayments);
