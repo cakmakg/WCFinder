@@ -39,7 +39,10 @@ class PaymentService {
 
     return {
       platformFee: Math.round(platformFee * 100) / 100,
-      businessFee: Math.round(businessFee * 100) / 100,
+      // SECURITY: businessFee ASLA negatif olmamalı. totalAmount < platformFee ise
+      // (geçersiz/manipüle edilmiş booking) 0'a clamp'lenir; asıl reddetme booking
+      // doğrulamasında yapılır — bu bir savunma katmanıdır (bakiye bütünlüğü).
+      businessFee: Math.max(0, Math.round(businessFee * 100) / 100),
     };
   }
 
@@ -292,6 +295,14 @@ class PaymentService {
     
     if (amountInCents < minAmountInCents) {
       throw new Error(`Invalid amount: Amount must be at least ${MIN_PAYMENT_AMOUNT_EUR} EUR`);
+    }
+
+    // SECURITY: totalAmount, platform ücretini karşılamalı; aksi halde businessFee
+    // negatif olur (ör. düşük tutar + yüksek personCount) ve işletme bakiyesi bozulurdu.
+    if (totalAmount < fees.platformFee) {
+      throw new Error(
+        `Invalid amount: Amount (${totalAmount} EUR) must cover the platform fee (${fees.platformFee} EUR)`
+      );
     }
 
     logger.debug('Creating payment intent from booking', {
@@ -561,6 +572,15 @@ class PaymentService {
       const amount = typeof totalAmount === 'string' ? parseFloat(totalAmount) : Number(totalAmount);
       if (isNaN(amount) || amount <= 0) {
         throw new Error(`Invalid totalAmount: ${totalAmount}. Must be a positive number.`);
+      }
+
+      // SECURITY: totalAmount platform ücretini karşılamalı; aksi halde businessFee
+      // negatif olur ve işletme bakiyesi bozulurdu. Order oluşturmadan ÖNCE reddet.
+      const { platformFee: paypalPlatformFee } = this.calculateFees(amount, personCount || 1);
+      if (amount < paypalPlatformFee) {
+        throw new Error(
+          `Invalid amount: Amount (${amount} EUR) must cover the platform fee (${paypalPlatformFee} EUR)`
+        );
       }
 
       // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
