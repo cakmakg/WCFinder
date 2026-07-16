@@ -24,24 +24,20 @@ const SERVICE_FEE = 0.75;
  * @returns {Promise<Array>} Trend data
  */
 async function getRevenueTrend(period = 'daily', startDate, endDate) {
+    // Tüm periyotlar TUTARLI bir string _id üretmeli. Önceki kod aylıkta _id'yi obje
+    // ({year, month}) yapıyordu; bu hem $sort'u güvenilmez kılıyor hem de client'a
+    // string tarih yerine obje döndürüyordu. Haftalıkta %G (ISO hafta-yılı) + %V (ISO
+    // hafta) birlikte kullanılır; %Y (takvim yılı) yıl sınırında yanlış eşleşme yaratırdı.
     let dateFormat;
-    let groupBy;
-
     switch (period) {
         case 'weekly':
-            dateFormat = "%Y-W%V";
-            groupBy = { $isoWeek: "$createdAt" };
+            dateFormat = "%G-W%V";
             break;
         case 'monthly':
             dateFormat = "%Y-%m";
-            groupBy = { 
-                year: { $year: "$createdAt" },
-                month: { $month: "$createdAt" }
-            };
             break;
         default: // daily
             dateFormat = "%Y-%m-%d";
-            groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
     }
 
     const matchStage = {
@@ -58,7 +54,7 @@ async function getRevenueTrend(period = 'daily', startDate, endDate) {
         matchStage,
         {
             $group: {
-                _id: period === 'monthly' ? groupBy : { $dateToString: { format: dateFormat, date: "$createdAt" } },
+                _id: { $dateToString: { format: dateFormat, date: "$createdAt" } },
                 revenue: { $sum: { $ifNull: ["$totalFee", 0] } },
                 commission: { $sum: { $ifNull: ["$serviceFee", SERVICE_FEE] } },
                 bookings: { $sum: 1 }
