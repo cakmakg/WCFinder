@@ -863,11 +863,15 @@ class PaymentService {
       );
     }
 
-    // Payment durumunu güncelle
-    await paymentRepository.findByIdAndUpdate(payment._id, {
-      status: "succeeded",
+    // ✅ IDEMPOTENCY: Ödemeyi atomik olarak 'succeeded'a geçir. Webhook veya paralel
+    // bir istek zaten settle etmişse claim null döner → tekrar kredilendirme/usage yok.
+    const claimed = await paymentRepository.claimSucceeded(payment._id, {
       transactionId: paymentIntentId,
     });
+
+    if (!claimed) {
+      return await paymentRepository.findById(payment._id);
+    }
 
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
@@ -1113,11 +1117,20 @@ class PaymentService {
       });
 
       if (payment) {
-        await paymentRepository.findByIdAndUpdate(payment._id, {
-          status: "succeeded",
+        // ✅ IDEMPOTENCY: Atomik olarak 'succeeded'a geçir. confirm veya önceki bir
+        // webhook zaten settle etmişse claim null döner → bakiye tekrar kredilendirilMEZ.
+        const claimed = await paymentRepository.claimSucceeded(payment._id, {
           transactionId: paymentIntent.id,
           gatewayResponse: paymentIntent,
         });
+
+        if (!claimed) {
+          logger.info("Stripe webhook: payment already settled, skipping credit", {
+            paymentId: payment._id,
+            eventId: event.id,
+          });
+          return;
+        }
 
         // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
         if (!payment.usageId) {

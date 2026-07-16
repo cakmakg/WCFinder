@@ -45,6 +45,20 @@ class PaymentRepository {
     });
   }
 
+  /**
+   * Ödemeyi atomik olarak 'succeeded' durumuna geçirir (idempotency).
+   * Yalnızca ödeme henüz 'succeeded' DEĞİLSE günceller ve güncellenen dokümanı döner.
+   * null dönerse başka bir işlem (confirm/webhook/paralel istek) zaten settle etmiştir;
+   * çağıran taraf bakiye kredilendirme/usage oluşturmayı ATLAMALIDIR.
+   */
+  async claimSucceeded(id, data = {}) {
+    return await Payment.findOneAndUpdate(
+      { _id: id, status: { $ne: "succeeded" } },
+      { $set: { status: "succeeded", ...data } },
+      { new: true }
+    );
+  }
+
   async updateMany(filter, update) {
     return await Payment.updateMany(filter, update);
   }
