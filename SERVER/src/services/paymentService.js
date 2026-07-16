@@ -746,10 +746,20 @@ class PaymentService {
   /**
    * PayPal ödeme onayla
    */
-  async capturePayPalOrder(orderId) {
+  async capturePayPalOrder(orderId, userId) {
     const payment = await paymentRepository.findOne({ paypalOrderId: orderId });
     if (!payment) {
       throw new Error("Payment not found");
+    }
+
+    // ✅ SECURITY: Ödeme, çağıran kullanıcıya ait olmalı (IDOR koruması)
+    if (userId && payment.userId.toString() !== userId.toString()) {
+      throw new Error("Unauthorized");
+    }
+
+    // ✅ IDEMPOTENCY: Zaten işlenmişse tekrar kredilendirme/usage oluşturma
+    if (payment.status === "succeeded") {
+      return await paymentRepository.findById(payment._id);
     }
 
     // PayPal Order'ı yakala
@@ -757,12 +767,23 @@ class PaymentService {
     const request = new paypal.orders.OrdersCaptureRequest(orderId);
     const capture = await paypalClient.execute(request);
 
-    // Payment durumunu güncelle
-    await paymentRepository.findByIdAndUpdate(payment._id, {
-      status: "succeeded",
+    // ✅ SECURITY: PayPal capture GERÇEKTEN tamamlanmış olmalı
+    if (capture.result?.status !== "COMPLETED") {
+      throw new Error(
+        `PayPal capture not completed. Status: ${capture.result?.status || "unknown"}`
+      );
+    }
+
+    // ✅ IDEMPOTENCY: Ödemeyi atomik olarak 'succeeded'a geçir. Paralel bir istek
+    // zaten settle etmişse claim null döner → bakiye tekrar kredilendirilMEZ.
+    const claimed = await paymentRepository.claimSucceeded(payment._id, {
       transactionId: capture.result.purchase_units[0].payments.captures[0].id,
       gatewayResponse: capture.result,
     });
+
+    if (!claimed) {
+      return await paymentRepository.findById(payment._id);
+    }
 
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
