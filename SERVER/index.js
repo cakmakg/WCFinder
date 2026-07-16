@@ -250,9 +250,11 @@ app.all('/', (req, res) => {
 // Development'ta rate limiting'i devre dışı bırak, production'da aktif et
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// ✅ DEVELOPMENT: Rate limiting'i tamamen devre dışı bırak (login testleri için)
-// ✅ PRODUCTION: Rate limiting aktif (brute force koruması)
-const shouldDisableAuthRateLimit = isDevelopment || process.env.DISABLE_AUTH_RATE_LIMIT === 'true';
+// ✅ Auth rate limiting SADECE gerçek development'ta veya açık opt-in ile kapatılır.
+// `isDevelopment` (NODE_ENV !== 'production') kullanmak; staging, test, boş veya
+// yanlış yazılmış (ör. 'prod') ortamlarda brute-force korumasını sessizce kapatırdı.
+const shouldDisableAuthRateLimit =
+    process.env.NODE_ENV === 'development' || process.env.DISABLE_AUTH_RATE_LIMIT === 'true';
 
 if (shouldDisableAuthRateLimit) {
     logger.info('Auth rate limiting DISABLED (development mode)', {
