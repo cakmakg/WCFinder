@@ -14,6 +14,7 @@
  * - Input Validation: Validation middleware ile korunuyor
  */
 
+const jwt = require("jsonwebtoken");
 const passwordEncrypt = require("../helper/passwordEncrypt");
 const logger = require("../utils/logger");
 const { validateEmail, validatePassword } = require("../middleware/validation");
@@ -316,39 +317,42 @@ module.exports = {
             throw new Error('Please enter token.refresh');
         }
 
-        jwt.verify(refreshToken, process.env.REFRESH_KEY, async function (err, userData) {
-            if (err) {
-                res.errorStatusCode = 401
-                throw err
-            }
+        // ✅ Senkron verify + try/catch: callback formunda atılan throw'lar
+        // express-async-errors tarafından yakalanmaz. Bu yüzden senkron doğrularız.
+        let userData;
+        try {
+            userData = jwt.verify(refreshToken, process.env.REFRESH_KEY);
+        } catch (err) {
+            res.errorStatusCode = 401;
+            throw new Error('Invalid or expired refresh token.');
+        }
 
-            const { _id, password } = userData
+        const { _id, password } = userData;
 
-            if (!(_id && password)) {
-                res.errorStatusCode = 401
-                throw new Error('Not found id or password in token.')
-            }
+        if (!(_id && password)) {
+            res.errorStatusCode = 401;
+            throw new Error('Not found id or password in token.');
+        }
 
-            const user = await User.findOne({ _id });
+        const user = await User.findOne({ _id });
 
-            if (!(user && user.password == password)) {
-                res.errorStatusCode = 401
-                throw new Error('Wrong id or password.');
-            }
+        if (!(user && user.password === password)) {
+            res.errorStatusCode = 401;
+            throw new Error('Wrong id or password.');
+        }
 
-            if (!user.isActive) {
-                res.errorStatusCode = 401
-                throw new Error('This account is not active.')
-            }
+        if (!user.isActive) {
+            res.errorStatusCode = 401;
+            throw new Error('This account is not active.');
+        }
 
-            // ✅ JWT token oluştur (DRY: helper function kullan)
-            const { accessToken } = createJwtTokens(user);
+        // ✅ JWT token oluştur (DRY: helper function kullan)
+        const { accessToken } = createJwtTokens(user);
 
-            res.send({
-                error: false,
-                bearer: { accessToken }
-            })
-        })
+        res.send({
+            error: false,
+            bearer: { accessToken }
+        });
     },
 
     logout: async (req, res) => {
