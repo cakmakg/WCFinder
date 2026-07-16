@@ -1243,45 +1243,71 @@ class PaymentService {
       throw new Error("Only succeeded payments can be refunded");
     }
 
-    let refund;
-
-    if (payment.paymentProvider === "stripe") {
-      const stripe = getStripe();
-      refund = await stripe.refunds.create({
-        payment_intent: payment.paymentIntentId,
-      });
-
-      await paymentRepository.findByIdAndUpdate(payment._id, {
-        status: "refunded",
-        refund: {
-          refundId: refund.id,
-          refundedAt: new Date(),
-          refundAmount: payment.amount,
-          refundReason: reason || "Requested by admin",
-        },
-      });
+    // ✅ IDEMPOTENCY: Ödemeyi atomik olarak kilitle (succeeded → processing).
+    // null dönerse başka bir iade zaten sürüyor/tamamlanmış demektir → çift iade önlenir.
+    const locked = await paymentRepository.claimForRefund(payment._id);
+    if (!locked) {
+      throw new Error("Refund already in progress or completed");
     }
 
-    if (payment.paymentProvider === "paypal") {
-      const paypalClient = getPayPalClient();
-      const request = new paypal.payments.CapturesRefundRequest(
-        payment.transactionId
-      );
-      request.requestBody({});
-      refund = await paypalClient.execute(request);
+    try {
+      let refundDetails;
 
-      await paymentRepository.findByIdAndUpdate(payment._id, {
-        status: "refunded",
-        refund: {
+      if (payment.paymentProvider === "stripe") {
+        const stripe = getStripe();
+        // idempotencyKey: retry'da Stripe aynı iadeyi döner, ikinci kez para iade etmez
+        const refund = await stripe.refunds.create(
+          { payment_intent: payment.paymentIntentId },
+          { idempotencyKey: `refund_${payment._id}` }
+        );
+
+        // Stripe iadesi 'succeeded' (senkron) veya 'pending' (asenkron yöntemler) olabilir
+        if (!["succeeded", "pending"].includes(refund.status)) {
+          throw new Error(`Stripe refund not successful. Status: ${refund.status}`);
+        }
+
+        refundDetails = {
+          refundId: refund.id,
+          refundedAt: new Date(),
+          refundAmount: (refund.amount ?? Math.round(payment.amount * 100)) / 100,
+          refundReason: reason || "Requested by admin",
+        };
+      } else if (payment.paymentProvider === "paypal") {
+        const paypalClient = getPayPalClient();
+        const request = new paypal.payments.CapturesRefundRequest(payment.transactionId);
+        // PayPal-Request-Id: retry'da aynı iadenin tekrarlanmasını engeller
+        request.headers = request.headers || {};
+        request.headers["PayPal-Request-Id"] = `refund_${payment._id}`;
+        request.requestBody({});
+        const refund = await paypalClient.execute(request);
+
+        if (refund.result?.status !== "COMPLETED") {
+          throw new Error(`PayPal refund not completed. Status: ${refund.result?.status}`);
+        }
+
+        refundDetails = {
           refundId: refund.result.id,
           refundedAt: new Date(),
           refundAmount: payment.amount,
           refundReason: reason || "Requested by admin",
-        },
-      });
-    }
+        };
+      } else {
+        throw new Error(`Unsupported payment provider: ${payment.paymentProvider}`);
+      }
 
-    return await paymentRepository.findById(payment._id);
+      // ✅ Yalnızca gateway iadesi onaylandıktan SONRA 'refunded' işaretle
+      await paymentRepository.findByIdAndUpdate(payment._id, {
+        status: "refunded",
+        refund: refundDetails,
+      });
+
+      return await paymentRepository.findById(payment._id);
+    } catch (err) {
+      // Gateway hatası: kilidi geri al ki admin yeniden deneyebilsin (idempotency key
+      // sayesinde başarılı olmuş bir iade retry'da tekrarlanmaz)
+      await paymentRepository.findByIdAndUpdate(payment._id, { status: "succeeded" });
+      throw err;
+    }
   }
 
   /**

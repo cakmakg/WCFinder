@@ -59,6 +59,19 @@ class PaymentRepository {
     );
   }
 
+  /**
+   * İade için atomik kilit: yalnızca ödeme 'succeeded' durumundaysa 'processing'e
+   * geçirir. null dönerse başka bir iade zaten sürüyor/tamamlanmış demektir; çağıran
+   * taraf gateway iadesini ATLAMALIDIR (çift iade önleme).
+   */
+  async claimForRefund(id) {
+    return await Payment.findOneAndUpdate(
+      { _id: id, status: "succeeded" },
+      { $set: { status: "processing" } },
+      { new: true }
+    );
+  }
+
   async updateMany(filter, update) {
     return await Payment.updateMany(filter, update);
   }
