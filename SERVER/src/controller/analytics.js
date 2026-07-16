@@ -1,12 +1,13 @@
 "use strict";
 /**
  * Analytics Controller
- * 
+ *
  * Admin analytics endpoints için controller.
  * Tüm endpoint'ler admin yetkisi gerektirir.
  */
 
 const analyticsService = require("../services/analyticsService");
+const logger = require("../utils/logger");
 
 /**
  * @route GET /api/admin/analytics/revenue-trend
@@ -18,20 +19,20 @@ const getRevenueTrend = async (req, res) => {
         #swagger.tags = ['Analytics']
         #swagger.summary = 'Get Revenue Trend'
         #swagger.description = 'Get revenue trend data for daily/weekly/monthly periods'
-        #swagger.parameters['period'] = { 
-            in: 'query', 
-            description: 'Period type', 
+        #swagger.parameters['period'] = {
+            in: 'query',
+            description: 'Period type',
             type: 'string',
             enum: ['daily', 'weekly', 'monthly'],
             default: 'daily'
         }
-        #swagger.parameters['startDate'] = { 
-            in: 'query', 
+        #swagger.parameters['startDate'] = {
+            in: 'query',
             description: 'Start date (ISO string)',
             type: 'string'
         }
-        #swagger.parameters['endDate'] = { 
-            in: 'query', 
+        #swagger.parameters['endDate'] = {
+            in: 'query',
             description: 'End date (ISO string)',
             type: 'string'
         }
@@ -56,11 +57,11 @@ const getRevenueTrend = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error getting revenue trend:", error);
+        // İç hata mesajı client'a sızdırılmaz; sadece sunucu tarafında loglanır.
+        logger.error("Error retrieving revenue trend", error);
         res.status(500).json({
             error: true,
-            message: "Error retrieving revenue trend",
-            details: error.message
+            message: "Error retrieving revenue trend"
         });
     }
 };
@@ -82,10 +83,10 @@ const getRevenueComparison = async (req, res) => {
         // Default: current 30 days vs previous 30 days
         const end = endDate ? new Date(endDate) : new Date();
         const start = startDate ? new Date(startDate) : new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
-        
+
         const compareEnd = compareEndDate ? new Date(compareEndDate) : new Date(start.getTime() - 1);
-        const compareStart = compareStartDate 
-            ? new Date(compareStartDate) 
+        const compareStart = compareStartDate
+            ? new Date(compareStartDate)
             : new Date(compareEnd.getTime() - (end.getTime() - start.getTime()));
 
         const comparison = await analyticsService.getRevenueComparison(start, end, compareStart, compareEnd);
@@ -106,11 +107,10 @@ const getRevenueComparison = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error getting revenue comparison:", error);
+        logger.error("Error retrieving revenue comparison", error);
         res.status(500).json({
             error: true,
-            message: "Error retrieving revenue comparison",
-            details: error.message
+            message: "Error retrieving revenue comparison"
         });
     }
 };
@@ -146,11 +146,10 @@ const getBusinessPerformance = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error getting business performance:", error);
+        logger.error("Error retrieving business performance", error);
         res.status(500).json({
             error: true,
-            message: "Error retrieving business performance",
-            details: error.message
+            message: "Error retrieving business performance"
         });
     }
 };
@@ -186,11 +185,10 @@ const getCommissionReport = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error getting commission report:", error);
+        logger.error("Error retrieving commission report", error);
         res.status(500).json({
             error: true,
-            message: "Error retrieving commission report",
-            details: error.message
+            message: "Error retrieving commission report"
         });
     }
 };
@@ -225,11 +223,10 @@ const getProfitLoss = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error getting profit/loss:", error);
+        logger.error("Error retrieving profit/loss analysis", error);
         res.status(500).json({
             error: true,
-            message: "Error retrieving profit/loss analysis",
-            details: error.message
+            message: "Error retrieving profit/loss analysis"
         });
     }
 };
@@ -254,11 +251,10 @@ const getDashboardSummary = async (req, res) => {
             result: summary
         });
     } catch (error) {
-        console.error("Error getting dashboard summary:", error);
+        logger.error("Error retrieving dashboard summary", error);
         res.status(500).json({
             error: true,
-            message: "Error retrieving dashboard summary",
-            details: error.message
+            message: "Error retrieving dashboard summary"
         });
     }
 };
@@ -271,4 +267,3 @@ module.exports = {
     getProfitLoss,
     getDashboardSummary
 };
-
