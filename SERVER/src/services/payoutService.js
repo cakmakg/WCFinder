@@ -211,6 +211,10 @@ class PayoutService {
       payoutStatus: "pending",
     });
 
+    if (!(amount > 0)) {
+      throw new Error("Payout amount must be greater than 0");
+    }
+
     const totalPending = pendingPayments.reduce(
       (sum, p) => sum + p.businessFee,
       0
@@ -222,49 +226,65 @@ class PayoutService {
       );
     }
 
-    // Payout kaydı oluştur
-    const payout = await payoutRepository.create({
-      businessId: business._id,
-      amount,
-      currency: "EUR",
-      status: "pending",
-      paymentMethod,
-      period: {
-        startDate: periodStart
-          ? new Date(periodStart)
-          : new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-        endDate: periodEnd ? new Date(periodEnd) : new Date(),
-      },
-      paymentCount: pendingPayments.length,
-      notes,
-      approvedBy,
-    });
-
-    // Payment'ları güncelle
-    await paymentRepository.updateMany(
-      {
-        businessId: business._id,
-        status: "succeeded",
-        payoutStatus: "pending",
-        _id: { $in: pendingPayments.map((p) => p._id) },
-      },
-      {
-        $set: {
-          payoutStatus: "processing",
-          payoutId: payout._id,
-        },
-      }
+    // ✅ ATOMIC + IDEMPOTENT: Bakiyeyi İLK ADIMDA ve yalnızca yeterliyse düş.
+    // Eşzamanlı iki payout'ta ikincisinin guard'ı (pendingBalance >= amount) başarısız
+    // olur → çift ödeme ve negatif bakiye önlenir. Transaction gerektirmez.
+    const debited = await businessRepository.decrementPendingBalance(
+      business._id,
+      amount
     );
+    if (!debited) {
+      throw new Error(
+        "Insufficient pending balance or a concurrent payout is in progress"
+      );
+    }
 
-    // Business balance'ı güncelle
-    await businessRepository.findByIdAndUpdate(business._id, {
-      $inc: {
-        pendingBalance: -amount,
-        totalPaidOut: amount,
-      },
-    });
+    try {
+      // Payout kaydı oluştur
+      const payout = await payoutRepository.create({
+        businessId: business._id,
+        amount,
+        currency: "EUR",
+        status: "pending",
+        paymentMethod,
+        period: {
+          startDate: periodStart
+            ? new Date(periodStart)
+            : new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          endDate: periodEnd ? new Date(periodEnd) : new Date(),
+        },
+        paymentCount: pendingPayments.length,
+        notes,
+        approvedBy,
+      });
 
-    return payout;
+      // Payment'ları claim et (yalnızca hâlâ 'pending' olanlar)
+      await paymentRepository.updateMany(
+        {
+          businessId: business._id,
+          status: "succeeded",
+          payoutStatus: "pending",
+          _id: { $in: pendingPayments.map((p) => p._id) },
+        },
+        {
+          $set: {
+            payoutStatus: "processing",
+            payoutId: payout._id,
+          },
+        }
+      );
+
+      return payout;
+    } catch (err) {
+      // Payout kaydı oluşturulamazsa düşülen bakiyeyi geri ekle
+      await businessRepository.findByIdAndUpdate(business._id, {
+        $inc: {
+          pendingBalance: amount,
+          totalPaidOut: -amount,
+        },
+      });
+      throw err;
+    }
   }
 
   /**
