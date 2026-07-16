@@ -13,6 +13,9 @@
 
 const Business = require("../models/business");
 const User = require("../models/user");
+const Toilet = require("../models/toilet");
+const Usage = require("../models/usage");
+const Review = require("../models/review");
 const { validateBusiness } = require("../services/validationService");
 const passwordEncrypt = require("../helper/passwordEncrypt");
 const { ValidationError } = require("../middleware/errorHnadler");
@@ -335,6 +338,25 @@ module.exports = {
             businessName: business.businessName,
             deletedBy: req.user._id
         });
+
+        // ✅ DATA INTEGRITY: Rezervasyon/ödeme geçmişi olan bir business SİLİNEMEZ.
+        // Finansal kayıtlar korunmalı; orphan usage/payment ve veri kaybı önlenir.
+        const usageCount = await Usage.countDocuments({ businessId: business._id });
+        if (usageCount > 0) {
+            res.errorStatusCode = 409;
+            throw new Error(
+                "Business has booking/payment history and cannot be deleted. Deactivate it instead."
+            );
+        }
+
+        // ✅ CASCADE: Rezervasyon yoksa bağlı toilet ve review'ları da temizle
+        // (aksi halde silinen business'a işaret eden orphan kayıtlar kalırdı).
+        const toilets = await Toilet.find({ business: business._id }).select('_id');
+        const toiletIds = toilets.map((t) => t._id);
+        if (toiletIds.length > 0) {
+            await Review.deleteMany({ toiletId: { $in: toiletIds } });
+            await Toilet.deleteMany({ business: business._id });
+        }
 
         const result = await Business.deleteOne({ _id: req.params.id });
 
