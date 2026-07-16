@@ -15,7 +15,7 @@ const {
     useAccessCode,
     cancel,
 } = require('../controller/usage');
-const { isLogin, isAdmin } = require('../middleware/permissions');
+const { isLogin, isAdmin, isOwnerOrAdmin } = require('../middleware/permissions');
 
 // URL: /usages
 
@@ -24,8 +24,10 @@ router.get('/my-usages', isLogin, myUsages);
 router.get('/my-usages/:id', isLogin, myUsageDetail);
 router.post('/cancel/:id', isLogin, cancel);
 
-// ✅ QR kod kullanımı (işletme tarafından)
-router.post('/use-access-code', useAccessCode);
+// ✅ QR kod kullanımı (işletme tarafından — owner/admin auth zorunlu)
+// Korumasız bırakılırsa herkes 6 haneli kodları kaba kuvvetle deneyip müşteri
+// PII'sini görebilir ve meşru rezervasyonları "kullanıldı" yapabilir.
+router.post('/use-access-code', isOwnerOrAdmin, useAccessCode);
 
 // ✅ Ödeme sonrası onay (internal - payment controller'dan çağrılır)
 router.post('/confirm-payment', isLogin, confirmPayment);

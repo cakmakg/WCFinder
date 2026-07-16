@@ -458,6 +458,15 @@ module.exports = {
             throw new Error("Invalid access code");
         }
 
+        // ✅ SECURITY: Kodu yalnızca ait olduğu işletmenin sahibi (veya admin) kullanabilir.
+        // Aksi halde bir owner, başka bir işletmenin kodlarını kullanabilir/görebilirdi.
+        const isAdminUser = req.user.role === 'admin';
+        const businessOwnerId = usage.businessId?.owner?.toString();
+        if (!isAdminUser && businessOwnerId !== req.user._id.toString()) {
+            res.errorStatusCode = 403;
+            throw new Error("You are not authorized to redeem this access code");
+        }
+
         // Zaten kullanıldı mı?
         if (usage.accessUsed) {
             res.errorStatusCode = 400;
