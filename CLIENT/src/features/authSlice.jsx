@@ -9,7 +9,8 @@
  * - Email and other sensitive data must be fetched from backend
  */
 import { createSlice } from "@reduxjs/toolkit";
-import { getUserData, storeUserData, removeUserData } from "../utils/userStorage";
+import { getUserData, storeUserData } from "../utils/userStorage";
+import { setAccessToken, setRefreshToken, clearSession } from "../utils/authSession";
 
 const getInitialToken = () => {
   try {
@@ -45,6 +46,7 @@ const authSlice = createSlice({
     registerSuccess: (state, { payload }) => {
       const userData = payload.user || payload.data?.user;
       const tokenData = payload.bearer?.accessToken || payload.token;
+      const refreshToken = payload.bearer?.refreshToken;
       
       // Security: Sanitize user data - remove sensitive information
       // Store: _id, username, role, isActive, email, firstName, lastName
@@ -62,9 +64,12 @@ const authSlice = createSlice({
       state.currentUser = sanitizedUser;
       state.token = tokenData;
       state.loading = false;
-      
+
       if (tokenData) {
-        localStorage.setItem('token', tokenData);
+        setAccessToken(tokenData);
+      }
+      if (refreshToken) {
+        setRefreshToken(refreshToken);
       }
       if (sanitizedUser) {
         // Use secure storage utility (removes password only)
@@ -76,6 +81,7 @@ const authSlice = createSlice({
       // ✅ Fallback: Backend response formatı değişebilir
       const userData = payload?.user || payload?.data?.user;
       const tokenData = payload?.bearer?.accessToken || payload?.token;
+      const refreshToken = payload?.bearer?.refreshToken;
       
       // Security: Sanitize user data - remove sensitive information
       // Store: _id, username, role, isActive, email, firstName, lastName
@@ -93,9 +99,12 @@ const authSlice = createSlice({
       state.currentUser = sanitizedUser;
       state.token = tokenData;
       state.loading = false;
-      
+
       if (tokenData) {
-        localStorage.setItem('token', tokenData);
+        setAccessToken(tokenData);
+      }
+      if (refreshToken) {
+        setRefreshToken(refreshToken);
       }
       if (sanitizedUser) {
         // Use secure storage utility (removes password only)
@@ -107,10 +116,9 @@ const authSlice = createSlice({
       state.currentUser = null;
       state.token = null;
       state.loading = false;
-      
-      localStorage.removeItem('token');
-      // Use secure removal utility
-      removeUserData();
+
+      // token + refreshToken + user tek yerden temizlenir
+      clearSession();
     },
 
     userUpdateSuccess: (state, { payload }) => {
@@ -147,9 +155,8 @@ const authSlice = createSlice({
       state.currentUser = null;
       state.token = null;
       state.loading = false;
-      localStorage.removeItem('token');
-      // Use secure removal utility
-      removeUserData();
+      // token + refreshToken + user tek yerden temizlenir
+      clearSession();
     }
   },
 });

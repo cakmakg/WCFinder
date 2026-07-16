@@ -2,41 +2,16 @@
 // Centralized API client configuration
 
 import axios from "axios";
-
-const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
-const BASE_URL = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+import { API_BASE_URL, attachAuthInterceptors } from "../../utils/authSession";
 
 const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request interceptor - Token ekle
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Response interceptor - Error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - logout
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
+// Token ekleme + 401'de refresh/oturum temizliği merkezi olarak yönetiliyor
+attachAuthInterceptors(apiClient);
 
 export default apiClient;
-

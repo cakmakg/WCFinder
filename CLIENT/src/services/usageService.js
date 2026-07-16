@@ -13,44 +13,20 @@ import axios from 'axios';
 import { isValidObjectId, validateBookingData } from '../utils/validation';
 import { handleError } from '../utils/errorHandler';
 import logger from '../utils/logger';
-
-// Environment variable validation
-const getBaseUrl = () => {
-  const baseUrl = import.meta.env.VITE_BASE_URL;
-  if (!baseUrl) {
-    logger.warn('VITE_BASE_URL not set, using default localhost');
-  }
-  const url = baseUrl || 'http://localhost:8000';
-  return url.endsWith('/api') ? url : `${url}/api`;
-};
-
-const BASE_URL = getBaseUrl();
+import { API_BASE_URL, attachAuthInterceptors } from '../utils/authSession';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds timeout
 });
 
-// Request interceptor: Add authentication token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Sanitize token (remove any whitespace)
-      const cleanToken = token.trim();
-      config.headers.Authorization = `Bearer ${cleanToken}`;
-    }
-    return config;
-  },
-  (error) => {
-    logger.error('Request interceptor error', error);
-    return Promise.reject(error);
-  }
-);
+// Token ekleme + 401'de refresh/oturum temizliği merkezi olarak yönetiliyor.
+// handleError interceptor'ından ÖNCE bağlanmalı ki 401-retry hata dönüşümünden önce çalışsın.
+attachAuthInterceptors(api);
 
 // Response interceptor: Handle errors globally
 api.interceptors.response.use(
