@@ -270,13 +270,16 @@ module.exports = (req, res, next) => {
          * @returns {Promise<Array>} Model listesi
          */
         res.getModelList = async (Model, customFilter = {}, populate = null) => {
+            // catch bloğunda da erişilebilir olmalı; try içinde const olursa
+            // hata anında ReferenceError atıp asıl DB hatasını maskeler.
+            let combinedFilter = {};
             try {
                 // SECURITY: Sanitize custom filter to prevent NoSQL injection
                 const sanitizedCustomFilter = sanitizeFilter(customFilter, 0, req);
-                
+
                 // Combined filter
-                const combinedFilter = { ...filter, ...search, ...sanitizedCustomFilter };
-                
+                combinedFilter = { ...filter, ...search, ...sanitizedCustomFilter };
+
                 // Query oluştur
                 let query = Model.find(combinedFilter);
                 
