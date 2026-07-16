@@ -137,11 +137,6 @@ const PaymentPage = () => {
               );
               
               if (pendingPayments && pendingPayments.length > 0) {
-                // En son oluşturulan payment'i al
-                const latestPayment = pendingPayments.sort((a, b) => 
-                  new Date(b.createdAt) - new Date(a.createdAt)
-                )[0];
-                
                 if (import.meta.env.DEV) {
                   console.log('[PaymentPage] Found existing pending payment');
                   console.log('[PaymentPage] Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
@@ -350,6 +345,32 @@ const PaymentPage = () => {
       }
       setError('Fehler beim Erstellen der Reservierung. Bitte kontaktieren Sie den Support.');
     }
+  };
+
+  // ✅ PayPal: capture backend'de usage'ı zaten oluşturuyor — stripe/confirm ÇAĞRILMAZ.
+  // Yanıt bir Payment dokümanıdır (usageId, transactionId, paymentMethod içerir).
+  const handlePayPalSuccess = (payment) => {
+    const usageId = payment?.usageId;
+
+    if (!usageId) {
+      if (import.meta.env.DEV) {
+        console.error('[PaymentPage] PayPal capture returned no usageId');
+      }
+      setError('Fehler beim Erstellen der Reservierung. Bitte kontaktieren Sie den Support.');
+      return;
+    }
+
+    navigate('/payment/success', {
+      state: {
+        bookingData: {
+          ...bookingData,
+          usageId,
+          paymentMethod: 'paypal',
+        },
+        paymentResult: payment,
+        transactionId: payment.transactionId || payment._id,
+      },
+    });
   };
 
   const handlePaymentError = (error) => {
@@ -679,7 +700,7 @@ const PaymentPage = () => {
                         <PayPalButton
                           usageId={paypalOrderId}
                           amount={bookingData.pricing.total}
-                          onSuccess={handlePaymentSuccess}
+                          onSuccess={handlePayPalSuccess}
                           onError={handlePaymentError}
                         />
                       )}
