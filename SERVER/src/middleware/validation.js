@@ -89,20 +89,20 @@ const sanitizeInput = (obj, depth = 0) => {
 const escapeHtml = (text) => {
     if (typeof text !== 'string') return text;
     
-    // Comprehensive XSS protection - escape all potentially dangerous characters
     const map = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
         '"': '&quot;',
-        "'": '&#039;',
-        '/': '&#x2F;', // Prevent XSS via closing tags
-        '`': '&#x60;', // Backtick can be used in XSS
-        '=': '&#x3D;'  // Equals sign in attributes
+        "'": '&#039;'
     };
-    
-    // Replace all dangerous characters in a single pass
-    return text.replace(/[&<>"'`=\/]/g, m => map[m] || m);
+
+    // NOT: '/', '`' ve '=' KASITEN escape edilMEZ. Bu bir JSON API'dir; girdi
+    // aşamasında bu karakterleri kaçırmak IBAN, URL, ISO tarih ve base64 gibi
+    // meşru verileri kalıcı olarak bozar (ör. "https://" → "https:&#x2F;&#x2F;").
+    // XSS koruması, asıl tehlikeli olan < > " ' & karakterlerinin kaçışıyla sağlanır;
+    // çıktı kodlaması istemci tarafının sorumluluğundadır.
+    return text.replace(/[&<>"']/g, m => map[m] || m);
 };
 
 /**

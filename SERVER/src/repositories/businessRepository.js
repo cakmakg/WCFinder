@@ -35,6 +35,19 @@ class BusinessRepository {
     return await Business.updateMany(filter, update);
   }
 
+  /**
+   * Bekleyen bakiyeden atomik olarak düşer. Yalnızca pendingBalance >= amount ise
+   * uygular ve güncellenen dokümanı döner. null dönerse yetersiz bakiye ya da
+   * eşzamanlı bir payout var demektir → çift ödeme / negatif bakiye önlenir.
+   */
+  async decrementPendingBalance(id, amount) {
+    return await Business.findOneAndUpdate(
+      { _id: id, pendingBalance: { $gte: amount } },
+      { $inc: { pendingBalance: -amount, totalPaidOut: amount } },
+      { new: true }
+    );
+  }
+
   async deleteOne(filter) {
     return await Business.deleteOne(filter);
   }

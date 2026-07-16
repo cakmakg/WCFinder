@@ -3,18 +3,20 @@
 "use strict"
 const router = require('express').Router();
 const { list, create, read, update, deletee } = require('../controller/toilet');
-const { isLogin, isAdmin } = require('../middleware/permissions');
+const { isOwnerOrAdmin } = require('../middleware/permissions');
 
 // URL: /toilets
 
+// ℹ️ Yazma işlemleri owner/admin gerektirir; controller ayrıca kaynağın çağıran
+//    owner'ın işletmesine ait olduğunu (resource-scoped) doğrular.
 router.route('/')
-    .get(list)                 // ✅ Herkes görebilir (public - login gerektirmez)
-    .post(isAdmin, create);    // ✅ Sadece Admin ekler
+    .get(list)                        // ✅ Herkes görebilir (public)
+    .post(isOwnerOrAdmin, create);    // ✅ Owner/Admin ekler
 
 router.route('/:id')
-    .get(read)                 // ✅ Herkes görebilir (public - login gerektirmez)
-    .put(isAdmin, update)      // ✅ Sadece Admin günceller
-    .patch(isAdmin, update)    // ✅ Sadece Admin günceller
-    .delete(isAdmin, deletee); // ✅ Sadece Admin siler
+    .get(read)                        // ✅ Herkes görebilir (public)
+    .put(isOwnerOrAdmin, update)      // ✅ Owner/Admin günceller
+    .patch(isOwnerOrAdmin, update)    // ✅ Owner/Admin günceller
+    .delete(isOwnerOrAdmin, deletee); // ✅ Owner/Admin siler
 
 module.exports = router;

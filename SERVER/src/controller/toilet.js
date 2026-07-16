@@ -1,9 +1,29 @@
 "use strict";
 
 const Toilet = require("../models/toilet");
+const Business = require("../models/business");
+const Review = require("../models/review");
+const Usage = require("../models/usage");
 const logger = require("../utils/logger");
 const { FEE_CONFIG, STATUS } = require("../constants");
 const { validateToilet } = require("../services/validationService");
+const { validateObjectId } = require("../middleware/validation");
+
+/**
+ * Resource-scoped yetki: admin her şeye erişir; owner yalnızca KENDİ işletmesine
+ * ait tuvaleti yönetebilir. Yetki yoksa uygun statü koduyla hata fırlatır.
+ */
+const assertToiletOwnership = (business, req, res) => {
+  if (!business) {
+    res.errorStatusCode = 404;
+    throw new Error("Business not found.");
+  }
+  const isAdminUser = req.user.role === 'admin';
+  if (!isAdminUser && business.owner.toString() !== req.user._id.toString()) {
+    res.errorStatusCode = 403;
+    throw new Error("You can only manage toilets of your own business.");
+  }
+};
 
 module.exports = {
   /**
@@ -89,7 +109,15 @@ module.exports = {
       res.errorStatusCode = 400;
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
-    
+
+    // ✅ SECURITY: business geçerli olmalı ve owner yalnızca KENDİ işletmesine ekleyebilir
+    if (!validateObjectId(req.body.business)) {
+      res.errorStatusCode = 400;
+      throw new Error("Valid business is required");
+    }
+    const business = await Business.findById(req.body.business);
+    assertToiletOwnership(business, req, res);
+
     // ✅ Yeni tuvalet kayıtlarında fee her zaman DEFAULT_TOILET_FEE olmalı (DRY principle)
     // Security: Prevent fee manipulation by always using constant
     const toiletData = {
@@ -190,10 +218,20 @@ module.exports = {
       res.errorStatusCode = 400;
       throw new Error('Invalid toilet ID format');
     }
-    
+
+    // ✅ SECURITY: Kaynak sahipliği — owner yalnızca KENDİ işletmesinin tuvaletini günceller
+    const existingToilet = await Toilet.findById(req.params.id);
+    if (!existingToilet) {
+      res.errorStatusCode = 404;
+      throw new Error("Toilet not found for update.");
+    }
+    const business = await Business.findById(existingToilet.business);
+    assertToiletOwnership(business, req, res);
+
     // ✅ SECURITY: Prevent fee manipulation (fee should only be set via constants)
     const updateData = { ...req.body };
-    delete updateData.fee; // Fee cannot be changed via update
+    delete updateData.fee;      // Fee cannot be changed via update
+    delete updateData.business; // Tuvalet başka bir işletmeye taşınamaz
     
     // ✅ SECURITY: Input validation
     if (Object.keys(updateData).length > 0) {
@@ -249,9 +287,28 @@ module.exports = {
       res.errorStatusCode = 400;
       throw new Error('Invalid toilet ID format');
     }
-    
+
+    // ✅ SECURITY: Kaynak sahipliği — owner yalnızca KENDİ işletmesinin tuvaletini siler
+    const existingToilet = await Toilet.findById(req.params.id);
+    if (!existingToilet) {
+      res.errorStatusCode = 404;
+      throw new Error("Toilet not found or already deleted.");
+    }
+    const business = await Business.findById(existingToilet.business);
+    assertToiletOwnership(business, req, res);
+
+    // ✅ DATA INTEGRITY: Rezervasyon/ödeme geçmişi olan tuvalet SİLİNEMEZ (finansal koruma)
+    const usageCount = await Usage.countDocuments({ toiletId: existingToilet._id });
+    if (usageCount > 0) {
+      res.errorStatusCode = 409;
+      throw new Error("Toilet has booking/payment history and cannot be deleted.");
+    }
+
+    // ✅ CASCADE: Bağlı review'ları da temizle (orphan bırakma)
+    await Review.deleteMany({ toiletId: existingToilet._id });
+
     logger.debug('Deleting toilet', { toiletId: req.params.id });
-    
+
     const result = await Toilet.findByIdAndDelete(req.params.id);
 
     if (result) {

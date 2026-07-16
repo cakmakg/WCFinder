@@ -145,11 +145,13 @@ function calculateUsageStats(toiletIds, thirtyDaysAgo) {
  */
 function calculateRevenueStats(toiletIds) {
     return Usage.aggregate([
-        { 
-            $match: { 
+        {
+            $match: {
                 toiletId: { $in: toiletIds },
-                status: { $in: ['paid', 'completed'] }
-            } 
+                // 'paid' bir paymentStatus değeridir, status enum'unda yoktur.
+                // Ödenmiş (henüz tamamlanmamış) rezervasyonlar da gelire sayılmalı.
+                $or: [{ paymentStatus: 'paid' }, { status: 'completed' }]
+            }
         },
         { 
             $group: { 

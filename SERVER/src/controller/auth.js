@@ -14,6 +14,7 @@
  * - Input Validation: Validation middleware ile korunuyor
  */
 
+const jwt = require("jsonwebtoken");
 const passwordEncrypt = require("../helper/passwordEncrypt");
 const logger = require("../utils/logger");
 const { validateEmail, validatePassword } = require("../middleware/validation");
@@ -207,30 +208,16 @@ module.exports = {
             throw new Error("Already used username or email.");
         }
 
-        // ✅ Role kontrolü (güvenlik: admin role'ü register ile alınamaz)
-        // Owner ve user role'leri register ile alınabilir, admin sadece admin tarafından atanabilir
-        let allowedRole = 'user'; // Default role
+        // ✅ SECURITY: Public register HER ZAMAN normal 'user' hesabı oluşturur.
+        // role ve isActive client'tan ASLA alınmaz (yetki yükseltme koruması).
+        // Owner hesapları işletme başvuru akışıyla (partnerRegistration) + admin
+        // onayıyla oluşturulur; admin role'ü sadece admin tarafından atanabilir.
         const requestedRole = req.body.role?.trim().toLowerCase();
-        
-        if (requestedRole === 'owner') {
-            allowedRole = 'owner';
-        } else if (requestedRole === 'admin') {
-            // ✅ SECURITY: Admin role'ü register ile alınamaz (role hijacking koruması)
-            logger.warn('Registration attempt with admin role blocked', { 
-                email: normalizedEmail, 
-                ip: req.ip 
-            });
-            throw new ValidationError("Admin role cannot be assigned during registration.");
-        }
-        // requestedRole === 'user' veya undefined ise default 'user' kullanılır
-
-        // Log registration attempt (only if role is not default)
-        if (allowedRole !== 'user') {
-            logger.info('User registration with custom role', {
+        if (requestedRole && requestedRole !== 'user') {
+            logger.warn('Registration attempt with elevated role ignored', {
                 username: normalizedUsername,
                 email: normalizedEmail,
                 requestedRole,
-                allowedRole,
                 ip: req.ip
             });
         }
@@ -240,8 +227,8 @@ module.exports = {
             username: normalizedUsername,
             email: normalizedEmail,
             password: passwordEncrypt(password), // ✅ CRITICAL: Şifreyi hash'le (asla plain text saklama!)
-            role: allowedRole, // ✅ SECURITY: Sadece 'user' veya 'owner' role'ü ile kayıt (admin hariç)
-            isActive: req.body.isActive !== undefined ? req.body.isActive : true // isActive parametreden alınır, yoksa default true
+            role: 'user',   // ✅ SECURITY: Public register her zaman 'user' oluşturur
+            isActive: true  // ✅ SECURITY: isActive client'tan alınmaz, server belirler
         };
 
         // User oluştur
@@ -330,39 +317,42 @@ module.exports = {
             throw new Error('Please enter token.refresh');
         }
 
-        jwt.verify(refreshToken, process.env.REFRESH_KEY, async function (err, userData) {
-            if (err) {
-                res.errorStatusCode = 401
-                throw err
-            }
+        // ✅ Senkron verify + try/catch: callback formunda atılan throw'lar
+        // express-async-errors tarafından yakalanmaz. Bu yüzden senkron doğrularız.
+        let userData;
+        try {
+            userData = jwt.verify(refreshToken, process.env.REFRESH_KEY);
+        } catch (err) {
+            res.errorStatusCode = 401;
+            throw new Error('Invalid or expired refresh token.');
+        }
 
-            const { _id, password } = userData
+        const { _id, password } = userData;
 
-            if (!(_id && password)) {
-                res.errorStatusCode = 401
-                throw new Error('Not found id or password in token.')
-            }
+        if (!(_id && password)) {
+            res.errorStatusCode = 401;
+            throw new Error('Not found id or password in token.');
+        }
 
-            const user = await User.findOne({ _id });
+        const user = await User.findOne({ _id });
 
-            if (!(user && user.password == password)) {
-                res.errorStatusCode = 401
-                throw new Error('Wrong id or password.');
-            }
+        if (!(user && user.password === password)) {
+            res.errorStatusCode = 401;
+            throw new Error('Wrong id or password.');
+        }
 
-            if (!user.isActive) {
-                res.errorStatusCode = 401
-                throw new Error('This account is not active.')
-            }
+        if (!user.isActive) {
+            res.errorStatusCode = 401;
+            throw new Error('This account is not active.');
+        }
 
-            // ✅ JWT token oluştur (DRY: helper function kullan)
-            const { accessToken } = createJwtTokens(user);
+        // ✅ JWT token oluştur (DRY: helper function kullan)
+        const { accessToken } = createJwtTokens(user);
 
-            res.send({
-                error: false,
-                bearer: { accessToken }
-            })
-        })
+        res.send({
+            error: false,
+            bearer: { accessToken }
+        });
     },
 
     logout: async (req, res) => {

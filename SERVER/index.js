@@ -184,10 +184,17 @@ app.use(cors({
     optionsSuccessStatus: 200, // OPTIONS request'ler için 200 döndür
 }));
 
+// ✅ Stripe Webhook (JSON body parser'dan ÖNCE mount edilmeli):
+// Stripe imza doğrulaması (constructEvent) gövdenin HAM (raw Buffer) halini gerektirir.
+// Bu route global express.json ve validateAndSanitize'dan ÖNCE kendi raw parser'ıyla
+// mount edilir; aksi halde gövde parse/sanitize edilir ve imza doğrulaması her zaman başarısız olur.
+const { stripeWebhook } = require('./src/controller/payment');
+app.post('/api/payments/webhook/stripe', express.raw({ type: 'application/json' }), stripeWebhook);
+
 // ✅ Body Parser (JSON)
-app.use(express.json({ 
+app.use(express.json({
     limit: process.env.MAX_BODY_SIZE || '10mb',
-    strict: true 
+    strict: true
 }));
 
 // ✅ URL Encoded (form data)
@@ -243,9 +250,11 @@ app.all('/', (req, res) => {
 // Development'ta rate limiting'i devre dışı bırak, production'da aktif et
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-// ✅ DEVELOPMENT: Rate limiting'i tamamen devre dışı bırak (login testleri için)
-// ✅ PRODUCTION: Rate limiting aktif (brute force koruması)
-const shouldDisableAuthRateLimit = isDevelopment || process.env.DISABLE_AUTH_RATE_LIMIT === 'true';
+// ✅ Auth rate limiting SADECE gerçek development'ta veya açık opt-in ile kapatılır.
+// `isDevelopment` (NODE_ENV !== 'production') kullanmak; staging, test, boş veya
+// yanlış yazılmış (ör. 'prod') ortamlarda brute-force korumasını sessizce kapatırdı.
+const shouldDisableAuthRateLimit =
+    process.env.NODE_ENV === 'development' || process.env.DISABLE_AUTH_RATE_LIMIT === 'true';
 
 if (shouldDisableAuthRateLimit) {
     logger.info('Auth rate limiting DISABLED (development mode)', {

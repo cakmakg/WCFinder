@@ -11,6 +11,7 @@ const Usage = require("../models/usage");
 const Toilet = require("../models/toilet");
 const Review = require("../models/review");
 const User = require("../models/user");
+const logger = require("../utils/logger");
 
 // Platform service fee
 const SERVICE_FEE = 0.75;
@@ -58,11 +59,10 @@ const list = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error listing monthly reports:", error);
+    logger.error("Error listing monthly reports:", error);
     res.status(500).json({
       error: true,
       message: "Error retrieving monthly reports",
-      details: error.message,
     });
   }
 };
@@ -95,11 +95,10 @@ const read = async (req, res) => {
       result: report,
     });
   } catch (error) {
-    console.error("Error reading monthly report:", error);
+    logger.error("Error reading monthly report:", error);
     res.status(500).json({
       error: true,
       message: "Error retrieving report",
-      details: error.message,
     });
   }
 };
@@ -314,11 +313,10 @@ const generate = async (req, res) => {
       result: populatedReport,
     });
   } catch (error) {
-    console.error("Error generating monthly report:", error);
+    logger.error("Error generating monthly report:", error);
     res.status(500).json({
       error: true,
       message: "Error generating report",
-      details: error.message,
     });
   }
 };
@@ -361,11 +359,10 @@ const update = async (req, res) => {
       result: report,
     });
   } catch (error) {
-    console.error("Error updating monthly report:", error);
+    logger.error("Error updating monthly report:", error);
     res.status(500).json({
       error: true,
       message: "Error updating report",
-      details: error.message,
     });
   }
 };
@@ -395,11 +392,10 @@ const destroy = async (req, res) => {
       message: "Report deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting monthly report:", error);
+    logger.error("Error deleting monthly report:", error);
     res.status(500).json({
       error: true,
       message: "Error deleting report",
-      details: error.message,
     });
   }
 };
@@ -431,11 +427,10 @@ const getByBusiness = async (req, res) => {
       result: reports,
     });
   } catch (error) {
-    console.error("Error getting business reports:", error);
+    logger.error("Error getting business reports:", error);
     res.status(500).json({
       error: true,
       message: "Error retrieving business reports",
-      details: error.message,
     });
   }
 };
@@ -552,11 +547,10 @@ const generateBulk = async (req, res) => {
       result: results,
     });
   } catch (error) {
-    console.error("Error in bulk report generation:", error);
+    logger.error("Error in bulk report generation:", error);
     res.status(500).json({
       error: true,
       message: "Error generating bulk reports",
-      details: error.message,
     });
   }
 };

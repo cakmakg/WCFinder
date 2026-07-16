@@ -385,9 +385,40 @@ module.exports = {
             throw new Error("This usage has already been paid");
         }
 
-        // ✅ Ödeme durumunu güncelle (pre-save hook QR kod oluşturacak)
+        // ✅ SECURITY: paymentId gerçekten var olan, bu kullanıcıya ait ve BAŞARILI
+        // bir ödemeye işaret etmeli. Aksi halde kullanıcı ödeme yapmadan
+        // rezervasyonunu 'paid' işaretleyip access code alabilirdi.
+        if (!validateObjectId(paymentId)) {
+            res.errorStatusCode = 400;
+            throw new Error("Valid paymentId is required");
+        }
+
+        const payment = await Payment.findById(paymentId);
+
+        if (!payment) {
+            res.errorStatusCode = 404;
+            throw new Error("Payment not found");
+        }
+
+        if (payment.userId.toString() !== req.user._id.toString()) {
+            res.errorStatusCode = 403;
+            throw new Error("Payment does not belong to this user");
+        }
+
+        if (payment.status !== 'succeeded') {
+            res.errorStatusCode = 400;
+            throw new Error("Payment has not been completed");
+        }
+
+        // Ödeme başka bir rezervasyona bağlıysa reddet
+        if (payment.usageId && payment.usageId.toString() !== usageId.toString()) {
+            res.errorStatusCode = 400;
+            throw new Error("Payment does not match this usage");
+        }
+
+        // ✅ Ödeme doğrulandı — durumu güncelle (pre-save hook QR kod oluşturacak)
         usage.paymentStatus = 'paid';
-        usage.paymentId = paymentId;
+        usage.paymentId = payment._id;
         await usage.save();
 
         // Güncellenmiş usage'ı döndür
@@ -425,6 +456,15 @@ module.exports = {
         if (!usage) {
             res.errorStatusCode = 404;
             throw new Error("Invalid access code");
+        }
+
+        // ✅ SECURITY: Kodu yalnızca ait olduğu işletmenin sahibi (veya admin) kullanabilir.
+        // Aksi halde bir owner, başka bir işletmenin kodlarını kullanabilir/görebilirdi.
+        const isAdminUser = req.user.role === 'admin';
+        const businessOwnerId = usage.businessId?.owner?.toString();
+        if (!isAdminUser && businessOwnerId !== req.user._id.toString()) {
+            res.errorStatusCode = 403;
+            throw new Error("You are not authorized to redeem this access code");
         }
 
         // Zaten kullanıldı mı?

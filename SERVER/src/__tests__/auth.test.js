@@ -102,7 +102,9 @@ describe('Auth Controller', () => {
       expect(res.body.error).toBe(true);
     });
 
-    it('should block admin role registration', async () => {
+    // SECURITY: Public register yetki yükseltmeye izin vermez; talep edilen
+    // admin/owner rolü sessizce 'user'a düşürülür (yetki yükseltme koruması).
+    it('should downgrade admin role registration to user', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
@@ -112,11 +114,11 @@ describe('Auth Controller', () => {
           role: 'admin',
         });
 
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBe(true);
+      expect(res.status).toBe(201);
+      expect(res.body.user.role).toBe('user');
     });
 
-    it('should allow owner role registration', async () => {
+    it('should downgrade owner role registration to user', async () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
@@ -127,7 +129,7 @@ describe('Auth Controller', () => {
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.user.role).toBe('owner');
+      expect(res.body.user.role).toBe('user');
     });
   });
 

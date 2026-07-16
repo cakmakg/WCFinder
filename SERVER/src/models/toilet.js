@@ -51,6 +51,7 @@ const ToiletSchema = new mongoose.Schema(
         // Performans için - Review tarafından otomatik güncellenir
         averageRatings: {
             cleanliness: { type: Number, default: 0 },
+            accessibility: { type: Number, default: 0 },
             overall: { type: Number, default: 0 },
         },
         reviewCount: {

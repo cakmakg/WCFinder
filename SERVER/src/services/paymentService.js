@@ -3,6 +3,7 @@
 const paymentRepository = require("../repositories/paymentRepository");
 const usageRepository = require("../repositories/usageRepository");
 const businessRepository = require("../repositories/businessRepository");
+const Toilet = require("../models/toilet");
 const User = require("../models/user");
 const getStripe = require("../config/stripe");
 const getPayPalClient = require("../config/paypal");
@@ -39,8 +40,40 @@ class PaymentService {
 
     return {
       platformFee: Math.round(platformFee * 100) / 100,
-      businessFee: Math.round(businessFee * 100) / 100,
+      // SECURITY: businessFee ASLA negatif olmamalı. totalAmount < platformFee ise
+      // (geçersiz/manipüle edilmiş booking) 0'a clamp'lenir; asıl reddetme booking
+      // doğrulamasında yapılır — bu bir savunma katmanıdır (bakiye bütünlüğü).
+      businessFee: Math.max(0, Math.round(businessFee * 100) / 100),
     };
+  }
+
+  /**
+   * ✅ SECURITY: Ödenecek tutarı SUNUCUDA otoritatif olarak hesaplar.
+   * Client'ın gönderdiği tutar ASLA güvenilmez (tutar manipülasyonu koruması).
+   * Fiyat = (toilet.fee × kişi) + (servis ücreti × kişi).
+   *
+   * @param {string} toiletId
+   * @param {string} businessId - tuvaletin ait olması beklenen işletme (doğrulama)
+   * @param {number|string} personCount
+   * @returns {Promise<number>} EUR cinsinden, 2 ondalığa yuvarlanmış tutar
+   */
+  async computeAuthoritativeAmount(toiletId, businessId, personCount) {
+    const toilet = await Toilet.findById(toiletId);
+    if (!toilet) {
+      throw new Error("Toilet not found");
+    }
+    if (businessId && toilet.business.toString() !== businessId.toString()) {
+      throw new Error("Toilet does not belong to the given business");
+    }
+
+    const count = parseInt(personCount) || 1;
+    if (count < 1) {
+      throw new Error("Invalid personCount");
+    }
+
+    const serviceFee = (FEE_CONFIG.SERVICE_FEE || 0.75) * count;
+    const amount = toilet.fee * count + serviceFee;
+    return Math.round(amount * 100) / 100;
   }
 
   /**
@@ -199,7 +232,13 @@ class PaymentService {
    * ✅ YENİ: Stripe ödeme başlat (booking bilgileri ile - ödeme sonrası usage oluşturulacak)
    */
   async createStripePaymentFromBooking(bookingData, userId) {
-    const { businessId, toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
+    const { businessId, toiletId, personCount, startTime, genderPreference } = bookingData;
+
+    // ✅ SECURITY: Tutar SUNUCUDA hesaplanır; client'ın gönderdiği totalAmount yok sayılır
+    //    (tutar manipülasyonu koruması). Downstream (metadata, dedup) tutarlı olsun diye
+    //    otoritatif değeri bookingData'ya da yazıyoruz.
+    const totalAmount = await this.computeAuthoritativeAmount(toiletId, businessId, personCount);
+    bookingData.totalAmount = totalAmount;
 
     // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
     const existingPayment = await this.findDuplicatePaymentByBooking({
@@ -292,6 +331,14 @@ class PaymentService {
     
     if (amountInCents < minAmountInCents) {
       throw new Error(`Invalid amount: Amount must be at least ${MIN_PAYMENT_AMOUNT_EUR} EUR`);
+    }
+
+    // SECURITY: totalAmount, platform ücretini karşılamalı; aksi halde businessFee
+    // negatif olur (ör. düşük tutar + yüksek personCount) ve işletme bakiyesi bozulurdu.
+    if (totalAmount < fees.platformFee) {
+      throw new Error(
+        `Invalid amount: Amount (${totalAmount} EUR) must cover the platform fee (${fees.platformFee} EUR)`
+      );
     }
 
     logger.debug('Creating payment intent from booking', {
@@ -548,20 +595,20 @@ class PaymentService {
     try {
       console.log('[PayPal] createPayPalOrderFromBooking started with userId:', userId);
       
-      const { businessId, toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
-      
+      const { businessId, toiletId, personCount, startTime, genderPreference } = bookingData;
+
+      // ✅ SECURITY: Tutar SUNUCUDA otoritatif hesaplanır; client'ın gönderdiği
+      //    totalAmount yok sayılır (tutar manipülasyonu koruması). Downstream tutarlılık
+      //    için otoritatif değeri bookingData'ya da yazıyoruz.
+      const amount = await this.computeAuthoritativeAmount(toiletId, businessId, personCount);
+      bookingData.totalAmount = amount;
+
       console.log('[PayPal] Input data:', {
         businessId,
-        totalAmount,
+        amount,
         personCount,
         hasToiletId: !!toiletId,
       });
-      
-      // Validate and convert totalAmount to number
-      const amount = typeof totalAmount === 'string' ? parseFloat(totalAmount) : Number(totalAmount);
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error(`Invalid totalAmount: ${totalAmount}. Must be a positive number.`);
-      }
 
       // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
       const existingPayment = await this.findDuplicatePaymentByBooking({
@@ -726,10 +773,20 @@ class PaymentService {
   /**
    * PayPal ödeme onayla
    */
-  async capturePayPalOrder(orderId) {
+  async capturePayPalOrder(orderId, userId) {
     const payment = await paymentRepository.findOne({ paypalOrderId: orderId });
     if (!payment) {
       throw new Error("Payment not found");
+    }
+
+    // ✅ SECURITY: Ödeme, çağıran kullanıcıya ait olmalı (IDOR koruması)
+    if (userId && payment.userId.toString() !== userId.toString()) {
+      throw new Error("Unauthorized");
+    }
+
+    // ✅ IDEMPOTENCY: Zaten işlenmişse tekrar kredilendirme/usage oluşturma
+    if (payment.status === "succeeded") {
+      return await paymentRepository.findById(payment._id);
     }
 
     // PayPal Order'ı yakala
@@ -737,12 +794,23 @@ class PaymentService {
     const request = new paypal.orders.OrdersCaptureRequest(orderId);
     const capture = await paypalClient.execute(request);
 
-    // Payment durumunu güncelle
-    await paymentRepository.findByIdAndUpdate(payment._id, {
-      status: "succeeded",
+    // ✅ SECURITY: PayPal capture GERÇEKTEN tamamlanmış olmalı
+    if (capture.result?.status !== "COMPLETED") {
+      throw new Error(
+        `PayPal capture not completed. Status: ${capture.result?.status || "unknown"}`
+      );
+    }
+
+    // ✅ IDEMPOTENCY: Ödemeyi atomik olarak 'succeeded'a geçir. Paralel bir istek
+    // zaten settle etmişse claim null döner → bakiye tekrar kredilendirilMEZ.
+    const claimed = await paymentRepository.claimSucceeded(payment._id, {
       transactionId: capture.result.purchase_units[0].payments.captures[0].id,
       gatewayResponse: capture.result,
     });
+
+    if (!claimed) {
+      return await paymentRepository.findById(payment._id);
+    }
 
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
@@ -832,11 +900,46 @@ class PaymentService {
       throw new Error("Unauthorized");
     }
 
-    // Payment durumunu güncelle
-    await paymentRepository.findByIdAndUpdate(payment._id, {
-      status: "succeeded",
+    // ✅ IDEMPOTENCY: Zaten başarıyla işlenmişse tekrar kredilendirme/usage oluşturma.
+    // (Stripe retry, çift tıklama veya webhook ile yarış durumlarına karşı koruma.)
+    if (payment.status === "succeeded") {
+      return await paymentRepository.findById(payment._id);
+    }
+
+    // ✅ SECURITY: Ödemenin GERÇEKTEN Stripe'ta başarılı olduğunu doğrula.
+    // Aksi halde kullanıcı, ödeme yapmadan 'pending' bir PaymentIntent'i confirm
+    // ederek ücretsiz rezervasyon + access code alabilirdi.
+    const stripe = getStripe();
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (!paymentIntent || paymentIntent.status !== "succeeded") {
+      throw new Error(
+        `Payment not completed. Stripe status: ${paymentIntent?.status || "unknown"}`
+      );
+    }
+
+    // ✅ SECURITY: Tahsil edilen tutar ve para birimi kayıtla eşleşmeli (tutar manipülasyonu koruması)
+    const expectedAmount = Math.round(payment.amount * 100); // EUR → cent
+    if (paymentIntent.amount_received !== expectedAmount) {
+      throw new Error(
+        `Payment amount mismatch. Expected ${expectedAmount}, received ${paymentIntent.amount_received}`
+      );
+    }
+    if ((paymentIntent.currency || "").toLowerCase() !== (payment.currency || "").toLowerCase()) {
+      throw new Error(
+        `Payment currency mismatch. Expected ${payment.currency}, got ${paymentIntent.currency}`
+      );
+    }
+
+    // ✅ IDEMPOTENCY: Ödemeyi atomik olarak 'succeeded'a geçir. Webhook veya paralel
+    // bir istek zaten settle etmişse claim null döner → tekrar kredilendirme/usage yok.
+    const claimed = await paymentRepository.claimSucceeded(payment._id, {
       transactionId: paymentIntentId,
     });
+
+    if (!claimed) {
+      return await paymentRepository.findById(payment._id);
+    }
 
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
@@ -844,22 +947,13 @@ class PaymentService {
       
       console.log("📋 Payment metadata:", JSON.stringify(metadata, null, 2));
       
-      // Eğer metadata yoksa, Stripe payment intent'ten metadata'yı al
-      if (!metadata.toiletId || !metadata.startTime) {
-        console.log("⚠️ Metadata missing, trying to get from Stripe payment intent...");
-        try {
-          const stripe = getStripe();
-          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-          if (paymentIntent.metadata) {
-            metadata = {
-              ...metadata,
-              ...paymentIntent.metadata,
-            };
-            console.log("✅ Got metadata from Stripe payment intent:", JSON.stringify(metadata, null, 2));
-          }
-        } catch (stripeErr) {
-          console.error("❌ Error retrieving payment intent metadata:", stripeErr);
-        }
+      // Metadata eksikse, yukarıda çekilen Stripe PaymentIntent'inden tamamla
+      // (ayrı bir Stripe çağrısına gerek yok, intent zaten doğrulama için alındı)
+      if ((!metadata.toiletId || !metadata.startTime) && paymentIntent.metadata) {
+        metadata = {
+          ...metadata,
+          ...paymentIntent.metadata,
+        };
       }
       
       // Metadata kontrolü ve validasyon
@@ -1091,11 +1185,20 @@ class PaymentService {
       });
 
       if (payment) {
-        await paymentRepository.findByIdAndUpdate(payment._id, {
-          status: "succeeded",
+        // ✅ IDEMPOTENCY: Atomik olarak 'succeeded'a geçir. confirm veya önceki bir
+        // webhook zaten settle etmişse claim null döner → bakiye tekrar kredilendirilMEZ.
+        const claimed = await paymentRepository.claimSucceeded(payment._id, {
           transactionId: paymentIntent.id,
           gatewayResponse: paymentIntent,
         });
+
+        if (!claimed) {
+          logger.info("Stripe webhook: payment already settled, skipping credit", {
+            paymentId: payment._id,
+            eventId: event.id,
+          });
+          return;
+        }
 
         // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
         if (!payment.usageId) {
@@ -1188,45 +1291,71 @@ class PaymentService {
       throw new Error("Only succeeded payments can be refunded");
     }
 
-    let refund;
-
-    if (payment.paymentProvider === "stripe") {
-      const stripe = getStripe();
-      refund = await stripe.refunds.create({
-        payment_intent: payment.paymentIntentId,
-      });
-
-      await paymentRepository.findByIdAndUpdate(payment._id, {
-        status: "refunded",
-        refund: {
-          refundId: refund.id,
-          refundedAt: new Date(),
-          refundAmount: payment.amount,
-          refundReason: reason || "Requested by admin",
-        },
-      });
+    // ✅ IDEMPOTENCY: Ödemeyi atomik olarak kilitle (succeeded → processing).
+    // null dönerse başka bir iade zaten sürüyor/tamamlanmış demektir → çift iade önlenir.
+    const locked = await paymentRepository.claimForRefund(payment._id);
+    if (!locked) {
+      throw new Error("Refund already in progress or completed");
     }
 
-    if (payment.paymentProvider === "paypal") {
-      const paypalClient = getPayPalClient();
-      const request = new paypal.payments.CapturesRefundRequest(
-        payment.transactionId
-      );
-      request.requestBody({});
-      refund = await paypalClient.execute(request);
+    try {
+      let refundDetails;
 
-      await paymentRepository.findByIdAndUpdate(payment._id, {
-        status: "refunded",
-        refund: {
+      if (payment.paymentProvider === "stripe") {
+        const stripe = getStripe();
+        // idempotencyKey: retry'da Stripe aynı iadeyi döner, ikinci kez para iade etmez
+        const refund = await stripe.refunds.create(
+          { payment_intent: payment.paymentIntentId },
+          { idempotencyKey: `refund_${payment._id}` }
+        );
+
+        // Stripe iadesi 'succeeded' (senkron) veya 'pending' (asenkron yöntemler) olabilir
+        if (!["succeeded", "pending"].includes(refund.status)) {
+          throw new Error(`Stripe refund not successful. Status: ${refund.status}`);
+        }
+
+        refundDetails = {
+          refundId: refund.id,
+          refundedAt: new Date(),
+          refundAmount: (refund.amount ?? Math.round(payment.amount * 100)) / 100,
+          refundReason: reason || "Requested by admin",
+        };
+      } else if (payment.paymentProvider === "paypal") {
+        const paypalClient = getPayPalClient();
+        const request = new paypal.payments.CapturesRefundRequest(payment.transactionId);
+        // PayPal-Request-Id: retry'da aynı iadenin tekrarlanmasını engeller
+        request.headers = request.headers || {};
+        request.headers["PayPal-Request-Id"] = `refund_${payment._id}`;
+        request.requestBody({});
+        const refund = await paypalClient.execute(request);
+
+        if (refund.result?.status !== "COMPLETED") {
+          throw new Error(`PayPal refund not completed. Status: ${refund.result?.status}`);
+        }
+
+        refundDetails = {
           refundId: refund.result.id,
           refundedAt: new Date(),
           refundAmount: payment.amount,
           refundReason: reason || "Requested by admin",
-        },
-      });
-    }
+        };
+      } else {
+        throw new Error(`Unsupported payment provider: ${payment.paymentProvider}`);
+      }
 
-    return await paymentRepository.findById(payment._id);
+      // ✅ Yalnızca gateway iadesi onaylandıktan SONRA 'refunded' işaretle
+      await paymentRepository.findByIdAndUpdate(payment._id, {
+        status: "refunded",
+        refund: refundDetails,
+      });
+
+      return await paymentRepository.findById(payment._id);
+    } catch (err) {
+      // Gateway hatası: kilidi geri al ki admin yeniden deneyebilsin (idempotency key
+      // sayesinde başarılı olmuş bir iade retry'da tekrarlanmaz)
+      await paymentRepository.findByIdAndUpdate(payment._id, { status: "succeeded" });
+      throw err;
+    }
   }
 
   /**

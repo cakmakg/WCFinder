@@ -67,17 +67,20 @@ ReviewSchema.statics.calculateAverageRatings = async function(toiletId) {
     const Toilet = mongoose.model('Toilet');
 
     if (stats.length > 0) {
+        // parseFloat: Number alanına string ('4.5') değil sayı (4.5) yazılmalı.
+        const round1 = (v) => parseFloat((v || 0).toFixed(1));
         await Toilet.findByIdAndUpdate(toiletId, {
             reviewCount: stats[0].reviewCount,
             averageRatings: {
-                cleanliness: stats[0].avgCleanliness.toFixed(1),
-                overall: stats[0].avgOverall.toFixed(1)
+                cleanliness: round1(stats[0].avgCleanliness),
+                accessibility: round1(stats[0].avgAccessibility),
+                overall: round1(stats[0].avgOverall)
             }
         });
     } else {
         await Toilet.findByIdAndUpdate(toiletId, {
             reviewCount: 0,
-            averageRatings: { cleanliness: 0, overall: 0 }
+            averageRatings: { cleanliness: 0, accessibility: 0, overall: 0 }
         });
     }
 };
@@ -92,6 +95,15 @@ ReviewSchema.post('save', async function() {
 ReviewSchema.post('findOneAndDelete', async function(doc) {
     // 'remove' yerine 'findOneAndDelete' hook'unu kullanmak daha modern ve güvenilirdir.
     // 'doc' silinen dokümanı temsil eder.
+    if (doc) {
+        await doc.constructor.calculateAverageRatings(doc.toiletId);
+    }
+});
+
+// BİR YORUM GÜNCELLENDİKTEN SONRA (findByIdAndUpdate/findOneAndUpdate)
+// Controller update için findByIdAndUpdate kullanıyor; bu 'save' hook'unu tetiklemez,
+// dolayısıyla puan düzenlemelerinde tuvaletin ortalaması güncellenmezdi.
+ReviewSchema.post('findOneAndUpdate', async function(doc) {
     if (doc) {
         await doc.constructor.calculateAverageRatings(doc.toiletId);
     }

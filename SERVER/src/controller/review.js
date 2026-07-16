@@ -24,6 +24,7 @@
  */
 
 const Review = require("../models/review");
+const Usage = require("../models/usage");
 const { validateObjectId } = require("../middleware/validation");
 const { ValidationError } = require("../middleware/errorHnadler");
 const logger = require("../utils/logger");
@@ -83,8 +84,8 @@ module.exports = {
     }
 
     // SECURITY: Validate required fields
-    const { rating, comment, toiletId } = req.body;
-    
+    const { rating, comment, toiletId, usageId } = req.body;
+
     if (!toiletId) {
       res.errorStatusCode = 400;
       throw new ValidationError("toiletId is required");
@@ -96,40 +97,69 @@ module.exports = {
       throw new ValidationError("Invalid toiletId format");
     }
 
-    // SECURITY: Validate rating (must be 1-5)
-    if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+    // SECURITY: Yorum yalnızca GERÇEKTEN kullanılan (ödenmiş) bir rezervasyon için
+    // yapılabilir. usageId zorunludur; bu kullanıcıya ait, bu tuvalete ait ve ödenmiş
+    // olmalı. Ayrıca 'usage' alanı (unique) her rezervasyona tek yorumu garanti eder.
+    if (!validateObjectId(usageId)) {
       res.errorStatusCode = 400;
-      throw new ValidationError("Rating must be a number between 1 and 5");
+      throw new ValidationError("Valid usageId is required to review");
     }
 
-    // SECURITY: Validate comment length (prevent DoS)
-    if (comment && typeof comment === 'string' && comment.length > 5000) {
+    const usage = await Usage.findById(usageId);
+    if (!usage) {
+      res.errorStatusCode = 404;
+      throw new ValidationError("Usage not found");
+    }
+    if (usage.userId.toString() !== req.user._id.toString()) {
+      res.errorStatusCode = 403;
+      throw new ValidationError("You can only review your own bookings");
+    }
+    if (usage.toiletId.toString() !== toiletId.toString()) {
       res.errorStatusCode = 400;
-      throw new ValidationError("Comment must be less than 5000 characters");
+      throw new ValidationError("Usage does not match the given toilet");
+    }
+    if (usage.paymentStatus !== 'paid') {
+      res.errorStatusCode = 400;
+      throw new ValidationError("You can only review a paid booking");
     }
 
-    // SECURITY: Prevent user ID injection - always use authenticated user's ID
-    const reviewData = {
-      ...req.body,
-      userId: req.user._id, // CRITICAL: Use authenticated user ID, not from request body
-      toiletId: toiletId.trim()
-    };
+    // SECURITY: Rating şema ile aynı yapıda olmalı: { cleanliness, accessibility, overall }
+    // Her biri 1-5 arası zorunlu. Aksi halde Mongoose cast hatası (500) oluşurdu.
+    if (!rating || typeof rating !== 'object' || Array.isArray(rating)) {
+      res.errorStatusCode = 400;
+      throw new ValidationError("Rating must be an object with cleanliness, accessibility and overall (1-5)");
+    }
 
-    // Remove any attempt to inject userId from request body
-    delete reviewData.userId;
+    const ratingFields = ['cleanliness', 'accessibility', 'overall'];
+    const sanitizedRating = {};
+    for (const field of ratingFields) {
+      const value = rating[field];
+      if (typeof value !== 'number' || !Number.isFinite(value) || value < 1 || value > 5) {
+        res.errorStatusCode = 400;
+        throw new ValidationError(`Rating '${field}' must be a number between 1 and 5`);
+      }
+      sanitizedRating[field] = value;
+    }
+
+    // SECURITY: Validate comment length (şema limiti: 1000)
+    if (comment && typeof comment === 'string' && comment.length > 1000) {
+      res.errorStatusCode = 400;
+      throw new ValidationError("Comment must be less than 1000 characters");
+    }
 
     logger.debug('Creating review', {
       userId: req.user._id,
       toiletId,
-      rating
     });
 
     try {
+      // SECURITY: userId her zaman authenticated kullanıcıdan alınır (body'den ASLA)
       const data = await Review.create({
         userId: req.user._id,
-        rating,
+        rating: sanitizedRating,
         comment: comment ? comment.trim() : undefined,
-        toiletId
+        toiletId,
+        usage: usageId, // unique: rezervasyon başına tek yorum
       });
 
       logger.info('Review created successfully', {

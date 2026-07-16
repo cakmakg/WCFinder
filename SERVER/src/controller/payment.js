@@ -208,7 +208,7 @@ module.exports = {
         throw new Error("orderId is required");
       }
 
-      const result = await paymentService.capturePayPalOrder(orderId);
+      const result = await paymentService.capturePayPalOrder(orderId, req.user._id);
 
       res.status(200).send({
         error: false,
