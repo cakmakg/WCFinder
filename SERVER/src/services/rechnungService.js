@@ -327,7 +327,19 @@ class RechnungService {
             if (rechnung.status === 'storniert') {
                 throw new Error("Stornierte Rechnungen können nicht bezahlt werden");
             }
-            
+
+            // Betrag prüfen: over-payment koruması (registerPayment ile aynı kural).
+            // Aksi halde offenerBetrag negatife düşer ve fazla tutar üzerinden payout üretilirdi.
+            if (!(zahlungsDaten.betrag > 0)) {
+                throw new Error("Zahlungsbetrag muss größer als 0 sein");
+            }
+            const offenerBetrag = rechnung.offenerBetrag != null
+                ? rechnung.offenerBetrag
+                : (rechnung.summen.zahlbetrag || rechnung.summen.bruttobetrag) - (rechnung.bezahlterBetrag || 0);
+            if (zahlungsDaten.betrag > offenerBetrag) {
+                throw new Error(`Betrag übersteigt offenen Betrag (${offenerBetrag.toFixed(2)}€)`);
+            }
+
             // Zahlung zur Rechnung hinzufügen (bestehende Methode nutzen)
             const zahlung = rechnung.addZahlung(zahlungsDaten, benutzer, benutzerId);
             
