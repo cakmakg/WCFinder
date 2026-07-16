@@ -24,6 +24,7 @@
  */
 
 const Review = require("../models/review");
+const Usage = require("../models/usage");
 const { validateObjectId } = require("../middleware/validation");
 const { ValidationError } = require("../middleware/errorHnadler");
 const logger = require("../utils/logger");
@@ -83,7 +84,7 @@ module.exports = {
     }
 
     // SECURITY: Validate required fields
-    const { rating, comment, toiletId } = req.body;
+    const { rating, comment, toiletId, usageId } = req.body;
 
     if (!toiletId) {
       res.errorStatusCode = 400;
@@ -94,6 +95,32 @@ module.exports = {
     if (!validateObjectId(toiletId)) {
       res.errorStatusCode = 400;
       throw new ValidationError("Invalid toiletId format");
+    }
+
+    // SECURITY: Yorum yalnızca GERÇEKTEN kullanılan (ödenmiş) bir rezervasyon için
+    // yapılabilir. usageId zorunludur; bu kullanıcıya ait, bu tuvalete ait ve ödenmiş
+    // olmalı. Ayrıca 'usage' alanı (unique) her rezervasyona tek yorumu garanti eder.
+    if (!validateObjectId(usageId)) {
+      res.errorStatusCode = 400;
+      throw new ValidationError("Valid usageId is required to review");
+    }
+
+    const usage = await Usage.findById(usageId);
+    if (!usage) {
+      res.errorStatusCode = 404;
+      throw new ValidationError("Usage not found");
+    }
+    if (usage.userId.toString() !== req.user._id.toString()) {
+      res.errorStatusCode = 403;
+      throw new ValidationError("You can only review your own bookings");
+    }
+    if (usage.toiletId.toString() !== toiletId.toString()) {
+      res.errorStatusCode = 400;
+      throw new ValidationError("Usage does not match the given toilet");
+    }
+    if (usage.paymentStatus !== 'paid') {
+      res.errorStatusCode = 400;
+      throw new ValidationError("You can only review a paid booking");
     }
 
     // SECURITY: Rating şema ile aynı yapıda olmalı: { cleanliness, accessibility, overall }
@@ -132,6 +159,7 @@ module.exports = {
         rating: sanitizedRating,
         comment: comment ? comment.trim() : undefined,
         toiletId,
+        usage: usageId, // unique: rezervasyon başına tek yorum
       });
 
       logger.info('Review created successfully', {
