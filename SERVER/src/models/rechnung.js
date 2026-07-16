@@ -559,31 +559,48 @@ RechnungSchema.pre('validate', async function(next) {
     if (!this.rechnungsnummer && this.rechnungsdatum) {
         const jahr = this.rechnungsdatum.getFullYear();
         const monat = String(this.rechnungsdatum.getMonth() + 1).padStart(2, '0');
-        
-        // Letzte Rechnung im gleichen Monat finden
+
+        // ✅ YARIŞ-GÜVENLİ SIRA NUMARASI: Eski "en son faturayı bul + 1" yaklaşımı
+        // eşzamanlı iki fatura oluşturmada AYNI numarayı üretip unique index ihlali
+        // (numara boşluğu / kayıp fatura) yaratıyordu. Atomik bir sayaç kullanılıyor.
+        const Counter = require('./counter');
+        const counterKey = `rechnung-${jahr}-${monat}`;
+
+        // İlk kullanımda sayacı, o ayki mevcut en yüksek numaradan tohumla
+        // (eski verilerle çakışmayı önlemek için). $setOnInsert + upsert yarış-güvenli.
+        const monatsStart = new Date(jahr, this.rechnungsdatum.getMonth(), 1);
+        const monatsEnde = new Date(jahr, this.rechnungsdatum.getMonth() + 1, 1);
         const letzteRechnung = await this.constructor
-            .findOne({
-                rechnungsdatum: {
-                    $gte: new Date(jahr, this.rechnungsdatum.getMonth(), 1),
-                    $lt: new Date(jahr, this.rechnungsdatum.getMonth() + 1, 1)
-                }
-            })
-            .sort({ createdAt: -1 });
-        
-        let laufendeNummer = 1;
+            .findOne({ rechnungsdatum: { $gte: monatsStart, $lt: monatsEnde } })
+            .sort({ rechnungsnummer: -1 });
+
+        let startSeq = 0;
         if (letzteRechnung && letzteRechnung.rechnungsnummer) {
             const parts = letzteRechnung.rechnungsnummer.split('-');
             if (parts.length === 4) {
                 const letzteLaufendeNr = parseInt(parts[3]);
                 if (!isNaN(letzteLaufendeNr)) {
-                    laufendeNummer = letzteLaufendeNr + 1;
+                    startSeq = letzteLaufendeNr;
                 }
             }
         }
-        
+        await Counter.updateOne(
+            { _id: counterKey },
+            { $setOnInsert: { seq: startSeq } },
+            { upsert: true }
+        );
+
+        // Atomik artır: eşzamanlı istekler farklı, sıralı numara alır
+        const counter = await Counter.findByIdAndUpdate(
+            counterKey,
+            { $inc: { seq: 1 } },
+            { new: true }
+        );
+        const laufendeNummer = counter.seq;
+
         this.rechnungsnummer = `RE-${jahr}-${monat}-${String(laufendeNummer).padStart(5, '0')}`;
     }
-    
+
     next();
 });
 
