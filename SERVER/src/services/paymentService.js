@@ -832,6 +832,37 @@ class PaymentService {
       throw new Error("Unauthorized");
     }
 
+    // ✅ IDEMPOTENCY: Zaten başarıyla işlenmişse tekrar kredilendirme/usage oluşturma.
+    // (Stripe retry, çift tıklama veya webhook ile yarış durumlarına karşı koruma.)
+    if (payment.status === "succeeded") {
+      return await paymentRepository.findById(payment._id);
+    }
+
+    // ✅ SECURITY: Ödemenin GERÇEKTEN Stripe'ta başarılı olduğunu doğrula.
+    // Aksi halde kullanıcı, ödeme yapmadan 'pending' bir PaymentIntent'i confirm
+    // ederek ücretsiz rezervasyon + access code alabilirdi.
+    const stripe = getStripe();
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (!paymentIntent || paymentIntent.status !== "succeeded") {
+      throw new Error(
+        `Payment not completed. Stripe status: ${paymentIntent?.status || "unknown"}`
+      );
+    }
+
+    // ✅ SECURITY: Tahsil edilen tutar ve para birimi kayıtla eşleşmeli (tutar manipülasyonu koruması)
+    const expectedAmount = Math.round(payment.amount * 100); // EUR → cent
+    if (paymentIntent.amount_received !== expectedAmount) {
+      throw new Error(
+        `Payment amount mismatch. Expected ${expectedAmount}, received ${paymentIntent.amount_received}`
+      );
+    }
+    if ((paymentIntent.currency || "").toLowerCase() !== (payment.currency || "").toLowerCase()) {
+      throw new Error(
+        `Payment currency mismatch. Expected ${payment.currency}, got ${paymentIntent.currency}`
+      );
+    }
+
     // Payment durumunu güncelle
     await paymentRepository.findByIdAndUpdate(payment._id, {
       status: "succeeded",
@@ -844,22 +875,13 @@ class PaymentService {
       
       console.log("📋 Payment metadata:", JSON.stringify(metadata, null, 2));
       
-      // Eğer metadata yoksa, Stripe payment intent'ten metadata'yı al
-      if (!metadata.toiletId || !metadata.startTime) {
-        console.log("⚠️ Metadata missing, trying to get from Stripe payment intent...");
-        try {
-          const stripe = getStripe();
-          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-          if (paymentIntent.metadata) {
-            metadata = {
-              ...metadata,
-              ...paymentIntent.metadata,
-            };
-            console.log("✅ Got metadata from Stripe payment intent:", JSON.stringify(metadata, null, 2));
-          }
-        } catch (stripeErr) {
-          console.error("❌ Error retrieving payment intent metadata:", stripeErr);
-        }
+      // Metadata eksikse, yukarıda çekilen Stripe PaymentIntent'inden tamamla
+      // (ayrı bir Stripe çağrısına gerek yok, intent zaten doğrulama için alındı)
+      if ((!metadata.toiletId || !metadata.startTime) && paymentIntent.metadata) {
+        metadata = {
+          ...metadata,
+          ...paymentIntent.metadata,
+        };
       }
       
       // Metadata kontrolü ve validasyon
