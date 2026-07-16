@@ -3,6 +3,7 @@
 const paymentRepository = require("../repositories/paymentRepository");
 const usageRepository = require("../repositories/usageRepository");
 const businessRepository = require("../repositories/businessRepository");
+const Toilet = require("../models/toilet");
 const User = require("../models/user");
 const getStripe = require("../config/stripe");
 const getPayPalClient = require("../config/paypal");
@@ -44,6 +45,35 @@ class PaymentService {
       // doğrulamasında yapılır — bu bir savunma katmanıdır (bakiye bütünlüğü).
       businessFee: Math.max(0, Math.round(businessFee * 100) / 100),
     };
+  }
+
+  /**
+   * ✅ SECURITY: Ödenecek tutarı SUNUCUDA otoritatif olarak hesaplar.
+   * Client'ın gönderdiği tutar ASLA güvenilmez (tutar manipülasyonu koruması).
+   * Fiyat = (toilet.fee × kişi) + (servis ücreti × kişi).
+   *
+   * @param {string} toiletId
+   * @param {string} businessId - tuvaletin ait olması beklenen işletme (doğrulama)
+   * @param {number|string} personCount
+   * @returns {Promise<number>} EUR cinsinden, 2 ondalığa yuvarlanmış tutar
+   */
+  async computeAuthoritativeAmount(toiletId, businessId, personCount) {
+    const toilet = await Toilet.findById(toiletId);
+    if (!toilet) {
+      throw new Error("Toilet not found");
+    }
+    if (businessId && toilet.business.toString() !== businessId.toString()) {
+      throw new Error("Toilet does not belong to the given business");
+    }
+
+    const count = parseInt(personCount) || 1;
+    if (count < 1) {
+      throw new Error("Invalid personCount");
+    }
+
+    const serviceFee = (FEE_CONFIG.SERVICE_FEE || 0.75) * count;
+    const amount = toilet.fee * count + serviceFee;
+    return Math.round(amount * 100) / 100;
   }
 
   /**
@@ -202,7 +232,13 @@ class PaymentService {
    * ✅ YENİ: Stripe ödeme başlat (booking bilgileri ile - ödeme sonrası usage oluşturulacak)
    */
   async createStripePaymentFromBooking(bookingData, userId) {
-    const { businessId, toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
+    const { businessId, toiletId, personCount, startTime, genderPreference } = bookingData;
+
+    // ✅ SECURITY: Tutar SUNUCUDA hesaplanır; client'ın gönderdiği totalAmount yok sayılır
+    //    (tutar manipülasyonu koruması). Downstream (metadata, dedup) tutarlı olsun diye
+    //    otoritatif değeri bookingData'ya da yazıyoruz.
+    const totalAmount = await this.computeAuthoritativeAmount(toiletId, businessId, personCount);
+    bookingData.totalAmount = totalAmount;
 
     // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
     const existingPayment = await this.findDuplicatePaymentByBooking({
@@ -559,29 +595,20 @@ class PaymentService {
     try {
       console.log('[PayPal] createPayPalOrderFromBooking started with userId:', userId);
       
-      const { businessId, toiletId, personCount, startTime, genderPreference, totalAmount } = bookingData;
-      
+      const { businessId, toiletId, personCount, startTime, genderPreference } = bookingData;
+
+      // ✅ SECURITY: Tutar SUNUCUDA otoritatif hesaplanır; client'ın gönderdiği
+      //    totalAmount yok sayılır (tutar manipülasyonu koruması). Downstream tutarlılık
+      //    için otoritatif değeri bookingData'ya da yazıyoruz.
+      const amount = await this.computeAuthoritativeAmount(toiletId, businessId, personCount);
+      bookingData.totalAmount = amount;
+
       console.log('[PayPal] Input data:', {
         businessId,
-        totalAmount,
+        amount,
         personCount,
         hasToiletId: !!toiletId,
       });
-      
-      // Validate and convert totalAmount to number
-      const amount = typeof totalAmount === 'string' ? parseFloat(totalAmount) : Number(totalAmount);
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error(`Invalid totalAmount: ${totalAmount}. Must be a positive number.`);
-      }
-
-      // SECURITY: totalAmount platform ücretini karşılamalı; aksi halde businessFee
-      // negatif olur ve işletme bakiyesi bozulurdu. Order oluşturmadan ÖNCE reddet.
-      const { platformFee: paypalPlatformFee } = this.calculateFees(amount, personCount || 1);
-      if (amount < paypalPlatformFee) {
-        throw new Error(
-          `Invalid amount: Amount (${amount} EUR) must cover the platform fee (${paypalPlatformFee} EUR)`
-        );
-      }
 
       // ✅ Duplicate kontrolü: Aynı booking için zaten bir pending payment var mı?
       const existingPayment = await this.findDuplicatePaymentByBooking({
