@@ -22,7 +22,7 @@ export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
   if (isRejected || !isResolved) {
     return (
       <Alert severity="warning" sx={{ mb: 2 }}>
-        PayPal is not configured properly. Please check your environment variables (VITE_PAYPAL_CLIENT_ID).
+        PayPal ist derzeit nicht verfügbar. Bitte wählen Sie eine andere Zahlungsmethode.
       </Alert>
     );
   }

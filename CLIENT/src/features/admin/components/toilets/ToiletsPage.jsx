@@ -94,7 +94,7 @@ const ToiletsPage = () => {
       setBusinesses(businessesData.result || []);
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError("Veriler yüklenirken hata oluştu.");
+      setError("Fehler beim Laden der Daten.");
     } finally {
       setLoading(false);
     }
@@ -209,11 +209,11 @@ const ToiletsPage = () => {
       if (selectedToilet) {
         // Update existing
         await adminService.updateToilet(selectedToilet._id, formData);
-        setSuccess("Tuvalet başarıyla güncellendi!");
+        setSuccess("Toilette erfolgreich aktualisiert!");
       } else {
         // Create new
         await axiosWithToken.post("/toilets", formData);
-        setSuccess("Tuvalet başarıyla oluşturuldu!");
+        setSuccess("Toilette erfolgreich erstellt!");
       }
 
       setEditDialogOpen(false);
@@ -221,7 +221,7 @@ const ToiletsPage = () => {
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Error saving toilet:", error);
-      setError(error.response?.data?.message || "Kaydetme hatası oluştu.");
+      setError(error.response?.data?.message || "Fehler beim Speichern.");
     }
   };
 
@@ -232,11 +232,11 @@ const ToiletsPage = () => {
       setDeleteDialogOpen(false);
       setSelectedToilet(null);
       await fetchData();
-      setSuccess("Tuvalet başarıyla silindi!");
+      setSuccess("Toilette erfolgreich gelöscht!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error("Error deleting toilet:", error);
-      setError("Silme hatası oluştu.");
+      setError("Fehler beim Löschen.");
     }
   };
 
@@ -502,7 +502,7 @@ const ToiletsPage = () => {
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
-                    <Typography color="text.secondary">Kayıt bulunamadı</Typography>
+                    <Typography color="text.secondary">Keine Einträge gefunden</Typography>
                   </TableCell>
                 </TableRow>
               ) : (

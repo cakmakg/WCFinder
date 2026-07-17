@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
+import { Box, CircularProgress } from '@mui/material';
 
 import Login from '../pages/Login';
 import Register from '../pages/Register';
@@ -15,9 +17,18 @@ import PaymentPage from '../pages/PaymentPage';
 import PaymentSuccessPage from '../pages/PaymentSuccessPage';
 import PaymentFailedPage from '../pages/PaymentFailedPage';
 import MyBookingsPage from '../pages/MyBookingsPage';
-import AdminPanel from '../pages/AdminPanel';
 import OwnerProfilePage from '../pages/OwnerProfilePage';
 import StartPage from '../pages/StartPage';
+import NotFoundPage from '../pages/NotFoundPage';
+
+// Admin paneli lazy: recharts/jspdf/xlsx zinciri ana bundle'a girmesin
+const AdminPanel = lazy(() => import('../pages/AdminPanel'));
+
+const SuspenseFallback = (
+  <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <CircularProgress sx={{ color: '#0891b2' }} />
+  </Box>
+);
 
 // Stripe key kontrolü
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -48,6 +59,7 @@ if (import.meta.env.DEV) {
 const AppRouter = () => {
   const content = (
     <Router>
+      <Suspense fallback={SuspenseFallback}>
       <Routes>
         {/* ========== PUBLIC ROUTES (Login gerektirmez) ========== */}
         
@@ -76,7 +88,11 @@ const AppRouter = () => {
           <Route path="/owner-profile" element={<OwnerProfilePage />} />
           </Route>
         </Route>
+
+        {/* ========== 404 ========== */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
     </Router>
   );
 

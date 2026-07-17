@@ -28,7 +28,7 @@ const useAuthCall = () => {
         startAction: fetchStart,
         successAction: loginSuccess,
         errorAction: fetchFail,
-        successMessage: "Giriş işlemi başarılı.",
+        successMessage: "Erfolgreich angemeldet.",
         requiresAuth: false,
       });
 
@@ -57,7 +57,7 @@ const useAuthCall = () => {
         startAction: fetchStart,
         successAction: registerSuccess,
         errorAction: fetchFail,
-        successMessage: "Kayıt işlemi başarılı.",
+        successMessage: "Registrierung erfolgreich.",
         requiresAuth: false,
       });
 
@@ -77,7 +77,7 @@ const useAuthCall = () => {
         startAction: fetchStart,
         successAction: logoutSuccess,
         errorAction: fetchFail,
-        successMessage: "Çıkış işlemi başarılı.",
+        successMessage: "Erfolgreich abgemeldet.",
         requiresAuth: true,
       });
     } catch (error) {

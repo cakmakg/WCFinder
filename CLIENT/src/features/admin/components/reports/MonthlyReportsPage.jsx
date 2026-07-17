@@ -227,7 +227,7 @@ const MonthlyReportsPage = () => {
 
   // Create Invoice from Report - DOĞRU AKIŞ
   const handleCreateInvoice = async (report) => {
-    if (!confirm(`Bu rapor için Rechnung oluşturmak istediğinize emin misiniz?\n\nİşletme: ${report.businessSnapshot?.businessName}\nDönem: ${monthlyReportService.formatPeriodLabel(report.year, report.month)}\nTutar: ${monthlyReportService.formatCurrency(report.financials?.businessRevenue)}`)) {
+    if (!confirm(`Möchten Sie für diesen Bericht wirklich eine Rechnung erstellen?\n\nUnternehmen: ${report.businessSnapshot?.businessName}\nZeitraum: ${monthlyReportService.formatPeriodLabel(report.year, report.month)}\nBetrag: ${monthlyReportService.formatCurrency(report.financials?.businessRevenue)}`)) {
       return;
     }
 
@@ -313,7 +313,7 @@ const MonthlyReportsPage = () => {
             Monatliche Berichte
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Aylık işletme raporlarını oluşturun, görüntüleyin ve PDF olarak indirin
+            Monatliche Geschäftsberichte erstellen, ansehen und als PDF herunterladen
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
@@ -700,7 +700,7 @@ const MonthlyReportsPage = () => {
         <DialogContent dividers>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <Alert severity="warning">
-              Bu işlem, seçilen dönem için TÜM aktif işletmelerin raporlarını oluşturacaktır.
+              Dieser Vorgang erstellt Berichte für ALLE aktiven Unternehmen im ausgewählten Zeitraum.
               Mevcut raporlar atlanacaktır.
             </Alert>
 

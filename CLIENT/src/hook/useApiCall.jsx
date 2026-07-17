@@ -62,7 +62,7 @@ const useApiCall = () => {
 
       if (data?.error === true) {
         if (import.meta.env.DEV) console.error(`❌ [useApiCall] Backend error:`, data?.message);
-        const message = data?.message || errorMessage || "Bir hata oluştu.";
+        const message = data?.message || errorMessage || "Ein Fehler ist aufgetreten.";
         dispatch(errorAction());
         toastErrorNotify(message);
         throw new Error(message);
@@ -86,15 +86,15 @@ const useApiCall = () => {
       if (responseData?.message) {
         message = responseData.message;
       } else if (status === 401) {
-        message = "Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.";
+        message = "Benutzername oder Passwort ist falsch. Bitte versuchen Sie es erneut.";
       } else if (status === 403) {
-        message = "Bu işlem için yetkiniz bulunmamaktadır.";
+        message = "Sie sind nicht berechtigt, diese Aktion auszuführen.";
       } else if (status === 404) {
-        message = "İstenen kaynak bulunamadı.";
+        message = "Die angeforderte Ressource wurde nicht gefunden.";
       } else if (status === 500) {
-        message = "Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.";
+        message = "Serverfehler. Bitte versuchen Sie es später erneut.";
       } else {
-        message = errorMessage || error.message || "Bir hata oluştu.";
+        message = errorMessage || error.message || "Ein Fehler ist aufgetreten.";
       }
 
       if (errorAction) dispatch(errorAction());

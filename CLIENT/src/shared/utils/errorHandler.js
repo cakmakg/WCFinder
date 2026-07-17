@@ -11,7 +11,7 @@ export const handleApiError = (error, customMessage = null) => {
     customMessage ||
     error?.response?.data?.message ||
     error?.message ||
-    "Bir hata oluştu";
+    "Ein Fehler ist aufgetreten";
 
   console.error("API Error:", error);
   toast.error(message);
@@ -33,7 +33,7 @@ export const extractErrorMessage = (error) => {
   return (
     error?.response?.data?.message ||
     error?.message ||
-    "Bilinmeyen bir hata oluştu"
+    "Ein unbekannter Fehler ist aufgetreten"
   );
 };
 
