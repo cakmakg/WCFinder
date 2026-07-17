@@ -44,7 +44,7 @@ const ForgotPasswordPage = () => {
     }
     setLoading(true);
     try {
-      const response = await apiCall({
+      await apiCall({
         url: '/auth/forgot-password',
         method: 'post',
         body: { email },
