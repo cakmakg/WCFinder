@@ -39,8 +39,9 @@ export default defineConfig({
     minify: 'terser', // Daha iyi minification
     terserOptions: {
       compress: {
-        drop_console: false, // ✅ DEBUG: Console log'ları her zaman göster
-        drop_debugger: false, // ✅ DEBUG: Debugger'ları da göster
+        // console.warn/error prod'da kalır (logger hata takibi), debug logları düşer
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+        drop_debugger: true,
         // Production'da event handler'ların bozulmasını önle
         keep_fnames: true, // Function isimlerini koru (debug için)
         keep_classnames: true, // Class isimlerini koru

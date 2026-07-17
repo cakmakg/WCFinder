@@ -228,20 +228,29 @@ const BusinessManagementForm = () => {
       }
 
       // Step 1: Create Owner
-      console.log("📝 Creating owner...", ownerData);
+      // Payload loglanmaz: ownerData şifre ve PII içerir
+      if (import.meta.env.DEV) {
+        console.log("📝 Creating owner...");
+      }
       const ownerResponse = await apiClient.post("/users", ownerData);
       const ownerId = ownerResponse.data.result._id;
-      console.log("✅ Owner created:", ownerId);
+      if (import.meta.env.DEV) {
+        console.log("✅ Owner created:", ownerId);
+      }
 
       // Step 2: Create Business with owner reference
       const businessPayload = {
         ...businessData,
         owner: ownerId,
       };
-      console.log("📝 Creating business...", businessPayload);
+      if (import.meta.env.DEV) {
+        console.log("📝 Creating business...");
+      }
       const businessResponse = await apiClient.post("/business", businessPayload);
       const businessId = businessResponse.data.result._id;
-      console.log("✅ Business created:", businessId);
+      if (import.meta.env.DEV) {
+        console.log("✅ Business created:", businessId);
+      }
 
       // Step 3: Create Toilet with business reference
       const toiletPayload = {
@@ -249,9 +258,13 @@ const BusinessManagementForm = () => {
         business: businessId,
         fee: 1.00, // Always 1.00 EUR
       };
-      console.log("📝 Creating toilet...", toiletPayload);
+      if (import.meta.env.DEV) {
+        console.log("📝 Creating toilet...");
+      }
       const toiletResponse = await apiClient.post("/toilets", toiletPayload);
-      console.log("✅ Toilet created:", toiletResponse.data.result._id);
+      if (import.meta.env.DEV) {
+        console.log("✅ Toilet created:", toiletResponse.data.result._id);
+      }
 
       setSuccess(
         `Erfolgreich! Inhaber-, Geschäfts- und Toiletten-Datensätze wurden erstellt.`

@@ -38,10 +38,12 @@ const paypalOptions = isValidPayPalId ? {
   intent: 'capture',
 } : null;
 
-console.log('Payment Config:', {
-  stripe: stripePromise ? 'Configured' : 'Not configured',
-  paypal: paypalOptions ? 'Configured' : 'Not configured',
-});
+if (import.meta.env.DEV) {
+  console.log('Payment Config:', {
+    stripe: stripePromise ? 'Configured' : 'Not configured',
+    paypal: paypalOptions ? 'Configured' : 'Not configured',
+  });
+}
 
 const AppRouter = () => {
   const content = (
