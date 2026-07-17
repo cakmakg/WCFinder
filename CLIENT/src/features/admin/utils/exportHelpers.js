@@ -79,6 +79,28 @@ export const prepareExportData = (data, columns) => {
 };
 
 /**
+ * Escape cells against CSV/Excel formula injection.
+ * Kullanıcı kaynaklı bir değer =, +, -, @ veya tab/CR ile başlarsa Excel onu
+ * formül olarak çalıştırır; başına ' konarak metne zorlanır. Sadece
+ * Excel/CSV'ye giden veriye uygulanır (PDF etkilenmez).
+ * @param {Array} rows - prepareExportData çıktısı (düz obje dizisi)
+ * @returns {Array} Escaped rows
+ */
+export const escapeFormulaCells = (rows) => {
+  if (!rows || !Array.isArray(rows)) return [];
+
+  return rows.map((row) => {
+    const escaped = {};
+    Object.keys(row).forEach((key) => {
+      const value = row[key];
+      escaped[key] =
+        typeof value === 'string' && /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+    });
+    return escaped;
+  });
+};
+
+/**
  * Get filename with timestamp
  * @param {string} baseName - Base filename
  * @param {string} extension - File extension (default: 'xlsx')

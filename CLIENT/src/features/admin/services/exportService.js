@@ -4,7 +4,7 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { prepareExportData, getExportFilename, EXPORT_COLUMNS } from '../utils/exportHelpers';
+import { prepareExportData, escapeFormulaCells, getExportFilename, EXPORT_COLUMNS } from '../utils/exportHelpers';
 
 export const exportService = {
   // ============ EXCEL EXPORT ============
@@ -25,8 +25,8 @@ export const exportService = {
         throw new Error('Keine Daten zum Exportieren vorhanden');
       }
 
-      // Create worksheet
-      const ws = XLSX.utils.json_to_sheet(exportData);
+      // Create worksheet (formül enjeksiyonuna karşı kaçışlı)
+      const ws = XLSX.utils.json_to_sheet(escapeFormulaCells(exportData));
 
       // Set column widths
       const columnWidths = columns.map(col => ({
@@ -40,7 +40,7 @@ export const exportService = {
 
       // Add summary sheet if provided
       if (options.summary) {
-        const summaryWs = XLSX.utils.json_to_sheet([options.summary]);
+        const summaryWs = XLSX.utils.json_to_sheet(escapeFormulaCells([options.summary]));
         XLSX.utils.book_append_sheet(wb, summaryWs, 'Zusammenfassung');
       }
 
@@ -68,7 +68,7 @@ export const exportService = {
 
       sheets.forEach(sheet => {
         const exportData = prepareExportData(sheet.data, sheet.columns);
-        const ws = XLSX.utils.json_to_sheet(exportData);
+        const ws = XLSX.utils.json_to_sheet(escapeFormulaCells(exportData));
 
         // Set column widths
         if (sheet.columns) {
@@ -191,8 +191,8 @@ export const exportService = {
         throw new Error('Keine Daten zum Exportieren vorhanden');
       }
 
-      // Create worksheet and convert to CSV
-      const ws = XLSX.utils.json_to_sheet(exportData);
+      // Create worksheet and convert to CSV (formül enjeksiyonuna karşı kaçışlı)
+      const ws = XLSX.utils.json_to_sheet(escapeFormulaCells(exportData));
       const csv = XLSX.utils.sheet_to_csv(ws);
 
       // Create blob
