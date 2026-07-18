@@ -16,6 +16,9 @@ import {
 } from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PersonIcon from '@mui/icons-material/Person';
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from 'framer-motion';
+import { COLORS, RADII, SHADOWS, PAGE_HEADER_BG, DOT_GRID, TYPOGRAPHY } from '../theme/designTokens';
 import OwnerPanel from './OwnerPanel';
 import BookingsTab from '../components/bookings/BookingsTab';
 import ProfileTab from '../components/bookings/ProfileTab';
@@ -31,6 +34,7 @@ import { downloadQRCode, openMaps } from '../utils/bookingHelpers';
 const MyBookingsPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const reduce = useReducedMotion();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.auth);
@@ -154,51 +158,82 @@ const MyBookingsPage = () => {
   if (loadingUser) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress sx={{ color: '#0891b2' }} />
+        <CircularProgress sx={{ color: COLORS.primary }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', py: 4 }}>
-      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 } }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: COLORS.backgroundLight }}>
 
-        {/* Gradient Header */}
-        <Paper
-          elevation={0}
+      {/* ── Heller Seitenkopf mit Punktraster ── */}
+      <Box
+        component="header"
+        sx={{
+          background: PAGE_HEADER_BG,
+          pt: { xs: 4, md: 5.5 },
+          pb: { xs: 3, md: 4 },
+          position: 'relative',
+          overflow: 'hidden',
+          borderBottom: `1px solid ${COLORS.border}`,
+        }}
+      >
+        {/* Dezentes Punktraster als Textur */}
+        <Box
+          aria-hidden="true"
           sx={{
-            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-            borderRadius: '16px',
-            p: { xs: 2.5, md: 3 },
-            mb: 3,
-            boxShadow: '0 4px 20px rgba(8,145,178,0.25)',
+            position: 'absolute',
+            inset: 0,
+            ...DOT_GRID,
+            maskImage: 'linear-gradient(180deg, rgba(0,0,0,0.7), transparent 70%)',
+            pointerEvents: 'none',
           }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', mb: 0.3 }}>
-            Meine Reservierungen
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.75)' }}>
-            Ihre Buchungen und Profilinformationen
-          </Typography>
-        </Paper>
+        />
+        <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, position: 'relative', zIndex: 1 }}>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Typography
+              component="h1"
+              sx={{
+                ...TYPOGRAPHY.pageTitle,
+                fontSize: { xs: '1.6rem', md: '2.1rem' },
+                lineHeight: 1.2,
+                mb: 0.5,
+              }}
+            >
+              Meine Buchungen
+            </Typography>
+            <Typography sx={{ color: COLORS.textSecondary, fontSize: { xs: '0.95rem', md: '1.05rem' } }}>
+              Ihre Reservierungen und Profilinformationen auf einen Blick
+            </Typography>
+          </motion.div>
+        </Box>
+      </Box>
+
+      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 3, pb: 6 }}>
 
         {error && (
           <Alert
             severity="error"
-            sx={{ mb: 2.5, borderRadius: '12px' }}
+            sx={{ mb: 2.5, borderRadius: RADII.button }}
             onClose={() => setError(null)}
           >
             {error}
           </Alert>
         )}
 
-        {/* Modern Tabs */}
+        {/* Tab-Leiste */}
         <Paper
           elevation={0}
           sx={{
-            borderRadius: '14px',
+            borderRadius: RADII.card,
             mb: 3,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+            backgroundColor: 'white',
+            border: `1px solid ${COLORS.border}`,
+            boxShadow: SHADOWS.subtle,
             overflow: 'hidden',
           }}
         >
@@ -208,7 +243,7 @@ const MyBookingsPage = () => {
             sx={{
               px: 1,
               '& .MuiTabs-indicator': {
-                backgroundColor: '#0891b2',
+                backgroundColor: COLORS.primary,
                 height: 3,
                 borderRadius: '3px 3px 0 0',
               },
@@ -216,9 +251,9 @@ const MyBookingsPage = () => {
                 textTransform: 'none',
                 fontWeight: 600,
                 fontSize: '0.9rem',
-                color: '#64748b',
+                color: COLORS.textSecondary,
                 minHeight: 56,
-                '&.Mui-selected': { color: '#0891b2', fontWeight: 700 },
+                '&.Mui-selected': { color: COLORS.primary, fontWeight: 700 },
               },
             }}
           >

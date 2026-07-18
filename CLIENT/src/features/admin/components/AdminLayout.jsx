@@ -36,6 +36,7 @@ import {
   Euro as FinanzIcon,
 } from "@mui/icons-material";
 import useAuthCall from "../../../hook/useAuthCall";
+import { COLORS, RADII } from "../../../theme/designTokens";
 
 const DRAWER_WIDTH = 280;
 
@@ -105,12 +106,17 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
 
   const drawer = (
     <Box>
-      <Toolbar sx={{ bgcolor: "white", borderBottom: "1px solid #e2e8f0" }}>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, color: "#0891b2" }}>
+      <Toolbar sx={{ bgcolor: COLORS.backgroundWhite, borderBottom: `1px solid ${COLORS.border}` }}>
+        <Typography
+          variant="h6"
+          noWrap
+          component="div"
+          sx={{ fontWeight: 800, letterSpacing: "-0.02em", color: COLORS.primary }}
+        >
           WCFinder Admin
         </Typography>
       </Toolbar>
-      <Divider />
+      <Divider sx={{ borderColor: COLORS.border }} />
       <List sx={{ py: 2 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
@@ -118,25 +124,38 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
               selected={activeTab === item.index}
               onClick={() => onTabChange(item.index)}
               sx={{
-                borderRadius: 2,
+                borderRadius: RADII.button,
                 mx: 2,
+                color: COLORS.textPrimary,
+                // Platzhalter-Bar, damit der aktive Zustand nicht springt
+                borderLeft: "3px solid transparent",
+                "& .MuiListItemIcon-root": {
+                  color: COLORS.textSecondary,
+                },
                 "&.Mui-selected": {
-                  backgroundColor: "#0891b215",
-                  color: "#0891b2",
+                  backgroundColor: COLORS.accentBoxBg,
+                  color: COLORS.primary,
+                  borderLeft: `3px solid ${COLORS.primary}`,
                   "& .MuiListItemIcon-root": {
-                    color: "#0891b2",
+                    color: COLORS.primary,
+                  },
+                  "& .MuiListItemText-primary": {
+                    fontWeight: 700,
                   },
                   "&:hover": {
-                    backgroundColor: "#0891b225",
+                    backgroundColor: COLORS.accentBoxBg,
                   },
                 },
                 "&:hover": {
-                  backgroundColor: "#f1f5f9",
+                  backgroundColor: COLORS.backgroundLight,
                 },
               }}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} sx={{ fontWeight: 600 }} />
+              <ListItemText
+                primary={item.text}
+                primaryTypographyProps={{ fontWeight: 600, fontSize: "0.95rem" }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
@@ -152,29 +171,37 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
         sx={{
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { md: `${DRAWER_WIDTH}px` },
-          bgcolor: "white",
+          bgcolor: COLORS.backgroundWhite,
           color: "text.primary",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-          borderBottom: "1px solid #e2e8f0",
+          boxShadow: "none",
+          borderBottom: `1px solid ${COLORS.border}`,
         }}
       >
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label="Menü öffnen"
             edge="start"
             onClick={handleDrawerToggle}
             sx={{ mr: 2, display: { md: "none" } }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ flexGrow: 1, fontWeight: 800, letterSpacing: "-0.02em", color: COLORS.textHeading }}
+          >
             {menuItems[activeTab]?.text}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <IconButton onClick={handleUserMenuOpen} sx={{ p: 0 }}>
-              <Avatar alt={currentUser?.username || "Admin"} />
+              <Avatar
+                alt={currentUser?.username || "Admin"}
+                sx={{ background: COLORS.primaryGradient, fontWeight: 600 }}
+              />
             </IconButton>
             <Menu
               sx={{ mt: "45px" }}
@@ -238,8 +265,8 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
               width: DRAWER_WIDTH,
-              backgroundColor: "white",
-              borderRight: "1px solid #e2e8f0",
+              backgroundColor: COLORS.backgroundWhite,
+              borderRight: `1px solid ${COLORS.border}`,
             },
           }}
           open
@@ -256,7 +283,7 @@ const AdminLayout = ({ children, activeTab = 0, onTabChange }) => {
           p: 3,
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           mt: "64px",
-          backgroundColor: "#f5f7fa",
+          backgroundColor: COLORS.backgroundLight,
           height: "calc(100vh - 64px)",
           overflow: "auto",
           maxWidth: "100%",

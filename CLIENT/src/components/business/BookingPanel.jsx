@@ -18,16 +18,19 @@ import LockIcon from '@mui/icons-material/Lock';
 import PeopleIcon from '@mui/icons-material/People';
 import WcIcon from '@mui/icons-material/Wc';
 import ShieldIcon from '@mui/icons-material/Shield';
+import { COLORS, RADII, SHADOWS } from '../../theme/designTokens';
 
 const INPUT_SX = {
   mb: 2,
   '& .MuiOutlinedInput-root': {
-    borderRadius: '12px',
+    borderRadius: RADII.input,
     fontSize: '0.9rem',
-    '&:hover fieldset': { borderColor: '#0891b2' },
-    '&.Mui-focused fieldset': { borderColor: '#0891b2', borderWidth: '2px' },
+    backgroundColor: COLORS.backgroundLight,
+    '& fieldset': { borderColor: COLORS.border },
+    '&:hover fieldset': { borderColor: COLORS.primary },
+    '&.Mui-focused fieldset': { borderColor: COLORS.primary, borderWidth: '2px' },
   },
-  '& .MuiInputLabel-root.Mui-focused': { color: '#0891b2' },
+  '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary },
 };
 
 export const BookingPanel = ({ business, toilets }) => {
@@ -42,7 +45,7 @@ export const BookingPanel = ({ business, toilets }) => {
 
   if (!toilets || toilets.length === 0) {
     return (
-      <Paper sx={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', border: '1px solid rgba(8,145,178,0.1)' }}>
+      <Paper sx={{ borderRadius: RADII.panel, overflow: 'hidden', boxShadow: SHADOWS.subtle, border: `1px solid ${COLORS.border}` }}>
         <Alert severity="warning" sx={{ m: 2, borderRadius: '10px' }}>
           {t('bookingPanel.noToilets')}
         </Alert>
@@ -84,16 +87,16 @@ export const BookingPanel = ({ business, toilets }) => {
   return (
     <Paper
       sx={{
-        borderRadius: '16px',
+        borderRadius: RADII.panel,
         overflow: 'hidden',
-        boxShadow: '0 4px 24px rgba(8,145,178,0.1)',
-        border: '1px solid rgba(8,145,178,0.12)',
+        boxShadow: SHADOWS.subtle,
+        border: `1px solid ${COLORS.border}`,
       }}
     >
       {/* ── Gradient Header ── */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          background: COLORS.primaryGradient,
           px: 2.5,
           py: 2.25,
           display: 'flex',
@@ -148,13 +151,13 @@ export const BookingPanel = ({ business, toilets }) => {
         >
           <MenuItem value="male">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <WcIcon sx={{ fontSize: '1.1rem', color: '#0891b2' }} />
+              <WcIcon sx={{ fontSize: '1.1rem', color: COLORS.primary }} />
               <span>{t('bookingPanel.male')}</span>
             </Box>
           </MenuItem>
           <MenuItem value="female">
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <WcIcon sx={{ fontSize: '1.1rem', color: '#0891b2' }} />
+              <WcIcon sx={{ fontSize: '1.1rem', color: COLORS.primary }} />
               <span>{t('bookingPanel.female')}</span>
             </Box>
           </MenuItem>
@@ -184,7 +187,7 @@ export const BookingPanel = ({ business, toilets }) => {
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
             <MenuItem key={num} value={num}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PeopleIcon sx={{ fontSize: '1.1rem', color: '#0891b2' }} />
+                <PeopleIcon sx={{ fontSize: '1.1rem', color: COLORS.primary }} />
                 <span>{num} {num === 1 ? t('common.person') : t('common.persons')}</span>
               </Box>
             </MenuItem>
@@ -195,10 +198,10 @@ export const BookingPanel = ({ business, toilets }) => {
         <Box
           sx={{
             p: 2,
-            borderRadius: '12px',
-            backgroundColor: '#f0f9ff',
+            borderRadius: RADII.input,
+            backgroundColor: COLORS.accentBoxBg,
             border: '1px solid rgba(8,145,178,0.12)',
-            borderLeft: '3px solid #0891b2',
+            borderLeft: `3px solid ${COLORS.primary}`,
             mb: 2.5,
           }}
         >
@@ -222,10 +225,10 @@ export const BookingPanel = ({ business, toilets }) => {
           <Divider sx={{ my: 1.25, borderColor: 'rgba(8,145,178,0.15)' }} />
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
+            <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: COLORS.textHeading }}>
               {t('bookingPanel.total')}
             </Typography>
-            <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: '#0891b2', lineHeight: 1 }}>
+            <Typography sx={{ fontWeight: 800, fontSize: '1.3rem', color: COLORS.primary, lineHeight: 1 }}>
               € {total.toFixed(2)}
             </Typography>
           </Box>
@@ -238,19 +241,20 @@ export const BookingPanel = ({ business, toilets }) => {
           disabled={!userGender || !date || loading}
           sx={{
             py: 1.6,
-            background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+            background: COLORS.primaryGradient,
             fontSize: '0.95rem',
-            fontWeight: 700,
+            fontWeight: 600,
             textTransform: 'none',
-            borderRadius: '12px',
-            boxShadow: '0 4px 14px rgba(8,145,178,0.3)',
+            borderRadius: RADII.button,
+            boxShadow: SHADOWS.brand,
             '&:hover': {
-              background: 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)',
-              boxShadow: '0 6px 18px rgba(8,145,178,0.4)',
+              background: COLORS.primaryGradientHover,
+              boxShadow: SHADOWS.brandHover,
               transform: 'translateY(-1px)',
             },
-            '&:disabled': { background: '#e2e8f0', color: '#94a3b8', boxShadow: 'none' },
-            transition: 'all 0.25s ease',
+            '&:active': { transform: 'scale(0.98)' },
+            '&:disabled': { background: COLORS.border, color: COLORS.textLight, boxShadow: 'none' },
+            transition: 'transform 0.2s, box-shadow 0.2s',
           }}
         >
           {loading ? (
@@ -277,8 +281,8 @@ export const BookingPanel = ({ business, toilets }) => {
             backgroundColor: 'rgba(8,145,178,0.05)',
           }}
         >
-          <ShieldIcon sx={{ fontSize: '0.9rem', color: '#0891b2' }} />
-          <Typography variant="caption" sx={{ color: '#0891b2', fontWeight: 600, fontSize: '0.72rem' }}>
+          <ShieldIcon sx={{ fontSize: '0.9rem', color: COLORS.primary }} />
+          <Typography variant="caption" sx={{ color: COLORS.primary, fontWeight: 600, fontSize: '0.72rem' }}>
             {t('bookingPanel.securePayment')}
           </Typography>
         </Box>

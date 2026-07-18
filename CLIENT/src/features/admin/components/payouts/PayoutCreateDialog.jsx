@@ -22,10 +22,29 @@ import {
   Stack,
   Chip
 } from '@mui/material';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { payoutService } from '../../services/payoutService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { formatDate } from '../../utils/dateHelpers';
 import { toastErrorNotify } from '../../../../helper/ToastNotify';
+
+// Admin-Designsprache: Stil-Konstanten
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: COLORS.primary
+    }
+  }
+};
+
+const neutralChipSx = {
+  borderRadius: '999px',
+  fontWeight: 600,
+  backgroundColor: '#f1f5f9',
+  color: COLORS.textSecondary
+};
 
 /**
  * PayoutCreateDialog Component
@@ -203,9 +222,19 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: RADII.panel,
+          boxShadow: SHADOWS.panel
+        }
+      }}
     >
       <DialogTitle>
-        <Typography variant="h6" fontWeight={600}>
+        <Typography
+          variant="h6"
+          component="span"
+          sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}
+        >
           Neue Auszahlung erstellen
         </Typography>
       </DialogTitle>
@@ -226,13 +255,14 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
                   label="Geschäft auswählen *"
                   error={!!errors.businessId}
                   helperText={errors.businessId}
+                  sx={inputSx}
                 />
               )}
               renderOption={(props, option) => (
                 <Box component="li" {...props}>
                   <Box>
                     <Typography variant="body1">{option.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                       {option.address?.street}, {option.address?.city}
                     </Typography>
                   </Box>
@@ -243,8 +273,16 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
 
           {/* Pending Payments Info */}
           {pendingPayments.length > 0 && (
-            <Alert severity="info" sx={{ mb: 3 }}>
-              <Typography variant="body2" fontWeight={600} gutterBottom>
+            <Box
+              sx={{
+                mb: 3,
+                p: 2,
+                backgroundColor: COLORS.accentBoxBg,
+                borderLeft: `3px solid ${COLORS.primary}`,
+                borderRadius: RADII.input
+              }}
+            >
+              <Typography variant="body2" fontWeight={600} gutterBottom sx={{ color: COLORS.textPrimary }}>
                 Ausstehende Zahlungen: {pendingPayments.length}
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
@@ -253,18 +291,18 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
                     key={payment._id}
                     label={`${formatCurrency(payment.businessFee)} - ${formatDate(payment.createdAt)}`}
                     size="small"
-                    variant="outlined"
+                    sx={neutralChipSx}
                   />
                 ))}
                 {pendingPayments.length > 5 && (
                   <Chip
                     label={`+${pendingPayments.length - 5} weitere`}
                     size="small"
-                    variant="outlined"
+                    sx={neutralChipSx}
                   />
                 )}
               </Stack>
-            </Alert>
+            </Box>
           )}
 
           {/* Amount */}
@@ -278,17 +316,17 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
             helperText={errors.amount || 'Gesamtbetrag für diese Auszahlung'}
             disabled={loading}
             InputProps={{
-              startAdornment: <Typography sx={{ mr: 1 }}>€</Typography>
+              startAdornment: <Typography sx={{ mr: 1, color: COLORS.textSecondary }}>€</Typography>
             }}
             inputProps={{
               min: 0,
               step: 0.01
             }}
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, ...inputSx }}
           />
 
           {/* Payment Method */}
-          <FormControl fullWidth sx={{ mb: 3 }}>
+          <FormControl fullWidth sx={{ mb: 3, ...inputSx }}>
             <InputLabel>Zahlungsmethode *</InputLabel>
             <Select
               value={formData.paymentMethod}
@@ -312,7 +350,7 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
             onChange={(e) => handleChange('referenceNumber', e.target.value)}
             helperText="Optional: Transaktions- oder Referenznummer"
             disabled={loading}
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, ...inputSx }}
           />
 
           {/* Description */}
@@ -325,50 +363,53 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
             onChange={(e) => handleChange('description', e.target.value)}
             helperText="Optional: Zusätzliche Notizen oder Beschreibung"
             disabled={loading}
+            sx={inputSx}
           />
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3, borderColor: COLORS.border }} />
 
           {/* Summary */}
           <Box
             sx={{
-              bgcolor: 'grey.50',
+              backgroundColor: COLORS.accentBoxBg,
               p: 2,
-              borderRadius: 1,
-              border: '1px solid',
-              borderColor: 'divider'
+              borderRadius: RADII.input,
+              borderLeft: `3px solid ${COLORS.primary}`
             }}
           >
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+            <Typography variant="subtitle2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }} gutterBottom>
               Zusammenfassung
             </Typography>
             <Box display="flex" justifyContent="space-between" mb={1}>
-              <Typography variant="body2">Geschäft:</Typography>
-              <Typography variant="body2" fontWeight={600}>
+              <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>Geschäft:</Typography>
+              <Typography variant="body2" fontWeight={600} sx={{ color: COLORS.textPrimary }}>
                 {selectedBusiness?.name || '-'}
               </Typography>
             </Box>
             <Box display="flex" justifyContent="space-between" mb={1}>
-              <Typography variant="body2">Zahlungen:</Typography>
-              <Typography variant="body2" fontWeight={600}>
+              <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>Zahlungen:</Typography>
+              <Typography variant="body2" fontWeight={600} sx={{ fontVariantNumeric: 'tabular-nums', color: COLORS.textPrimary }}>
                 {pendingPayments.length}
               </Typography>
             </Box>
             <Box display="flex" justifyContent="space-between" mb={1}>
-              <Typography variant="body2">Methode:</Typography>
-              <Typography variant="body2" fontWeight={600}>
+              <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>Methode:</Typography>
+              <Typography variant="body2" fontWeight={600} sx={{ color: COLORS.textPrimary }}>
                 {formData.paymentMethod === 'bank_transfer' && 'Banküberweisung'}
                 {formData.paymentMethod === 'paypal' && 'PayPal'}
                 {formData.paymentMethod === 'stripe' && 'Stripe'}
                 {formData.paymentMethod === 'cash' && 'Bar'}
               </Typography>
             </Box>
-            <Divider sx={{ my: 1 }} />
+            <Divider sx={{ my: 1, borderColor: COLORS.border }} />
             <Box display="flex" justifyContent="space-between">
-              <Typography variant="body1" fontWeight={600}>
+              <Typography variant="body1" fontWeight={600} sx={{ color: COLORS.textHeading }}>
                 Gesamtbetrag:
               </Typography>
-              <Typography variant="h6" color="primary" fontWeight={600}>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 800, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}
+              >
                 {formatCurrency(Number(formData.amount) || 0)}
               </Typography>
             </Box>
@@ -377,7 +418,11 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} disabled={loading}>
+        <Button
+          onClick={handleClose}
+          disabled={loading}
+          sx={{ textTransform: 'none', fontWeight: 600, borderRadius: RADII.button, color: COLORS.textSecondary }}
+        >
           Abbrechen
         </Button>
         <Button
@@ -385,6 +430,17 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
           onClick={handleSubmit}
           disabled={loading || !formData.businessId || !formData.amount}
           startIcon={loading && <CircularProgress size={16} />}
+          sx={{
+            background: COLORS.primaryGradient,
+            textTransform: 'none',
+            fontWeight: 600,
+            borderRadius: RADII.button,
+            boxShadow: SHADOWS.brand,
+            '&:hover': {
+              background: COLORS.primaryGradientHover,
+              boxShadow: SHADOWS.brandHover
+            }
+          }}
         >
           {loading ? 'Erstelle...' : 'Auszahlung erstellen'}
         </Button>

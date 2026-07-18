@@ -51,10 +51,60 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from "framer-motion";
 import { adminService } from "../services/adminService";
 import { toastSuccessNotify, toastErrorNotify } from "../../../helper/ToastNotify";
+import { COLORS, RADII, SHADOWS } from "../../../theme/designTokens";
+
+const PANEL_SX = {
+  bgcolor: COLORS.backgroundWhite,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle,
+};
+
+const INPUT_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    "& fieldset": { borderColor: COLORS.border },
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary },
+};
+
+const TABLE_HEAD_SX = {
+  "& .MuiTableCell-head": {
+    bgcolor: COLORS.backgroundLight,
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderBottom: `1px solid ${COLORS.border}`,
+  },
+};
+
+const SECTION_TITLE_SX = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: "-0.02em",
+};
+
+const getStatusChipSx = (status) => {
+  switch (status) {
+    case "Aktiv":
+      return { bg: "#ecfdf5", color: "#059669" };
+    case "Ausstehend":
+      return { bg: "#fffbeb", color: "#d97706" };
+    case "Abgelehnt":
+      return { bg: "#fef2f2", color: "#dc2626" };
+    default:
+      return { bg: "#f1f5f9", color: "#64748b" };
+  }
+};
 
 const BusinessesTab = () => {
+  const reduceMotion = useReducedMotion();
   const [businesses, setBusinesses] = useState([]);
   const [usages, setUsages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -319,9 +369,14 @@ const BusinessesTab = () => {
   }
 
   return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header Controls */}
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+      <Paper elevation={0} sx={{ ...PANEL_SX, p: 3 }}>
         <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
           <TextField
             label="Datum auswählen"
@@ -331,9 +386,9 @@ const BusinessesTab = () => {
             InputLabelProps={{
               shrink: true,
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: 200, ...INPUT_SX }}
           />
-            <FormControl sx={{ minWidth: 150 }}>
+            <FormControl sx={{ minWidth: 150, ...INPUT_SX }}>
               <InputLabel>Ansichtsmodus</InputLabel>
               <Select
                 value={viewMode}
@@ -350,10 +405,10 @@ const BusinessesTab = () => {
         {/* Statistics Cards */}
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={PANEL_SX}>
               <CardContent>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <AccountBalanceWallet sx={{ color: "#0891b2" }} />
+                  <AccountBalanceWallet sx={{ color: COLORS.primary }} />
                   <Typography variant="body2" color="text.secondary">
                     {viewMode === "daily" ? "Täglicher Umsatz" : "Monatlicher Umsatz"}
                   </Typography>
@@ -370,7 +425,7 @@ const BusinessesTab = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={PANEL_SX}>
               <CardContent>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                   <People sx={{ color: "#16a34a" }} />
@@ -388,10 +443,10 @@ const BusinessesTab = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={PANEL_SX}>
               <CardContent>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <TrendingUp sx={{ color: "#f59e0b" }} />
+                  <TrendingUp sx={{ color: COLORS.warning }} />
                   <Typography variant="body2" color="text.secondary">
                     Gesamtumsatz
                   </Typography>
@@ -403,7 +458,7 @@ const BusinessesTab = () => {
             </Card>
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={PANEL_SX}>
               <CardContent>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                   <People sx={{ color: "#dc2626" }} />
@@ -422,8 +477,8 @@ const BusinessesTab = () => {
         {/* Charts */}
         <Grid container spacing={3}>
           <Grid item xs={12} lg={6}>
-            <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+            <Paper elevation={0} sx={{ ...PANEL_SX, p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, ...SECTION_TITLE_SX }}>
                 {viewMode === "daily" ? "Täglicher Umsatztrend (Letzte 30 Tage)" : "Monatlicher Umsatztrend (Letzte 12 Monate)"}
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
@@ -443,7 +498,7 @@ const BusinessesTab = () => {
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#667eea"
+                    stroke={COLORS.primary}
                     strokeWidth={3}
                     name="Umsatz (€)"
                   />
@@ -452,8 +507,8 @@ const BusinessesTab = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} lg={6}>
-            <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+            <Paper elevation={0} sx={{ ...PANEL_SX, p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2, ...SECTION_TITLE_SX }}>
                 {viewMode === "daily" ? "Tägliche Kundenzahl (Letzte 30 Tage)" : "Monatliche Kundenzahl (Letzte 12 Monate)"}
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
@@ -470,7 +525,7 @@ const BusinessesTab = () => {
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="customers" fill="#10b981" name="Kundenzahl" />
+                  <Bar dataKey="customers" fill={COLORS.success} name="Kundenzahl" />
                 </BarChart>
               </ResponsiveContainer>
             </Paper>
@@ -478,15 +533,15 @@ const BusinessesTab = () => {
         </Grid>
 
         {/* Business Table */}
-        <Paper sx={{ borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-          <Box sx={{ p: 3, borderBottom: "1px solid #e5e7eb" }}>
-            <Typography variant="h6" fontWeight={600}>
+        <Paper elevation={0} sx={{ ...PANEL_SX, overflow: "hidden" }}>
+          <Box sx={{ p: 3, borderBottom: `1px solid ${COLORS.border}` }}>
+            <Typography variant="h6" sx={SECTION_TITLE_SX}>
               Unternehmensdetails
             </Typography>
           </Box>
           <TableContainer>
-            <Table>
-              <TableHead>
+            <Table sx={{ "& .MuiTableCell-root": { borderColor: COLORS.border } }}>
+              <TableHead sx={TABLE_HEAD_SX}>
                 <TableRow>
                   <TableCell>
                     <TableSortLabel
@@ -512,7 +567,11 @@ const BusinessesTab = () => {
               </TableHead>
               <TableBody>
                 {paginatedStats.map((business) => (
-                  <TableRow key={business.id} hover>
+                  <TableRow
+                    key={business.id}
+                    hover
+                    sx={{ "&:hover": { bgcolor: COLORS.backgroundLight } }}
+                  >
                     <TableCell>
                       <Typography fontWeight={600}>{business.businessName}</Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -534,13 +593,12 @@ const BusinessesTab = () => {
                       <Chip
                         label={business.status}
                         size="small"
-                        color={
-                          business.status === "Aktiv"
-                            ? "success"
-                            : business.status === "Ausstehend"
-                            ? "warning"
-                            : "error"
-                        }
+                        sx={{
+                          bgcolor: getStatusChipSx(business.status).bg,
+                          color: getStatusChipSx(business.status).color,
+                          fontWeight: 600,
+                          borderRadius: "999px",
+                        }}
                       />
                     </TableCell>
                     <TableCell align="center">
@@ -615,6 +673,7 @@ const BusinessesTab = () => {
         </Paper>
 
     </Box>
+    </motion.div>
   );
 };
 

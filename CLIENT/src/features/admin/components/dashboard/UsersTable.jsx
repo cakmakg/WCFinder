@@ -29,6 +29,7 @@ import {
   AttachMoney,
   Event,
 } from "@mui/icons-material";
+import { COLORS, RADII, SHADOWS } from "../../../../theme/designTokens";
 
 const UsersTable = ({ users, usages, payments, loading }) => {
   const [orderBy, setOrderBy] = useState("createdAt");
@@ -99,8 +100,8 @@ const UsersTable = ({ users, usages, payments, loading }) => {
       
       return {
         id: userId,
-        username: user.username || "N/A",
-        email: user.email || "N/A",
+        username: user.username || "–",
+        email: user.email || "–",
         role: user.role || "user",
         isActive: user.isActive !== false,
         createdAt: user.createdAt,
@@ -161,7 +162,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
   };
 
   const formatDate = (date) => {
-    if (!date) return "N/A";
+    if (!date) return "–";
     return new Date(date).toLocaleDateString("de-DE", {
       year: "numeric",
       month: "short",
@@ -170,7 +171,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
   };
 
   const formatDateTime = (date) => {
-    if (!date) return "N/A";
+    if (!date) return "–";
     return new Date(date).toLocaleString("de-DE", {
       year: "numeric",
       month: "short",
@@ -183,17 +184,29 @@ const UsersTable = ({ users, usages, payments, loading }) => {
   const getRoleColor = (role) => {
     switch (role) {
       case "admin":
-        return "#dc2626";
+        return COLORS.primary;
       case "owner":
         return "#f59e0b";
       default:
-        return "#16a34a";
+        return "#059669";
+    }
+  };
+
+  // Weiche Pill-Hintergründe passend zur Rollenfarbe
+  const getRoleBg = (role) => {
+    switch (role) {
+      case "admin":
+        return COLORS.accentBoxBg;
+      case "owner":
+        return "#fffbeb";
+      default:
+        return "#ecfdf5";
     }
   };
 
   if (loading) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb" }}>
+      <Paper sx={{ p: 3, borderRadius: RADII.panel, boxShadow: SHADOWS.subtle, border: `1px solid ${COLORS.border}` }}>
         <Typography>Lädt...</Typography>
       </Paper>
     );
@@ -201,8 +214,8 @@ const UsersTable = ({ users, usages, payments, loading }) => {
 
   if (!users || users.length === 0) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb" }}>
-        <Typography color="text.secondary">Keine Benutzer verfügbar</Typography>
+      <Paper sx={{ p: 3, borderRadius: RADII.panel, boxShadow: SHADOWS.subtle, border: `1px solid ${COLORS.border}` }}>
+        <Typography sx={{ color: COLORS.textSecondary }}>Keine Benutzer verfügbar</Typography>
       </Paper>
     );
   }
@@ -217,22 +230,38 @@ const UsersTable = ({ users, usages, payments, loading }) => {
   return (
     <Paper
       sx={{
-        borderRadius: 2,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
+        borderRadius: RADII.panel,
+        boxShadow: SHADOWS.subtle,
+        border: `1px solid ${COLORS.border}`,
+        backgroundColor: COLORS.backgroundWhite,
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ p: 2.5, borderBottom: "1px solid #e5e7eb" }}>
-        <Typography variant="h6" fontWeight={600} sx={{ color: "#111827", fontSize: "1rem" }}>
+      <Box sx={{ p: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: "-0.02em", fontSize: "1rem" }}>
           Benutzerverwaltung
         </Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+        <Typography variant="caption" sx={{ color: COLORS.textSecondary, mt: 0.5, display: "block" }}>
           Gesamt {users.length} Benutzer
         </Typography>
       </Box>
       <TableContainer>
-        <Table>
+        <Table
+          sx={{
+            "& .MuiTableHead-root .MuiTableCell-root": {
+              backgroundColor: COLORS.backgroundLight,
+              fontWeight: 600,
+              color: COLORS.textSecondary,
+              borderBottom: `1px solid ${COLORS.border}`,
+            },
+            "& .MuiTableBody-root .MuiTableCell-root": {
+              borderColor: COLORS.border,
+            },
+            "& .MuiTableBody-root .MuiTableRow-hover:hover": {
+              backgroundColor: COLORS.backgroundLight,
+            },
+          }}
+        >
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox"></TableCell>
@@ -330,8 +359,15 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                             <Chip
                               label="Inaktiv"
                               size="small"
-                              sx={{ height: 16, fontSize: "0.6rem", mt: 0.5 }}
-                              color="error"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.6rem",
+                                mt: 0.5,
+                                borderRadius: "999px",
+                                fontWeight: 600,
+                                bgcolor: "#f1f5f9",
+                                color: COLORS.textSecondary,
+                              }}
                             />
                           )}
                         </Box>
@@ -347,14 +383,15 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                         label={row.role === "admin" ? "Admin" : row.role === "owner" ? "Betriebsinhaber" : "Benutzer"}
                         size="small"
                         sx={{
-                          bgcolor: `${getRoleColor(row.role)}15`,
+                          borderRadius: "999px",
+                          bgcolor: getRoleBg(row.role),
                           color: getRoleColor(row.role),
-                          fontWeight: 500,
+                          fontWeight: 600,
                         }}
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight={500}>
+                      <Typography variant="body2" fontWeight={500} sx={{ fontVariantNumeric: "tabular-nums" }}>
                         {row.totalBookings}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
@@ -362,7 +399,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight={600} sx={{ color: "#0891b2" }}>
+                      <Typography variant="body2" fontWeight={600} sx={{ color: COLORS.primary, fontVariantNumeric: "tabular-nums" }}>
                         {formatCurrency(row.totalSpent)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
@@ -383,7 +420,17 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                   <TableRow>
                     <TableCell colSpan={8} sx={{ py: 0, border: 0 }}>
                       <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                        <Box sx={{ p: 3, bgcolor: "#f9fafb" }}>
+                        <Box
+                          sx={{
+                            p: 3,
+                            bgcolor: COLORS.backgroundLight,
+                            "& .MuiCard-root": {
+                              borderRadius: RADII.card,
+                              border: `1px solid ${COLORS.border}`,
+                              boxShadow: SHADOWS.subtle,
+                            },
+                          }}
+                        >
                           <Grid container spacing={3}>
                             {/* Statistics Cards */}
                             <Grid item xs={12} md={6}>
@@ -458,11 +505,11 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                         {row.successfulPayments}
                                       </Typography>
                                     </Box>
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, pt: 2, borderTop: "1px solid #e5e7eb" }}>
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2, pt: 2, borderTop: `1px solid ${COLORS.border}` }}>
                                       <Typography variant="body2" fontWeight={600}>
                                         Gesamtausgaben:
                                       </Typography>
-                                      <Typography variant="h6" fontWeight={700} sx={{ color: "#0891b2" }}>
+                                      <Typography variant="h6" fontWeight={700} sx={{ color: COLORS.primary, fontVariantNumeric: "tabular-nums" }}>
                                         {formatCurrency(row.totalSpent)}
                                       </Typography>
                                     </Box>
@@ -488,7 +535,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                             justifyContent: "space-between",
                                             alignItems: "center",
                                             py: 1.5,
-                                            borderBottom: "1px solid #e5e7eb",
+                                            borderBottom: `1px solid ${COLORS.border}`,
                                             "&:last-child": { borderBottom: 0 },
                                           }}
                                         >
@@ -511,22 +558,24 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                               }
                                               size="small"
                                               sx={{
+                                                borderRadius: "999px",
+                                                fontWeight: 600,
                                                 bgcolor:
                                                   payment.status === "succeeded" || payment.status === "paid"
-                                                    ? "#16a34a15"
+                                                    ? "#ecfdf5"
                                                     : payment.status === "pending"
-                                                    ? "#f59e0b15"
-                                                    : "#dc262615",
+                                                    ? "#fffbeb"
+                                                    : "#fef2f2",
                                                 color:
                                                   payment.status === "succeeded" || payment.status === "paid"
-                                                    ? "#16a34a"
+                                                    ? "#059669"
                                                     : payment.status === "pending"
                                                     ? "#f59e0b"
                                                     : "#dc2626",
                                               }}
                                             />
                                             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-                                              {payment.paymentMethod || "N/A"}
+                                              {payment.paymentMethod || "–"}
                                             </Typography>
                                           </Box>
                                         </Box>
@@ -563,7 +612,7 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                             justifyContent: "space-between",
                                             alignItems: "center",
                                             py: 1.5,
-                                            borderBottom: "1px solid #e5e7eb",
+                                            borderBottom: `1px solid ${COLORS.border}`,
                                             "&:last-child": { borderBottom: 0 },
                                           }}
                                         >
@@ -597,22 +646,24 @@ const UsersTable = ({ users, usages, payments, loading }) => {
                                               size="small"
                                               sx={{
                                                 mt: 0.5,
+                                                borderRadius: "999px",
+                                                fontWeight: 600,
                                                 bgcolor:
                                                   usage.status === "completed"
-                                                    ? "#16a34a15"
+                                                    ? "#ecfdf5"
                                                     : usage.status === "pending"
-                                                    ? "#f59e0b15"
+                                                    ? "#fffbeb"
                                                     : usage.status === "cancelled"
-                                                    ? "#dc262615"
-                                                    : "#0891b215",
+                                                    ? "#fef2f2"
+                                                    : COLORS.accentBoxBg,
                                                 color:
                                                   usage.status === "completed"
-                                                    ? "#16a34a"
+                                                    ? "#059669"
                                                     : usage.status === "pending"
                                                     ? "#f59e0b"
                                                     : usage.status === "cancelled"
                                                     ? "#dc2626"
-                                                    : "#0891b2",
+                                                    : COLORS.primary,
                                               }}
                                             />
                                           </Box>

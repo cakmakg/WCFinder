@@ -52,6 +52,8 @@ import {
   Payment as PaymentIcon,
   AccountBalance as AccountBalanceIcon
 } from '@mui/icons-material';
+import { motion, useReducedMotion } from 'framer-motion';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { invoiceService } from '../../services/invoiceService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { formatDate } from '../../utils/dateHelpers';
@@ -60,13 +62,60 @@ import InvoiceCreateDialog from './InvoiceCreateDialog';
 import InvoiceDetailDialog from './InvoiceDetailDialog';
 import { ExportButton } from '../shared';
 
+// Pill-Statuschips: weicher Hintergrund + dunkler Text (Admin-Variante)
+const CHIP_PALETTES = {
+  success: { bg: '#ecfdf5', color: '#059669' },
+  warning: { bg: '#fffbeb', color: '#d97706' },
+  error: { bg: '#fef2f2', color: '#dc2626' },
+  default: { bg: '#f1f5f9', color: '#64748b' },
+};
+
+const pillChipSx = (palette = 'default') => {
+  const { bg, color } = CHIP_PALETTES[palette] || CHIP_PALETTES.default;
+  return {
+    borderRadius: '999px',
+    bgcolor: bg,
+    color,
+    fontWeight: 600,
+    border: 'none',
+    '& .MuiChip-icon': { color },
+  };
+};
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '&:hover fieldset': { borderColor: COLORS.primary },
+    '&.Mui-focused fieldset': { borderColor: COLORS.primary },
+  },
+  '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary },
+};
+
+const gradientButtonSx = {
+  background: COLORS.primaryGradient,
+  borderRadius: RADII.button,
+  textTransform: 'none',
+  fontWeight: 600,
+  '&:hover': { background: COLORS.primaryGradientHover },
+};
+
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle,
+};
+
 /**
  * InvoicesPage Component
  * Main page for managing invoices (Rechnungen)
  */
 const InvoicesPage = () => {
   console.log('🧾 InvoicesPage: Component mounting...'); // Debug log
-  
+
+  const reduceMotion = useReducedMotion();
+
   // State
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
@@ -318,8 +367,8 @@ const InvoicesPage = () => {
       <Chip
         icon={iconMap[status]}
         label={statusInfo.label}
-        color={statusInfo.color}
         size="small"
+        sx={pillChipSx(statusInfo.color)}
       />
     );
   };
@@ -363,10 +412,15 @@ const InvoicesPage = () => {
   }
 
   return (
-    <Box>
+    <Box
+      component={motion.div}
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+    >
       {/* Header */}
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
           Rechnungsverwaltung
         </Typography>
         <Stack direction="row" spacing={2}>
@@ -379,6 +433,7 @@ const InvoicesPage = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
+            sx={gradientButtonSx}
           >
             Neue Rechnung
           </Button>
@@ -389,7 +444,7 @@ const InvoicesPage = () => {
       {stats && (
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={panelSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
                   <ReceiptIcon color="primary" sx={{ mr: 1 }} />
@@ -397,7 +452,7 @@ const InvoicesPage = () => {
                     Gesamt Rechnungen
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: COLORS.textHeading, fontVariantNumeric: 'tabular-nums' }}>
                   {stats.total}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -408,7 +463,7 @@ const InvoicesPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={panelSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
                   <CheckCircleIcon color="success" sx={{ mr: 1 }} />
@@ -416,7 +471,7 @@ const InvoicesPage = () => {
                     Bezahlt
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600} color="success.main">
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                   {stats.paid}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -427,7 +482,7 @@ const InvoicesPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={panelSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
                   <ScheduleIcon color="info" sx={{ mr: 1 }} />
@@ -435,7 +490,7 @@ const InvoicesPage = () => {
                     Ausstehend
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600} color="info.main">
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#d97706', fontVariantNumeric: 'tabular-nums' }}>
                   {stats.pending}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -446,7 +501,7 @@ const InvoicesPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card sx={panelSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
                   <WarningIcon color="error" sx={{ mr: 1 }} />
@@ -454,7 +509,7 @@ const InvoicesPage = () => {
                     Überfällig
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600} color="error.main">
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#dc2626', fontVariantNumeric: 'tabular-nums' }}>
                   {stats.overdue}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -467,7 +522,7 @@ const InvoicesPage = () => {
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...panelSx, p: 2, mb: 3 }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <TextField
             size="small"
@@ -481,7 +536,7 @@ const InvoicesPage = () => {
                 </InputAdornment>
               )
             }}
-            sx={{ minWidth: 250 }}
+            sx={{ ...fieldSx, minWidth: 250 }}
           />
 
           <TextField
@@ -490,7 +545,7 @@ const InvoicesPage = () => {
             label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ minWidth: 150 }}
+            sx={{ ...fieldSx, minWidth: 150 }}
           >
             <MenuItem value="all">Alle Status</MenuItem>
             <MenuItem value="entwurf">Entwurf</MenuItem>
@@ -509,11 +564,16 @@ const InvoicesPage = () => {
       </Paper>
 
       {/* Invoices Table */}
-      <Paper>
+      <Paper sx={{ ...panelSx, overflow: 'hidden' }}>
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow>
+              <TableRow
+                sx={{
+                  bgcolor: COLORS.backgroundLight,
+                  '& th': { fontWeight: 600, color: COLORS.textSecondary, borderColor: COLORS.border },
+                }}
+              >
                 <TableCell>
                   <TableSortLabel
                     active={orderBy === 'rechnungsnummer'}
@@ -569,7 +629,14 @@ const InvoicesPage = () => {
                   const daysUntilDue = invoiceService.getDaysUntilDue(invoice);
 
                   return (
-                    <TableRow key={invoice._id} hover>
+                    <TableRow
+                      key={invoice._id}
+                      hover
+                      sx={{
+                        '& td': { borderColor: COLORS.border },
+                        '&:hover': { bgcolor: COLORS.backgroundLight },
+                      }}
+                    >
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
                           {invoice.rechnungsnummer || '-'}
@@ -606,10 +673,10 @@ const InvoicesPage = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body1" fontWeight={600}>
+                        <Typography variant="body1" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                           {formatCurrency(invoice.gesamtbetrag)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>
                           Netto: {formatCurrency(invoice.nettobetrag)}
                         </Typography>
                       </TableCell>
@@ -703,7 +770,7 @@ const InvoicesPage = () => {
       </Paper>
 
       {/* Info Alert */}
-      <Alert severity="info" sx={{ mt: 3 }}>
+      <Alert severity="info" sx={{ mt: 3, borderRadius: RADII.input }}>
         <Typography variant="body2">
           <strong>§14 UStG / XRechnung 3.0 - Korrekter Workflow:</strong><br />
           📊 <strong>Monatsbericht</strong> → 📄 <strong>Rechnung</strong> → 💰 <strong>Zahlung erfassen</strong> → 🏦 <strong>Auszahlung</strong><br /><br />
@@ -728,23 +795,26 @@ const InvoicesPage = () => {
       />
 
       {/* Payment Dialog - DOĞRU AKIŞ: Rechnung → Zahlung → Payout */}
-      <Dialog 
-        open={paymentDialogOpen} 
-        onClose={() => setPaymentDialogOpen(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={() => setPaymentDialogOpen(false)}
+        maxWidth="sm"
         fullWidth
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
       >
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
-            <PaymentIcon color="success" />
-            <Typography variant="h6">Zahlung Erfassen</Typography>
+            <PaymentIcon sx={{ color: COLORS.primary }} />
+            <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
+              Zahlung erfassen
+            </Typography>
           </Box>
         </DialogTitle>
         <DialogContent dividers>
           {selectedInvoice && (
             <Stack spacing={3} sx={{ mt: 1 }}>
               {/* Invoice Info */}
-              <Alert severity="info">
+              <Alert severity="info" sx={{ borderRadius: RADII.input }}>
                 <Typography variant="body2">
                   <strong>Rechnung:</strong> {selectedInvoice.rechnungsnummer}<br />
                   <strong>Geschäft:</strong> {selectedInvoice.rechnungsempfaenger?.firmenname}<br />
@@ -764,9 +834,10 @@ const InvoicesPage = () => {
                   startAdornment: <InputAdornment position="start">€</InputAdornment>,
                 }}
                 helperText="Vollständiger oder Teilbetrag"
+                sx={fieldSx}
               />
 
-              <FormControl fullWidth>
+              <FormControl fullWidth sx={fieldSx}>
                 <InputLabel>Zahlungsmethode</InputLabel>
                 <Select
                   value={paymentForm.zahlungsmethode}
@@ -787,6 +858,7 @@ const InvoicesPage = () => {
                 value={paymentForm.transaktionsreferenz}
                 onChange={(e) => setPaymentForm(prev => ({ ...prev, transaktionsreferenz: e.target.value }))}
                 placeholder="z.B. SEPA Referenz, Buchungsnummer"
+                sx={fieldSx}
               />
 
               <TextField
@@ -796,6 +868,7 @@ const InvoicesPage = () => {
                 value={paymentForm.zahlungsdatum}
                 onChange={(e) => setPaymentForm(prev => ({ ...prev, zahlungsdatum: e.target.value }))}
                 InputLabelProps={{ shrink: true }}
+                sx={fieldSx}
               />
 
               <TextField
@@ -805,9 +878,10 @@ const InvoicesPage = () => {
                 rows={2}
                 value={paymentForm.notizen}
                 onChange={(e) => setPaymentForm(prev => ({ ...prev, notizen: e.target.value }))}
+                sx={fieldSx}
               />
 
-              <Alert severity="success" icon={<AccountBalanceIcon />}>
+              <Alert severity="success" icon={<AccountBalanceIcon />} sx={{ borderRadius: RADII.input }}>
                 <Typography variant="body2">
                   <strong>Automatischer Payout:</strong> Bei vollständiger Zahlung wird automatisch eine Auszahlung (Payout) für das Geschäft erstellt und in Auszahlungen angezeigt.
                 </Typography>
@@ -816,15 +890,20 @@ const InvoicesPage = () => {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setPaymentDialogOpen(false)}>Abbrechen</Button>
+          <Button
+            onClick={() => setPaymentDialogOpen(false)}
+            sx={{ textTransform: 'none', fontWeight: 600, color: COLORS.textSecondary }}
+          >
+            Abbrechen
+          </Button>
           <Button
             variant="contained"
-            color="success"
             onClick={handleRecordPayment}
             disabled={paymentLoading || !paymentForm.betrag}
-            startIcon={paymentLoading ? <CircularProgress size={20} /> : <PaymentIcon />}
+            startIcon={paymentLoading ? <CircularProgress size={20} color="inherit" /> : <PaymentIcon />}
+            sx={{ ...gradientButtonSx, px: 3 }}
           >
-            {paymentLoading ? 'Verarbeite...' : 'Zahlung Erfassen'}
+            {paymentLoading ? 'Verarbeite...' : 'Zahlung erfassen'}
           </Button>
         </DialogActions>
       </Dialog>

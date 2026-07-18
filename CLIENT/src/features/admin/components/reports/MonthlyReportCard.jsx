@@ -16,6 +16,10 @@ import {
   TrendingDown as TrendingDownIcon,
   CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
+
+// Admin-Designsprache: Zahlen mit tabular-nums
+const moneySx = { fontVariantNumeric: 'tabular-nums' };
 
 /**
  * MonthlyReportCard Component
@@ -106,59 +110,73 @@ const MonthlyReportCard = ({ year, month, usages = [], _payments = [] }) => {
 
   return (
     <Card
-      variant="outlined"
+      elevation={0}
       sx={{
         height: '100%',
-        borderColor: isCurrentMonth ? 'primary.main' : 'divider',
-        borderWidth: isCurrentMonth ? 2 : 1
+        backgroundColor: 'white',
+        borderRadius: RADII.card,
+        boxShadow: SHADOWS.subtle,
+        border: isCurrentMonth ? `2px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`
       }}
     >
       <CardContent>
         {/* Header */}
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Box display="flex" alignItems="center" gap={1}>
-            <CalendarIcon color="primary" fontSize="small" />
-            <Typography variant="subtitle1" fontWeight={600}>
+            <CalendarIcon sx={{ color: COLORS.primary }} fontSize="small" />
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}
+            >
               {monthName}
             </Typography>
           </Box>
           {isCurrentMonth && (
-            <Chip label="Aktuell" size="small" color="primary" />
+            <Chip
+              label="Aktuell"
+              size="small"
+              sx={{
+                borderRadius: '999px',
+                fontWeight: 600,
+                backgroundColor: COLORS.accentBoxBg,
+                color: COLORS.primaryDark
+              }}
+            />
           )}
         </Box>
 
         {/* Revenue */}
         <Box mb={2}>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
             Umsatz
           </Typography>
           <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="h5" fontWeight={700} color="primary">
+            <Typography variant="h5" sx={{ ...moneySx, fontWeight: 800, color: COLORS.primary }}>
               €{stats.revenue.toFixed(2)}
             </Typography>
             <GrowthIndicator value={stats.revenueGrowth} />
           </Box>
         </Box>
 
-        <Divider sx={{ my: 1.5 }} />
+        <Divider sx={{ my: 1.5, borderColor: COLORS.border }} />
 
         {/* Stats Grid */}
         <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
           <Box>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
               Kommission
             </Typography>
-            <Typography variant="body2" fontWeight={600} color="success.main">
+            <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: '#059669' }}>
               €{stats.commission.toFixed(2)}
             </Typography>
           </Box>
 
           <Box>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
               Buchungen
             </Typography>
             <Box display="flex" alignItems="center" gap={0.5}>
-              <Typography variant="body2" fontWeight={600}>
+              <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: COLORS.textHeading }}>
                 {stats.bookings}
               </Typography>
               <GrowthIndicator value={stats.bookingsGrowth} small />
@@ -166,19 +184,19 @@ const MonthlyReportCard = ({ year, month, usages = [], _payments = [] }) => {
           </Box>
 
           <Box>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
               Ø Buchungswert
             </Typography>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: COLORS.textHeading }}>
               €{stats.averageValue.toFixed(2)}
             </Typography>
           </Box>
 
           <Box>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
               Abschlussrate
             </Typography>
-            <Typography variant="body2" fontWeight={600}>
+            <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: COLORS.textHeading }}>
               {stats.completionRate.toFixed(0)}%
             </Typography>
           </Box>
@@ -187,10 +205,10 @@ const MonthlyReportCard = ({ year, month, usages = [], _payments = [] }) => {
         {/* Completion Rate Progress */}
         <Box mt={2}>
           <Box display="flex" justifyContent="space-between" mb={0.5}>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
               Abgeschlossen
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ ...moneySx, color: COLORS.textSecondary }}>
               {stats.bookings}/{stats.totalBookings}
             </Typography>
           </Box>
@@ -200,9 +218,10 @@ const MonthlyReportCard = ({ year, month, usages = [], _payments = [] }) => {
             sx={{
               height: 6,
               borderRadius: 3,
-              bgcolor: 'grey.200',
+              backgroundColor: COLORS.border,
               '& .MuiLinearProgress-bar': {
-                borderRadius: 3
+                borderRadius: 3,
+                backgroundColor: COLORS.primary
               }
             }}
           />
@@ -218,7 +237,7 @@ const GrowthIndicator = ({ value, small = false }) => {
 
   const isPositive = value > 0;
   const Icon = isPositive ? TrendingUpIcon : TrendingDownIcon;
-  const color = isPositive ? 'success.main' : 'error.main';
+  const color = isPositive ? '#059669' : '#dc2626';
 
   return (
     <Box
@@ -232,7 +251,7 @@ const GrowthIndicator = ({ value, small = false }) => {
       <Icon sx={{ fontSize: small ? 14 : 16 }} />
       <Typography
         variant="caption"
-        sx={{ fontWeight: 600, color, fontSize: 'inherit' }}
+        sx={{ fontWeight: 600, color, fontSize: 'inherit', fontVariantNumeric: 'tabular-nums' }}
       >
         {isPositive ? '+' : ''}{value.toFixed(1)}%
       </Typography>
@@ -241,4 +260,3 @@ const GrowthIndicator = ({ value, small = false }) => {
 };
 
 export default MonthlyReportCard;
-

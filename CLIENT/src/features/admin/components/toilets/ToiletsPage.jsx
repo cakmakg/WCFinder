@@ -44,10 +44,50 @@ import {
   Refresh as RefreshIcon,
   Wc as WcIcon,
 } from "@mui/icons-material";
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from "framer-motion";
 import { adminService } from "../../services/adminService";
 import useAxios from "../../../../hook/useAxios";
+import { COLORS, RADII, SHADOWS } from "../../../../theme/designTokens";
+
+const PANEL_SX = {
+  bgcolor: COLORS.backgroundWhite,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle,
+};
+
+const INPUT_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    "& fieldset": { borderColor: COLORS.border },
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary },
+};
+
+const OUTLINED_BUTTON_SX = {
+  textTransform: "none",
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  borderColor: COLORS.border,
+  color: COLORS.primary,
+  "&:hover": { borderColor: COLORS.primary, bgcolor: COLORS.accentBoxBg },
+};
+
+const TABLE_HEAD_SX = {
+  "& .MuiTableCell-head": {
+    bgcolor: COLORS.backgroundLight,
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderBottom: `1px solid ${COLORS.border}`,
+  },
+};
 
 const ToiletsPage = () => {
+  const reduceMotion = useReducedMotion();
   const { axiosWithToken } = useAxios();
   const [toilets, setToilets] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -256,13 +296,13 @@ const ToiletsPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "available":
-        return { bg: "#16a34a15", color: "#16a34a", label: "Müsait" };
+        return { bg: "#ecfdf5", color: "#059669", label: "Verfügbar" };
       case "in_use":
-        return { bg: "#0891b215", color: "#0891b2", label: "Kullanımda" };
+        return { bg: "#f0f9ff", color: "#0891b2", label: "In Benutzung" };
       case "out_of_order":
-        return { bg: "#dc262615", color: "#dc2626", label: "Arızalı" };
+        return { bg: "#fef2f2", color: "#dc2626", label: "Außer Betrieb" };
       default:
-        return { bg: "#6b728015", color: "#6b7280", label: status };
+        return { bg: "#f1f5f9", color: "#64748b", label: status };
     }
   };
 
@@ -286,16 +326,33 @@ const ToiletsPage = () => {
     );
   }
 
+  const statCards = [
+    { label: "Gesamt", value: stats.total, color: COLORS.textHeading },
+    { label: "Verfügbar", value: stats.available, color: "#059669" },
+    { label: "In Benutzung", value: stats.inUse, color: COLORS.primary },
+    { label: "Außer Betrieb", value: stats.outOfOrder, color: "#dc2626" },
+    { label: "Barrierefrei", value: stats.accessible, color: COLORS.textHeading },
+    { label: "Wickelstation", value: stats.withBabyStation, color: COLORS.textHeading },
+  ];
+
   return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
-            Tuvalet Yönetimi
+          <Typography
+            variant="h4"
+            sx={{ mb: 1, fontWeight: 800, color: COLORS.textHeading, letterSpacing: "-0.02em" }}
+          >
+            Toilettenverwaltung
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Tüm tuvaletleri görüntüleyin, düzenleyin ve yönetin
+          <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
+            Alle Toiletten anzeigen, bearbeiten und verwalten
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
@@ -304,150 +361,101 @@ const ToiletsPage = () => {
             startIcon={<RefreshIcon />}
             onClick={fetchData}
             disabled={loading}
+            sx={OUTLINED_BUTTON_SX}
           >
-            Yenile
+            Aktualisieren
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleCreate}
-            sx={{ bgcolor: "#0891b2", "&:hover": { bgcolor: "#06b6d4" } }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: RADII.button,
+              background: COLORS.primaryGradient,
+              boxShadow: SHADOWS.brand,
+              "&:hover": { background: COLORS.primaryGradientHover },
+            }}
           >
-            Yeni Tuvalet
+            Neue Toilette
           </Button>
         </Box>
       </Box>
 
       {/* Alerts */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.input }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+        <Alert severity="success" sx={{ mb: 2, borderRadius: RADII.input }} onClose={() => setSuccess(null)}>
           {success}
         </Alert>
       )}
 
       {/* Statistics Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={4} md={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Toplam
-              </Typography>
-              <Typography variant="h5" fontWeight={700}>
-                {stats.total}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Müsait
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#16a34a" }}>
-                {stats.available}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Kullanımda
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#0891b2" }}>
-                {stats.inUse}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Arızalı
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#dc2626" }}>
-                {stats.outOfOrder}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Engelli Erişimli
-              </Typography>
-              <Typography variant="h5" fontWeight={700}>
-                {stats.accessible}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Bebek İstasyonu
-              </Typography>
-              <Typography variant="h5" fontWeight={700}>
-                {stats.withBabyStation}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {statCards.map((card) => (
+          <Grid item xs={6} sm={4} md={2} key={card.label}>
+            <Card elevation={0} sx={PANEL_SX}>
+              <CardContent>
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
+                  {card.label}
+                </Typography>
+                <Typography variant="h5" fontWeight={700} sx={{ color: card.color }}>
+                  {card.value}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper elevation={0} sx={{ ...PANEL_SX, p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
-              placeholder="Ara (Tuvalet adı, İşletme, ID)..."
+              placeholder="Suchen (Toilettenname, Geschäft, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              sx={INPUT_SX}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon sx={{ color: COLORS.textSecondary }} />
                   </InputAdornment>
                 ),
               }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Durum</InputLabel>
+            <FormControl fullWidth sx={INPUT_SX}>
+              <InputLabel>Status</InputLabel>
               <Select
                 value={statusFilter}
-                label="Durum"
+                label="Status"
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="all">Tümü</MenuItem>
-                <MenuItem value="available">Müsait</MenuItem>
-                <MenuItem value="in_use">Kullanımda</MenuItem>
-                <MenuItem value="out_of_order">Arızalı</MenuItem>
+                <MenuItem value="all">Alle</MenuItem>
+                <MenuItem value="available">Verfügbar</MenuItem>
+                <MenuItem value="in_use">In Benutzung</MenuItem>
+                <MenuItem value="out_of_order">Außer Betrieb</MenuItem>
               </Select>
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6} md={5}>
-            <FormControl fullWidth>
-              <InputLabel>İşletme</InputLabel>
+            <FormControl fullWidth sx={INPUT_SX}>
+              <InputLabel>Geschäft</InputLabel>
               <Select
                 value={businessFilter}
-                label="İşletme"
+                label="Geschäft"
                 onChange={(e) => setBusinessFilter(e.target.value)}
               >
-                <MenuItem value="all">Tümü</MenuItem>
+                <MenuItem value="all">Alle</MenuItem>
                 {businesses.map((business) => (
                   <MenuItem key={business._id} value={business._id}>
                     {business.businessName}
@@ -460,10 +468,10 @@ const ToiletsPage = () => {
       </Paper>
 
       {/* Table */}
-      <Paper>
+      <Paper elevation={0} sx={{ ...PANEL_SX, overflow: "hidden" }}>
         <TableContainer>
-          <Table>
-            <TableHead>
+          <Table sx={{ "& .MuiTableCell-root": { borderColor: COLORS.border } }}>
+            <TableHead sx={TABLE_HEAD_SX}>
               <TableRow>
                 <TableCell>
                   <TableSortLabel
@@ -471,48 +479,52 @@ const ToiletsPage = () => {
                     direction={orderBy === "name" ? order : "asc"}
                     onClick={() => handleRequestSort("name")}
                   >
-                    Tuvalet Adı
+                    Toilettenname
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>İşletme</TableCell>
+                <TableCell>Geschäft</TableCell>
                 <TableCell align="right">
                   <TableSortLabel
                     active={orderBy === "fee"}
                     direction={orderBy === "fee" ? order : "asc"}
                     onClick={() => handleRequestSort("fee")}
                   >
-                    Ücret
+                    Gebühr
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>Özellikler</TableCell>
-                <TableCell>Durum</TableCell>
+                <TableCell>Eigenschaften</TableCell>
+                <TableCell>Status</TableCell>
                 <TableCell>
                   <TableSortLabel
                     active={orderBy === "createdAt"}
                     direction={orderBy === "createdAt" ? order : "asc"}
                     onClick={() => handleRequestSort("createdAt")}
                   >
-                    Oluşturulma
+                    Erstellt am
                   </TableSortLabel>
                 </TableCell>
-                <TableCell align="center">İşlemler</TableCell>
+                <TableCell align="center">Aktionen</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
-                    <Typography color="text.secondary">Keine Einträge gefunden</Typography>
+                    <Typography sx={{ color: COLORS.textSecondary }}>Keine Einträge gefunden</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedData.map((toilet) => {
                   const statusInfo = getStatusColor(toilet.status);
                   return (
-                    <TableRow key={toilet._id} hover>
+                    <TableRow
+                      key={toilet._id}
+                      hover
+                      sx={{ "&:hover": { bgcolor: COLORS.backgroundLight } }}
+                    >
                       <TableCell>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <WcIcon sx={{ color: "#0891b2" }} />
+                          <WcIcon sx={{ color: COLORS.primary }} />
                           <Typography fontWeight={500}>{toilet.name}</Typography>
                         </Box>
                       </TableCell>
@@ -527,13 +539,21 @@ const ToiletsPage = () => {
                       <TableCell>
                         <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                           {toilet.features?.isAccessible && (
-                            <Chip label="Engelli Erişimli" size="small" color="primary" />
+                            <Chip
+                              label="Barrierefrei"
+                              size="small"
+                              sx={{ bgcolor: "#f0f9ff", color: "#0891b2", fontWeight: 600, borderRadius: "999px" }}
+                            />
                           )}
                           {toilet.features?.hasBabyChangingStation && (
-                            <Chip label="Bebek İstasyonu" size="small" color="secondary" />
+                            <Chip
+                              label="Wickelstation"
+                              size="small"
+                              sx={{ bgcolor: "#ecfdf5", color: "#059669", fontWeight: 600, borderRadius: "999px" }}
+                            />
                           )}
                           {(!toilet.features?.isAccessible && !toilet.features?.hasBabyChangingStation) && (
-                            <Typography variant="caption" color="text.secondary">—</Typography>
+                            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>—</Typography>
                           )}
                         </Box>
                       </TableCell>
@@ -544,7 +564,8 @@ const ToiletsPage = () => {
                           sx={{
                             bgcolor: statusInfo.bg,
                             color: statusInfo.color,
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            borderRadius: "999px",
                           }}
                         />
                       </TableCell>
@@ -586,52 +607,60 @@ const ToiletsPage = () => {
             setPage(0);
           }}
           rowsPerPageOptions={[10, 25, 50, 100]}
-          labelRowsPerPage="Sayfa başına:"
+          labelRowsPerPage="Einträge pro Seite:"
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} / ${count}`}
         />
       </Paper>
 
       {/* View Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Tuvalet Detayları</DialogTitle>
+      <Dialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: COLORS.textHeading }}>
+          Toilettendetails
+        </DialogTitle>
         <DialogContent>
           {selectedToilet && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Tuvalet ID
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  Toiletten-ID
                 </Typography>
                 <Typography variant="body1" sx={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
                   {selectedToilet._id}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Tuvalet Adı
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  Toilettenname
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
                   {selectedToilet.name}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  İşletme
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  Geschäft
                 </Typography>
                 <Typography variant="body1">
                   {selectedToilet.business?.businessName || "N/A"}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Ücret
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  Gebühr
                 </Typography>
-                <Typography variant="body1" fontWeight={600} sx={{ color: "#0891b2" }}>
+                <Typography variant="body1" fontWeight={600} sx={{ color: COLORS.primary }}>
                   {formatCurrency(selectedToilet.fee)}
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Durum
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  Status
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
                   <Chip
@@ -640,33 +669,45 @@ const ToiletsPage = () => {
                     sx={{
                       bgcolor: getStatusColor(selectedToilet.status).bg,
                       color: getStatusColor(selectedToilet.status).color,
+                      fontWeight: 600,
+                      borderRadius: "999px",
                     }}
                   />
                 </Box>
               </Grid>
               <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Özellikler
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                  Eigenschaften
                 </Typography>
                 <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
                   <Chip
-                    label="Engelli Erişimli"
+                    label="Barrierefrei"
                     size="small"
-                    color={selectedToilet.features?.isAccessible ? "primary" : "default"}
-                    variant={selectedToilet.features?.isAccessible ? "filled" : "outlined"}
+                    sx={{
+                      borderRadius: "999px",
+                      fontWeight: 600,
+                      ...(selectedToilet.features?.isAccessible
+                        ? { bgcolor: "#f0f9ff", color: "#0891b2" }
+                        : { bgcolor: "#f1f5f9", color: "#64748b" }),
+                    }}
                   />
                   <Chip
-                    label="Bebek Bakım İstasyonu"
+                    label="Wickelstation"
                     size="small"
-                    color={selectedToilet.features?.hasBabyChangingStation ? "secondary" : "default"}
-                    variant={selectedToilet.features?.hasBabyChangingStation ? "filled" : "outlined"}
+                    sx={{
+                      borderRadius: "999px",
+                      fontWeight: 600,
+                      ...(selectedToilet.features?.hasBabyChangingStation
+                        ? { bgcolor: "#ecfdf5", color: "#059669" }
+                        : { bgcolor: "#f1f5f9", color: "#64748b" }),
+                    }}
                   />
                 </Box>
               </Grid>
               {selectedToilet.averageRatings && (
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Ortalama Puan
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
+                    Durchschnittliche Bewertung
                   </Typography>
                   <Typography variant="body1">
                     {selectedToilet.averageRatings.overall?.toFixed(1) || "N/A"} / 5.0
@@ -677,37 +718,61 @@ const ToiletsPage = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Kapat</Button>
-          <Button onClick={() => { setViewDialogOpen(false); handleEdit(selectedToilet); }} variant="contained">
-            Düzenle
+          <Button
+            onClick={() => setViewDialogOpen(false)}
+            sx={{ textTransform: "none", fontWeight: 600, borderRadius: RADII.button, color: COLORS.textSecondary }}
+          >
+            Schließen
+          </Button>
+          <Button
+            onClick={() => { setViewDialogOpen(false); handleEdit(selectedToilet); }}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: RADII.button,
+              background: COLORS.primaryGradient,
+              "&:hover": { background: COLORS.primaryGradientHover },
+            }}
+          >
+            Bearbeiten
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit/Create Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedToilet ? "Tuvalet Düzenle" : "Yeni Tuvalet Ekle"}</DialogTitle>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: COLORS.textHeading }}>
+          {selectedToilet ? "Toilette bearbeiten" : "Neue Toilette hinzufügen"}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Tuvalet Adı"
+                label="Toilettenname"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                sx={INPUT_SX}
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>İşletme</InputLabel>
+              <FormControl fullWidth sx={INPUT_SX}>
+                <InputLabel>Geschäft</InputLabel>
                 <Select
                   value={formData.business}
-                  label="İşletme"
+                  label="Geschäft"
                   onChange={(e) => setFormData({ ...formData, business: e.target.value })}
                   required
                 >
-                  <MenuItem value="">Seçiniz</MenuItem>
+                  <MenuItem value="">Bitte wählen</MenuItem>
                   {businesses.map((business) => (
                     <MenuItem key={business._id} value={business._id}>
                       {business.businessName}
@@ -719,25 +784,26 @@ const ToiletsPage = () => {
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Ücret (EUR)"
+                label="Gebühr (EUR)"
                 type="number"
                 value={formData.fee}
                 onChange={(e) => setFormData({ ...formData, fee: parseFloat(e.target.value) || 0 })}
                 inputProps={{ min: 0, step: 0.01 }}
                 required
+                sx={INPUT_SX}
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Durum</InputLabel>
+              <FormControl fullWidth sx={INPUT_SX}>
+                <InputLabel>Status</InputLabel>
                 <Select
                   value={formData.status}
-                  label="Durum"
+                  label="Status"
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 >
-                  <MenuItem value="available">Müsait</MenuItem>
-                  <MenuItem value="in_use">Kullanımda</MenuItem>
-                  <MenuItem value="out_of_order">Arızalı</MenuItem>
+                  <MenuItem value="available">Verfügbar</MenuItem>
+                  <MenuItem value="in_use">In Benutzung</MenuItem>
+                  <MenuItem value="out_of_order">Außer Betrieb</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -754,7 +820,7 @@ const ToiletsPage = () => {
                     }
                   />
                 }
-                label="Engelli Erişimli"
+                label="Barrierefrei"
               />
             </Grid>
             <Grid item xs={12}>
@@ -770,41 +836,75 @@ const ToiletsPage = () => {
                     }
                   />
                 }
-                label="Bebek Bakım İstasyonu"
+                label="Wickelstation"
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>İptal</Button>
+          <Button
+            onClick={() => setEditDialogOpen(false)}
+            sx={{ textTransform: "none", fontWeight: 600, borderRadius: RADII.button, color: COLORS.textSecondary }}
+          >
+            Abbrechen
+          </Button>
           <Button
             onClick={handleSave}
             variant="contained"
             disabled={!formData.name || !formData.business}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: RADII.button,
+              background: COLORS.primaryGradient,
+              "&:hover": { background: COLORS.primaryGradientHover },
+            }}
           >
-            Kaydet
+            Speichern
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Tuvaleti Sil</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: COLORS.textHeading }}>
+          Toilette löschen
+        </DialogTitle>
         <DialogContent>
           <Typography>
-            Bu tuvaleti silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            Sind Sie sicher, dass Sie diese Toilette löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>İptal</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Sil
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            sx={{ textTransform: "none", fontWeight: 600, borderRadius: RADII.button, color: COLORS.textSecondary }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="outlined"
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: RADII.button,
+              color: "#dc2626",
+              borderColor: "#dc2626",
+              "&:hover": { borderColor: "#b91c1c", bgcolor: "#fef2f2" },
+            }}
+          >
+            Löschen
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
+    </motion.div>
   );
 };
 
 export default ToiletsPage;
-

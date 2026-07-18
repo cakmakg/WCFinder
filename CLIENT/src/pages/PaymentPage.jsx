@@ -24,15 +24,42 @@ import CreditCardIcon from '@mui/icons-material/CreditCard';
 import LockIcon from '@mui/icons-material/Lock';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SecurityIcon from '@mui/icons-material/Security';
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from 'framer-motion';
+import { COLORS, RADII, SHADOWS } from '../theme/designTokens';
 import { OrderSummary } from '../components/payment/OrderSummary';
 import { StripeCardForm } from '../components/payment/StripeCardForm';
 import { PayPalButton } from '../components/payment/PayPalButton';
 import { useSelector } from 'react-redux';
+import api from '../services/api';
+
+// Gemeinsame Feder-Animation für Bestätigungs-Icons (wie StartPage FlowDemo)
+const spring = { type: 'spring', stiffness: 260, damping: 22 };
+
+// Primär-Button im StartPage-Stil: Verlauf, Hover-Lift, Active-Scale
+const PRIMARY_BUTTON_SX = {
+  py: 1.5,
+  textTransform: 'none',
+  fontSize: '1rem',
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  background: COLORS.primaryGradient,
+  boxShadow: SHADOWS.brand,
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    background: COLORS.primaryGradientHover,
+    boxShadow: SHADOWS.brandHover,
+    transform: 'translateY(-1px)',
+  },
+  '&:active': { transform: 'scale(0.98)' },
+  '&:disabled': { background: '#cbd5e1', color: 'white', boxShadow: 'none' },
+};
 
 const PaymentPage = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const reduce = useReducedMotion();
   const bookingData = location.state;
   const { token } = useSelector((state) => state.auth);
 
@@ -56,12 +83,15 @@ const PaymentPage = () => {
 
   if (!bookingData) {
     return (
-      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 4 }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: COLORS.backgroundLight, py: 4 }}>
         <Container>
-          <Alert severity="error" sx={{ borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
+          <Alert severity="error" sx={{ borderRadius: RADII.button, boxShadow: SHADOWS.subtle }}>
             {t('payment.noBookingInfo')}
           </Alert>
-          <Button onClick={() => navigate('/')} sx={{ mt: 2, color: '#0891b2' }}>
+          <Button
+            onClick={() => navigate('/')}
+            sx={{ mt: 2, color: COLORS.primary, textTransform: 'none', fontWeight: 600 }}
+          >
             {t('common.backToHome')}
           </Button>
         </Container>
@@ -94,58 +124,38 @@ const PaymentPage = () => {
         console.log('📤 Creating Stripe payment from booking');
       }
 
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
-      const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(`${baseURL}/payments/stripe/create`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingData: bookingDataForPayment }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
+      // Zentrale api-Instanz: Bearer-Token wird automatisch angehängt,
+      // bei 401 wird der Token einmal erneuert und die Anfrage wiederholt.
+      let data;
+      try {
+        const response = await api.post('/payments/stripe/create', {
+          bookingData: bookingDataForPayment,
+        });
+        data = response.data;
+      } catch (requestErr) {
+        const status = requestErr.response?.status;
+        const errorData = requestErr.response?.data || {};
         let errorMessage = errorData.message || errorData.error || "Payment intent creation failed";
-        
+
         // 409 (Conflict - Duplicate) hatası için: Mevcut payment'i sorgula ve clientSecret'ı al
-        if (response.status === 409) {
+        if (status === 409) {
           if (import.meta.env.DEV) {
             console.log('⚠️ Duplicate payment detected, fetching existing payment...');
           }
           try {
-            const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
-            const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
-            const token = localStorage.getItem("token");
-            
             // Kullanıcının pending payment'lerini sorgula
-            const paymentsResponse = await fetch(`${baseURL}/payments/my-payments`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            
-            if (paymentsResponse.ok) {
-              const paymentsData = await paymentsResponse.json();
-              const pendingPayments = paymentsData.result?.filter(p => 
-                p.status === 'pending' && 
-                p.paymentProvider === 'stripe' &&
-                p.paymentIntentId
-              );
-              
-              if (pendingPayments && pendingPayments.length > 0) {
-                if (import.meta.env.DEV) {
-                  console.log('[PaymentPage] Found existing pending payment');
-                  console.log('[PaymentPage] Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
-                }
-                errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
-              }
+            const paymentsResponse = await api.get('/payments/my-payments');
+            const pendingPayments = paymentsResponse.data.result?.filter(p =>
+              p.status === 'pending' &&
+              p.paymentProvider === 'stripe' &&
+              p.paymentIntentId
+            );
+
+            if (pendingPayments && pendingPayments.length > 0 && import.meta.env.DEV) {
+              console.log('[PaymentPage] Found existing pending payment');
+              console.log('[PaymentPage] Existing payment found but cannot retrieve clientSecret. Backend should handle this.');
             }
-            
-            // Eğer mevcut payment bulunamazsa, kullanıcıya bilgi ver
+
             errorMessage = 'Eine Zahlung für diese Buchung existiert bereits. Bitte warten Sie einen Moment und versuchen Sie es erneut.';
           } catch (fetchErr) {
             if (import.meta.env.DEV) {
@@ -154,24 +164,22 @@ const PaymentPage = () => {
             errorMessage = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.';
           }
         }
-        
+
         // 429 (Too Many Requests) hatası için özel mesaj
-        if (response.status === 429) {
-          const retryAfter = response.headers.get('Retry-After');
+        if (status === 429) {
+          const retryAfter = requestErr.response?.headers?.['retry-after'];
           if (retryAfter) {
             errorMessage = `Zu viele Anfragen. Bitte versuchen Sie es in ${Math.ceil(parseInt(retryAfter) / 60)} Minuten erneut.`;
           } else {
             errorMessage = 'Zu viele Anfragen. Bitte versuchen Sie es in ein paar Minuten erneut.';
           }
         }
-        
+
         if (import.meta.env.DEV) {
-          console.error('[PaymentPage] Stripe payment creation error, status:', response.status);
+          console.error('[PaymentPage] Stripe payment creation error, status:', status);
         }
         throw new Error(errorMessage);
       }
-
-      const data = await response.json();
       // ✅ SECURITY: Sensitive data (clientSecret) loglanmıyor
       if (import.meta.env.DEV) {
         console.log('[PaymentPage] Stripe response received, status:', data.result?.paymentIntentStatus);
@@ -225,45 +233,38 @@ const PaymentPage = () => {
         console.log('📤 Creating PayPal order from booking');
       }
 
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
-      const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(`${baseURL}/payments/paypal/create`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ bookingData: bookingDataForPayment }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
+      // Zentrale api-Instanz: Bearer-Token + automatischer Refresh bei 401
+      let data;
+      try {
+        const response = await api.post('/payments/paypal/create', {
+          bookingData: bookingDataForPayment,
+        });
+        data = response.data;
+      } catch (requestErr) {
+        const status = requestErr.response?.status;
+        const errorData = requestErr.response?.data || {};
         let errorMessage = errorData.message || errorData.error || "PayPal order creation failed";
-        
+
         // 429 (Too Many Requests) hatası için özel mesaj
-        if (response.status === 429) {
-          const retryAfter = response.headers.get('Retry-After');
+        if (status === 429) {
+          const retryAfter = requestErr.response?.headers?.['retry-after'];
           if (retryAfter) {
             errorMessage = `Zu viele Anfragen. Bitte versuchen Sie es in ${Math.ceil(parseInt(retryAfter) / 60)} Minuten erneut.`;
           } else {
             errorMessage = 'Zu viele Anfragen. Bitte versuchen Sie es in ein paar Minuten erneut.';
           }
         }
-        
+
         // PayPal credentials hatası için özel mesaj
         if (errorMessage.includes('PayPal credentials') || errorMessage.includes('placeholder') || errorMessage.includes('Invalid PayPal')) {
           errorMessage = 'PayPal ist derzeit nicht konfiguriert. Bitte kontaktieren Sie den Administrator oder verwenden Sie die Kreditkartenzahlung.';
         }
-        
+
         if (import.meta.env.DEV) {
-          console.error('[PaymentPage] PayPal creation error, status:', response.status);
+          console.error('[PaymentPage] PayPal creation error, status:', status);
         }
         throw new Error(errorMessage);
       }
-
-      const data = await response.json();
       if (import.meta.env.DEV) {
         console.log('✅ PayPal response received');
       }
@@ -295,29 +296,19 @@ const PaymentPage = () => {
         throw new Error('Payment intent ID not found');
       }
 
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://localhost:8000";
-      const baseURL = baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
-      const token = localStorage.getItem("token");
-
       // ✅ Backend'den payment'i confirm et ve usage oluştur
+      // Zentrale api-Instanz: Bearer-Token + automatischer Refresh bei 401
       if (import.meta.env.DEV) {
         console.log('📤 Confirming payment and creating usage...');
       }
-      const confirmResponse = await fetch(`${baseURL}/payments/stripe/confirm`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ paymentIntentId }),
-      });
-
-      if (!confirmResponse.ok) {
-        const errorData = await confirmResponse.json();
+      let confirmData;
+      try {
+        const confirmResponse = await api.post('/payments/stripe/confirm', { paymentIntentId });
+        confirmData = confirmResponse.data;
+      } catch (requestErr) {
+        const errorData = requestErr.response?.data || {};
         throw new Error(errorData.message || 'Failed to confirm payment');
       }
-
-      const confirmData = await confirmResponse.json();
       const usageId = confirmData.result?.usageId;
       const confirmedPaymentId = confirmData.result?.paymentId;
 
@@ -384,12 +375,12 @@ const PaymentPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: COLORS.backgroundLight }}>
       {/* ── Gradient Hero Header ── */}
       <Box
         component="header"
         sx={{
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          background: COLORS.primaryGradient,
           pt: { xs: 3, sm: 4 },
           pb: { xs: 3, sm: 4 },
           position: 'relative',
@@ -439,6 +430,7 @@ const PaymentPage = () => {
                   fontWeight: 800,
                   fontSize: { xs: '1.6rem', sm: '2rem' },
                   color: 'white',
+                  letterSpacing: '-0.02em',
                   lineHeight: 1.2,
                   mb: 0.5,
                 }}
@@ -460,7 +452,8 @@ const PaymentPage = () => {
             severity="error"
             sx={{
               mb: 3,
-              borderRadius: '12px',
+              borderRadius: RADII.button,
+              boxShadow: SHADOWS.subtle,
               '& .MuiAlert-icon': { color: '#ef4444' },
             }}
             onClose={() => setError(null)}
@@ -472,13 +465,18 @@ const PaymentPage = () => {
         <Grid container spacing={2.5}>
           {/* Left Column - Payment Methods */}
           <Grid size={{ xs: 12, md: 7 }}>
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={spring}
+            >
             <Paper
               sx={{
                 p: 3,
                 mb: 2.5,
-                borderRadius: '16px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                border: '1px solid rgba(8,145,178,0.1)',
+                borderRadius: RADII.panel,
+                boxShadow: SHADOWS.subtle,
+                border: `1px solid ${COLORS.border}`,
               }}
             >
               <Typography
@@ -486,7 +484,7 @@ const PaymentPage = () => {
                   mb: 2.5,
                   fontWeight: 700,
                   fontSize: '0.85rem',
-                  color: '#0891b2',
+                  color: COLORS.primary,
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                 }}
@@ -508,32 +506,44 @@ const PaymentPage = () => {
                   <Card
                     sx={{
                       mb: 2,
-                      border: paymentMethod === 'card' ? '2px solid #0891b2' : '1.5px solid rgba(0,0,0,0.08)',
-                      borderRadius: '14px',
+                      border: paymentMethod === 'card' ? `2px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
+                      borderRadius: RADII.card,
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
+                      boxShadow: 'none',
                       '&:hover': {
-                        borderColor: '#0891b2',
-                        boxShadow: '0 4px 12px rgba(8,145,178,0.15)',
+                        borderColor: COLORS.primary,
+                        boxShadow: SHADOWS.subtle,
                       },
-                      backgroundColor: paymentMethod === 'card' ? '#f0f9ff' : 'white',
+                      backgroundColor: paymentMethod === 'card' ? COLORS.accentBoxBg : COLORS.backgroundWhite,
                     }}
                     onClick={() => setPaymentMethod('card')}
                   >
                     <CardContent sx={{ p: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Radio value="card" checked={paymentMethod === 'card'} />
-                        <CreditCardIcon sx={{ fontSize: '2rem', color: '#0891b2', mx: 2 }} />
+                        <Radio
+                          value="card"
+                          checked={paymentMethod === 'card'}
+                          sx={{ '&.Mui-checked': { color: COLORS.primary } }}
+                        />
+                        <CreditCardIcon sx={{ fontSize: '2rem', color: COLORS.primary, mx: 2 }} />
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: COLORS.textHeading }}>
                             {t('payment.creditCard')}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
                             {t('payment.creditCardDescription')}
                           </Typography>
                         </Box>
                         {paymentMethod === 'card' && (
-                          <CheckCircleIcon sx={{ color: '#0891b2', fontSize: '1.5rem' }} />
+                          <motion.span
+                            initial={reduce ? false : { scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={spring}
+                            style={{ display: 'inline-flex' }}
+                          >
+                            <CheckCircleIcon sx={{ color: COLORS.primary, fontSize: '1.5rem' }} />
+                          </motion.span>
                         )}
                       </Box>
                     </CardContent>
@@ -542,21 +552,26 @@ const PaymentPage = () => {
                   {/* PayPal */}
                   <Card
                     sx={{
-                      border: paymentMethod === 'paypal' ? '2px solid #0891b2' : '1.5px solid rgba(0,0,0,0.08)',
-                      borderRadius: '14px',
+                      border: paymentMethod === 'paypal' ? `2px solid ${COLORS.primary}` : `1px solid ${COLORS.border}`,
+                      borderRadius: RADII.card,
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
+                      boxShadow: 'none',
                       '&:hover': {
-                        borderColor: '#0891b2',
-                        boxShadow: '0 4px 12px rgba(8,145,178,0.15)',
+                        borderColor: COLORS.primary,
+                        boxShadow: SHADOWS.subtle,
                       },
-                      backgroundColor: paymentMethod === 'paypal' ? '#f0f9ff' : 'white',
+                      backgroundColor: paymentMethod === 'paypal' ? COLORS.accentBoxBg : COLORS.backgroundWhite,
                     }}
                     onClick={() => setPaymentMethod('paypal')}
                   >
                     <CardContent sx={{ p: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Radio value="paypal" checked={paymentMethod === 'paypal'} />
+                        <Radio
+                          value="paypal"
+                          checked={paymentMethod === 'paypal'}
+                          sx={{ '&.Mui-checked': { color: COLORS.primary } }}
+                        />
                         <Box
                           sx={{
                             width: 32,
@@ -567,20 +582,27 @@ const PaymentPage = () => {
                             mx: 2
                           }}
                         >
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="#0891b2">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill={COLORS.primary}>
                             <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l1.12-7.106c.082-.518.526-.9 1.05-.9h2.19c4.298 0 7.664-1.747 8.647-6.797.03-.149.054-.294.077-.437.294-1.867.001-3.137-1.012-4.287C19.654.543 17.645 0 15.076 0h-7.46c-.524 0-.972.382-1.054.901L3.455 20.437a.641.641 0 0 0 .633.74h4.606l1.187-7.527h2.19c4.298 0 7.664-1.747 8.647-6.797z"/>
                           </svg>
                         </Box>
                         <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: COLORS.textHeading }}>
                             {t('payment.paypal')}
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
                             {t('payment.paypalDescription')}
                           </Typography>
                         </Box>
                         {paymentMethod === 'paypal' && (
-                          <CheckCircleIcon sx={{ color: '#0891b2', fontSize: '1.5rem' }} />
+                          <motion.span
+                            initial={reduce ? false : { scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={spring}
+                            style={{ display: 'inline-flex' }}
+                          >
+                            <CheckCircleIcon sx={{ color: COLORS.primary, fontSize: '1.5rem' }} />
+                          </motion.span>
                         )}
                       </Box>
                     </CardContent>
@@ -588,12 +610,12 @@ const PaymentPage = () => {
                 </RadioGroup>
               </FormControl>
 
-              <Divider sx={{ my: 2.5, borderColor: 'rgba(8,145,178,0.1)' }} />
+              <Divider sx={{ my: 2.5, borderColor: COLORS.border }} />
 
               {/* Payment Form Area */}
               {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                  <CircularProgress sx={{ color: '#0891b2' }} />
+                  <CircularProgress sx={{ color: COLORS.primary }} />
                 </Box>
               ) : (
                 <>
@@ -615,7 +637,7 @@ const PaymentPage = () => {
                       {/* ✅ SECURITY: Stripe key kontrolü - eğer yoksa kullanıcıya bilgi ver */}
                       {!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
                        !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY.startsWith('pk_') ? (
-                        <Alert severity="warning" sx={{ mb: 2 }}>
+                        <Alert severity="warning" sx={{ mb: 2, borderRadius: RADII.button }}>
                           Stripe ist derzeit nicht konfiguriert. Bitte verwenden Sie PayPal oder kontaktieren Sie den Administrator.
                         </Alert>
                       ) : !clientSecret ? (
@@ -626,16 +648,7 @@ const PaymentPage = () => {
                           onClick={createStripePaymentIntent}
                           disabled={loading}
                           startIcon={!loading && <LockIcon />}
-                          sx={{
-                            py: 1.5,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            fontWeight: 700,
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-                            '&:hover': { background: 'linear-gradient(135deg, #0284c7 0%, #0e7490 100%)' },
-                            '&:disabled': { background: '#94a3b8', color: 'white' },
-                          }}
+                          sx={PRIMARY_BUTTON_SX}
                         >
                           {loading ? (
                             <CircularProgress size={24} color="inherit" />
@@ -659,7 +672,7 @@ const PaymentPage = () => {
                               />
                             </>
                           ) : (
-                            <Alert severity="error" sx={{ mb: 2 }}>
+                            <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.button }}>
                               Stripe ist derzeit nicht verfügbar. Bitte verwenden Sie PayPal oder kontaktieren Sie den Administrator.
                             </Alert>
                           )}
@@ -679,16 +692,7 @@ const PaymentPage = () => {
                           onClick={createPayPalOrder}
                           disabled={loading}
                           startIcon={!loading && <LockIcon />}
-                          sx={{
-                            py: 1.5,
-                            textTransform: 'none',
-                            fontSize: '1rem',
-                            fontWeight: 700,
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-                            '&:hover': { background: 'linear-gradient(135deg, #0284c7 0%, #0e7490 100%)' },
-                            '&:disabled': { background: '#94a3b8', color: 'white' },
-                          }}
+                          sx={PRIMARY_BUTTON_SX}
                         >
                           {loading ? (
                             <CircularProgress size={24} color="inherit" />
@@ -710,37 +714,44 @@ const PaymentPage = () => {
               )}
             </Paper>
 
-            {/* Security Notice */}
+            {/* Security Notice — SSL-Vertrauenssignal */}
             <Paper
               sx={{
                 p: 2.5,
-                borderRadius: '14px',
-                backgroundColor: '#f0f9ff',
-                border: '1px solid rgba(8,145,178,0.2)',
+                borderRadius: RADII.card,
+                backgroundColor: COLORS.accentBoxBg,
+                borderLeft: `3px solid ${COLORS.primary}`,
                 boxShadow: 'none',
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <LockIcon sx={{ color: '#0891b2', fontSize: '1.5rem' }} />
+                <LockIcon sx={{ color: COLORS.primary, fontSize: '1.5rem' }} />
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#0891b2' }}>
-                    {t('payment.securePayment')}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }}>
+                    {t('payment.securePayment')} – SSL-verschlüsselt
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#0369a1' }}>
+                  <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
                     {t('payment.securePaymentDescription')}
                   </Typography>
                 </Box>
               </Box>
             </Paper>
+            </motion.div>
           </Grid>
 
           {/* Right Column - Order Summary */}
           <Grid size={{ xs: 12, md: 5 }}>
-            <Box sx={{ 
+            <Box sx={{
               position: { xs: 'static', md: 'sticky' },
-              top: { md: 24 } 
+              top: { md: 24 }
             }}>
-              <OrderSummary bookingData={bookingData} />
+              <motion.div
+                initial={reduce ? false : { opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ ...spring, delay: reduce ? 0 : 0.1 }}
+              >
+                <OrderSummary bookingData={bookingData} />
+              </motion.div>
             </Box>
           </Grid>
         </Grid>

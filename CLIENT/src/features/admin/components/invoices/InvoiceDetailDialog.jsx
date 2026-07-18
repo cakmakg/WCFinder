@@ -55,10 +55,67 @@ import {
   ErrorOutline as ErrorOutlineIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
+import { COLORS, RADII } from '../../../../theme/designTokens';
 import { invoiceService } from '../../services/invoiceService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { formatDate } from '../../utils/dateHelpers';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
+
+// Pill-Statuschips: weicher Hintergrund + dunkler Text (Admin-Variante)
+const CHIP_PALETTES = {
+  success: { bg: '#ecfdf5', color: '#059669' },
+  warning: { bg: '#fffbeb', color: '#d97706' },
+  error: { bg: '#fef2f2', color: '#dc2626' },
+  default: { bg: '#f1f5f9', color: '#64748b' },
+};
+
+const pillChipSx = (palette = 'default') => {
+  const { bg, color } = CHIP_PALETTES[palette] || CHIP_PALETTES.default;
+  return {
+    borderRadius: '999px',
+    bgcolor: bg,
+    color,
+    fontWeight: 600,
+    border: 'none',
+    '& .MuiChip-icon': { color },
+  };
+};
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '&:hover fieldset': { borderColor: COLORS.primary },
+    '&.Mui-focused fieldset': { borderColor: COLORS.primary },
+  },
+  '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary },
+};
+
+const gradientButtonSx = {
+  background: COLORS.primaryGradient,
+  borderRadius: RADII.button,
+  textTransform: 'none',
+  fontWeight: 600,
+  '&:hover': { background: COLORS.primaryGradientHover },
+};
+
+const outlineButtonSx = {
+  textTransform: 'none',
+  fontWeight: 600,
+  borderRadius: RADII.button,
+};
+
+const dangerButtonSx = {
+  ...outlineButtonSx,
+  color: '#dc2626',
+  borderColor: '#dc2626',
+  '&:hover': { borderColor: '#dc2626', backgroundColor: '#fef2f2' },
+};
+
+const panelPaperSx = {
+  borderRadius: RADII.input,
+  borderColor: COLORS.border,
+};
 
 /**
  * InvoiceDetailDialog Component
@@ -271,14 +328,14 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
         maxWidth="lg"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 2 }
+          sx: { borderRadius: RADII.panel }
         }}
       >
         <DialogTitle>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Box display="flex" alignItems="center" gap={1}>
-              <ReceiptIcon color="primary" />
-              <Typography variant="h6" fontWeight={600}>
+              <ReceiptIcon sx={{ color: COLORS.primary }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
                 Rechnung {invoice.rechnungsnummer}
               </Typography>
             </Box>
@@ -289,15 +346,14 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                     icon={<CodeIcon />}
                     label="XRechnung"
                     size="small"
-                    color="info"
-                    variant="outlined"
+                    sx={pillChipSx('default')}
                   />
                 </Tooltip>
               )}
               <Chip
                 icon={getStatusIcon(invoice.status)}
                 label={statusInfo.label}
-                color={statusInfo.color}
+                sx={pillChipSx(statusInfo.color)}
               />
             </Box>
           </Box>
@@ -339,10 +395,10 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
           {/* Header Info */}
           <Grid container spacing={3} mb={3}>
             <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+              <Paper variant="outlined" sx={{ ...panelPaperSx, p: 2, height: '100%' }}>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <BusinessIcon color="primary" />
-                  <Typography variant="subtitle1" fontWeight={600}>
+                  <BusinessIcon sx={{ color: COLORS.primary }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
                     Rechnungsempfänger
                   </Typography>
                 </Box>
@@ -369,10 +425,10 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+              <Paper variant="outlined" sx={{ ...panelPaperSx, p: 2, height: '100%' }}>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
-                  <CalendarIcon color="primary" />
-                  <Typography variant="subtitle1" fontWeight={600}>
+                  <CalendarIcon sx={{ color: COLORS.primary }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
                     Rechnungsdaten
                   </Typography>
                 </Box>
@@ -432,13 +488,18 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
           </Grid>
 
           {/* Positions Table */}
-          <Typography variant="subtitle1" fontWeight={600} mb={2}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }} mb={2}>
             Rechnungspositionen
           </Typography>
-          <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ ...panelPaperSx, mb: 3, overflow: 'hidden' }}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ bgcolor: 'grey.50' }}>
+                <TableRow
+                  sx={{
+                    bgcolor: COLORS.backgroundLight,
+                    '& th': { fontWeight: 600, color: COLORS.textSecondary, borderColor: COLORS.border },
+                  }}
+                >
                   <TableCell>Pos.</TableCell>
                   <TableCell>Beschreibung</TableCell>
                   <TableCell align="center">Menge</TableCell>
@@ -455,9 +516,9 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                     <TableCell>{pos.beschreibung}</TableCell>
                     <TableCell align="center">{pos.menge}</TableCell>
                     <TableCell>{pos.einheitName || pos.einheitCode || 'Stück'}</TableCell>
-                    <TableCell align="right">{formatCurrency(pos.einzelpreis)}</TableCell>
-                    <TableCell align="right">{pos.steuersatz}%</TableCell>
-                    <TableCell align="right">{formatCurrency(pos.gesamtpreis)}</TableCell>
+                    <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(pos.einzelpreis)}</TableCell>
+                    <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{pos.steuersatz}%</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(pos.gesamtpreis)}</TableCell>
                   </TableRow>
                 )) || (
                   <TableRow>
@@ -472,13 +533,23 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
 
           {/* Totals */}
           <Box display="flex" justifyContent="flex-end" mb={3}>
-            <Paper variant="outlined" sx={{ p: 2, minWidth: 350 }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                minWidth: 350,
+                backgroundColor: COLORS.accentBoxBg,
+                borderColor: COLORS.border,
+                borderLeft: `3px solid ${COLORS.primary}`,
+                borderRadius: RADII.input,
+              }}
+            >
               <Grid container spacing={1}>
                 <Grid item xs={7}>
                   <Typography variant="body2">Nettobetrag:</Typography>
                 </Grid>
                 <Grid item xs={5}>
-                  <Typography variant="body2" align="right">
+                  <Typography variant="body2" align="right" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrency(invoice.nettobetrag || invoice.summen?.nettobetrag)}
                   </Typography>
                 </Grid>
@@ -491,7 +562,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                       </Typography>
                     </Grid>
                     <Grid item xs={5}>
-                      <Typography variant="body2" align="right">
+                      <Typography variant="body2" align="right" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                         {formatCurrency(invoice.mwstBetrag || invoice.summen?.mehrwertsteuer?.betrag)}
                       </Typography>
                     </Grid>
@@ -503,12 +574,12 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                 </Grid>
                 
                 <Grid item xs={7}>
-                  <Typography variant="subtitle1" fontWeight={600}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: COLORS.textHeading }}>
                     Gesamtbetrag:
                   </Typography>
                 </Grid>
                 <Grid item xs={5}>
-                  <Typography variant="h6" fontWeight={600} align="right" color="primary">
+                  <Typography variant="h6" align="right" sx={{ fontWeight: 800, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrency(invoice.gesamtbetrag || invoice.summen?.bruttobetrag)}
                   </Typography>
                 </Grid>
@@ -518,8 +589,8 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
 
           {/* Status Change */}
           {availableStatuses.length > 0 && (
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
+            <Paper variant="outlined" sx={{ ...panelPaperSx, p: 2, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }} gutterBottom>
                 Status ändern
               </Typography>
               <Stack direction="row" spacing={2} alignItems="center">
@@ -529,7 +600,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                   label="Neuer Status"
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
-                  sx={{ minWidth: 200 }}
+                  sx={{ ...fieldSx, minWidth: 200 }}
                 >
                   {availableStatuses.map((status) => (
                     <MenuItem key={status} value={status}>
@@ -541,7 +612,8 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                   variant="contained"
                   onClick={handleStatusChange}
                   disabled={!newStatus || statusLoading}
-                  startIcon={statusLoading ? <CircularProgress size={20} /> : <EditIcon />}
+                  startIcon={statusLoading ? <CircularProgress size={20} color="inherit" /> : <EditIcon />}
+                  sx={gradientButtonSx}
                 >
                   Status aktualisieren
                 </Button>
@@ -551,6 +623,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
                     color="error"
                     onClick={() => setStornoDialogOpen(true)}
                     startIcon={<CancelIcon />}
+                    sx={dangerButtonSx}
                   >
                     Stornieren
                   </Button>
@@ -561,8 +634,8 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
 
           {/* Payment Info */}
           {invoice.zahlungsbedingungen?.bankverbindung && (
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
+            <Paper variant="outlined" sx={{ ...panelPaperSx, p: 2, mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }} gutterBottom>
                 Bankverbindung
               </Typography>
               <Grid container spacing={1}>
@@ -595,11 +668,11 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
           )}
 
           {/* Audit Log Accordion */}
-          <Accordion>
+          <Accordion sx={{ border: `1px solid ${COLORS.border}`, borderRadius: RADII.input, boxShadow: 'none', '&:before': { display: 'none' } }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Box display="flex" alignItems="center" gap={1}>
                 <HistoryIcon color="action" />
-                <Typography variant="subtitle2">
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }}>
                   Änderungsverlauf (GoBD Audit Log)
                 </Typography>
               </Box>
@@ -667,6 +740,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             startIcon={<DownloadIcon />}
             onClick={handleDownloadPDF}
             disabled={loading}
+            sx={outlineButtonSx}
           >
             PDF Download
           </Button>
@@ -676,6 +750,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             startIcon={<CodeIcon />}
             onClick={handleDownloadXRechnung}
             disabled={loading}
+            sx={outlineButtonSx}
           >
             XRechnung XML
           </Button>
@@ -684,6 +759,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             startIcon={<VerifiedIcon />}
             onClick={handleValidateXRechnung}
             disabled={loading}
+            sx={outlineButtonSx}
           >
             Validieren
           </Button>
@@ -693,6 +769,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
               startIcon={<EmailIcon />}
               onClick={handleResendEmail}
               disabled={loading}
+              sx={outlineButtonSx}
             >
               E-Mail senden
             </Button>
@@ -702,6 +779,7 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             startIcon={<RefreshIcon />}
             onClick={handleRegeneratePDF}
             disabled={loading}
+            sx={outlineButtonSx}
           >
             PDF neu
           </Button>
@@ -710,26 +788,35 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             startIcon={<RefreshIcon />}
             onClick={handleRegenerateXRechnung}
             disabled={loading}
+            sx={outlineButtonSx}
           >
             XRechnung neu
           </Button>
           <Box flex={1} />
-          <Button onClick={onClose}>
+          <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600, color: COLORS.textSecondary }}>
             Schließen
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Storno Dialog */}
-      <Dialog open={stornoDialogOpen} onClose={() => setStornoDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={stornoDialogOpen}
+        onClose={() => setStornoDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
         <DialogTitle>
           <Box display="flex" alignItems="center" gap={1}>
-            <CancelIcon color="error" />
-            <Typography variant="h6">Rechnung stornieren</Typography>
+            <CancelIcon sx={{ color: '#dc2626' }} />
+            <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
+              Rechnung stornieren
+            </Typography>
           </Box>
         </DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="warning" sx={{ mb: 2, borderRadius: RADII.input }}>
             <Typography variant="body2">
               <strong>GoBD Hinweis:</strong> Bei der Stornierung wird eine Gutschrift erstellt. 
               Die ursprüngliche Rechnung bleibt im System erhalten und wird als storniert markiert.
@@ -744,16 +831,23 @@ const InvoiceDetailDialog = ({ open, onClose, invoice, onUpdate }) => {
             onChange={(e) => setStornoGrund(e.target.value)}
             placeholder="Bitte geben Sie den Grund für die Stornierung an..."
             required
+            sx={fieldSx}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setStornoDialogOpen(false)}>Abbrechen</Button>
-          <Button 
-            variant="contained" 
-            color="error" 
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setStornoDialogOpen(false)}
+            sx={{ textTransform: 'none', fontWeight: 600, color: COLORS.textSecondary }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
             onClick={handleCreateStorno}
             disabled={loading || !stornoGrund.trim()}
-            startIcon={loading ? <CircularProgress size={20} /> : <CancelIcon />}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CancelIcon />}
+            sx={dangerButtonSx}
           >
             Stornieren
           </Button>

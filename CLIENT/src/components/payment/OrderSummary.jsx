@@ -6,6 +6,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import PeopleIcon from '@mui/icons-material/People';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import LockIcon from '@mui/icons-material/Lock';
+import { COLORS, RADII, SHADOWS } from '../../theme/designTokens';
 
 export const OrderSummary = ({ bookingData, onPayment, processing }) => {
   const { business, date, personCount, pricing } = bookingData;
@@ -13,16 +14,16 @@ export const OrderSummary = ({ bookingData, onPayment, processing }) => {
   return (
     <Paper
       sx={{
-        borderRadius: '16px',
+        borderRadius: RADII.panel,
         overflow: 'hidden',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-        border: '1px solid rgba(8,145,178,0.1)',
+        boxShadow: SHADOWS.subtle,
+        border: `1px solid ${COLORS.border}`,
       }}
     >
       {/* ── Gradient Header ── */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          background: COLORS.primaryGradient,
           px: 3,
           py: 2.5,
           display: 'flex',
@@ -31,7 +32,7 @@ export const OrderSummary = ({ bookingData, onPayment, processing }) => {
         }}
       >
         <ReceiptIcon sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.3rem' }} />
-        <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: 'white' }}>
+        <Typography sx={{ fontWeight: 700, fontSize: '1rem', color: 'white', letterSpacing: '-0.02em' }}>
           Buchungsübersicht
         </Typography>
       </Box>
@@ -40,81 +41,89 @@ export const OrderSummary = ({ bookingData, onPayment, processing }) => {
       <Box sx={{ p: 3 }}>
         {/* Business Info */}
         <Box sx={{ mb: 2.5 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', mb: 0.75 }}>
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: '0.95rem',
+              color: COLORS.textHeading,
+              letterSpacing: '-0.02em',
+              mb: 0.75,
+            }}
+          >
             {business.name}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <LocationOnIcon sx={{ fontSize: '0.9rem', color: '#0891b2', mt: '2px', flexShrink: 0 }} />
-            <Typography sx={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.5 }}>
+            <LocationOnIcon sx={{ fontSize: '0.9rem', color: COLORS.primary, mt: '2px', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, lineHeight: 1.5 }}>
               {business.address?.street}, {business.address?.city}
             </Typography>
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: 'rgba(8,145,178,0.1)', mb: 2 }} />
+        <Divider sx={{ borderColor: COLORS.border, mb: 2 }} />
 
         {/* Booking Details */}
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.25 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <CalendarTodayIcon sx={{ fontSize: '0.85rem', color: '#0891b2' }} />
-              <Typography sx={{ fontSize: '0.83rem', color: '#64748b' }}>Datum</Typography>
+              <CalendarTodayIcon sx={{ fontSize: '0.85rem', color: COLORS.primary }} />
+              <Typography sx={{ fontSize: '0.83rem', color: COLORS.textSecondary }}>Datum</Typography>
             </Box>
-            <Typography sx={{ fontSize: '0.83rem', fontWeight: 600, color: '#0f172a' }}>
+            <Typography sx={{ fontSize: '0.83rem', fontWeight: 600, color: COLORS.textHeading }}>
               {new Date(date).toLocaleDateString('de-DE')}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <PeopleIcon sx={{ fontSize: '0.85rem', color: '#0891b2' }} />
-              <Typography sx={{ fontSize: '0.83rem', color: '#64748b' }}>Personen</Typography>
+              <PeopleIcon sx={{ fontSize: '0.85rem', color: COLORS.primary }} />
+              <Typography sx={{ fontSize: '0.83rem', color: COLORS.textSecondary }}>Personen</Typography>
             </Box>
-            <Typography sx={{ fontSize: '0.83rem', fontWeight: 600, color: '#0f172a' }}>
+            <Typography sx={{ fontSize: '0.83rem', fontWeight: 600, color: COLORS.textHeading }}>
               {personCount}
             </Typography>
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: 'rgba(8,145,178,0.1)', mb: 2 }} />
+        <Divider sx={{ borderColor: COLORS.border, mb: 2 }} />
 
         {/* Price Breakdown */}
         <Box sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>
+            <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
               € {pricing.basePrice.toFixed(2)} × {personCount} Personen
             </Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#0f172a' }}>
+            <Typography sx={{ fontSize: '0.82rem', color: COLORS.textHeading }}>
               € {(pricing.basePrice * personCount).toFixed(2)}
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>Servicegebühr</Typography>
-            <Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>
+            <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>Servicegebühr</Typography>
+            <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary }}>
               € {pricing.serviceFee.toFixed(2)}
             </Typography>
           </Box>
         </Box>
 
-        {/* Total Box */}
+        {/* Total Box — Accent-Box-Muster wie FlowDemo "Gesamt" */}
         <Box
           sx={{
-            backgroundColor: '#f0f9ff',
-            borderRadius: '12px',
-            borderLeft: '3px solid #0891b2',
+            backgroundColor: COLORS.accentBoxBg,
+            borderRadius: RADII.button,
+            borderLeft: `3px solid ${COLORS.primary}`,
             px: 2,
             py: 1.75,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: onPayment ? 2.5 : 0,
+            mb: onPayment ? 2.5 : 2,
           }}
         >
-          <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>
+          <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: COLORS.textHeading }}>
             Gesamtbetrag
           </Typography>
-          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: '#0891b2' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: COLORS.primary }}>
             € {pricing.total.toFixed(2)}
           </Typography>
         </Box>
@@ -129,27 +138,42 @@ export const OrderSummary = ({ bookingData, onPayment, processing }) => {
               width: '100%',
               py: 1.5,
               px: 2,
+              mb: 2,
               border: 'none',
-              borderRadius: '12px',
+              borderRadius: RADII.button,
               cursor: processing ? 'not-allowed' : 'pointer',
-              background: processing
-                ? '#94a3b8'
-                : 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+              background: processing ? '#cbd5e1' : COLORS.primaryGradient,
+              boxShadow: processing ? 'none' : SHADOWS.brand,
               color: 'white',
               fontSize: '0.97rem',
-              fontWeight: 700,
+              fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 1,
-              transition: 'opacity 0.2s',
-              '&:hover': { opacity: processing ? 1 : 0.9 },
+              transition: 'all 0.2s ease',
+              '&:hover': processing
+                ? {}
+                : {
+                    background: COLORS.primaryGradientHover,
+                    boxShadow: SHADOWS.brandHover,
+                    transform: 'translateY(-1px)',
+                  },
+              '&:active': processing ? {} : { transform: 'scale(0.98)' },
             }}
           >
             <LockIcon sx={{ fontSize: '1rem' }} />
             {processing ? 'Verarbeitung...' : `€ ${pricing.total.toFixed(2)} Jetzt bezahlen`}
           </Box>
         )}
+
+        {/* SSL-Vertrauenssignal */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+          <LockIcon sx={{ fontSize: '0.85rem', color: COLORS.textLight }} />
+          <Typography sx={{ fontSize: '0.75rem', color: COLORS.textLight, fontWeight: 500 }}>
+            SSL-verschlüsselt &amp; sicher bezahlen
+          </Typography>
+        </Box>
       </Box>
     </Paper>
   );

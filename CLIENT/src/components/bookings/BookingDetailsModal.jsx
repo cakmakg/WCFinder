@@ -19,13 +19,84 @@ import PersonIcon from '@mui/icons-material/Person';
 import DownloadIcon from '@mui/icons-material/Download';
 import QRCode from 'react-qr-code';
 import {
-  getStatusColor,
   getStatusLabel,
-  getPaymentStatusColor,
   getPaymentStatusLabel,
   getPaymentMethodLabel,
   getGenderLabel,
 } from './bookingUtils';
+import { COLORS, RADII, SHADOWS } from '../../theme/designTokens';
+
+// Weiche Pill-Farben je Status — gleiche Semantik wie bookingUtils.getStatusColor
+const STATUS_CHIP_COLORS = {
+  pending: { bg: '#fffbeb', fg: '#b45309' },
+  confirmed: { bg: '#ecfdf5', fg: '#047857' },
+  active: { bg: COLORS.accentBoxBg, fg: COLORS.primary },
+  completed: { bg: '#f1f5f9', fg: COLORS.textSecondary },
+  cancelled: { bg: '#fef2f2', fg: '#dc2626' },
+  expired: { bg: '#f1f5f9', fg: COLORS.textSecondary },
+};
+
+const PAYMENT_CHIP_COLORS = {
+  pending: { bg: '#fffbeb', fg: '#b45309' },
+  paid: { bg: '#ecfdf5', fg: '#047857' },
+  failed: { bg: '#fef2f2', fg: '#dc2626' },
+  refunded: { bg: '#f1f5f9', fg: COLORS.textSecondary },
+};
+
+const FALLBACK_CHIP = { bg: '#f1f5f9', fg: COLORS.textSecondary };
+
+const pillChipSx = (palette = FALLBACK_CHIP) => ({
+  borderRadius: '999px',
+  height: 24,
+  fontSize: '0.72rem',
+  fontWeight: 600,
+  backgroundColor: palette.bg,
+  color: palette.fg,
+  '& .MuiChip-label': { px: 1.25 },
+});
+
+const closeButtonSx = {
+  borderRadius: RADII.button,
+  textTransform: 'none',
+  fontWeight: 600,
+  color: COLORS.textSecondary,
+};
+
+/* ---------- QR-Ticket im Stil der FlowDemo-QrVignette ---------- */
+const QrTicket = ({ booking, isMobile, htmlId }) => (
+  <Box
+    sx={{
+      display: 'inline-flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 1.25,
+      p: 2.5,
+      backgroundColor: 'white',
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: RADII.card,
+      boxShadow: SHADOWS.subtle,
+      mb: 2,
+    }}
+  >
+    {htmlId ? (
+      <div id={htmlId}>
+        <QRCode value={booking.accessCode} size={isMobile ? 150 : 200} level="H" />
+      </div>
+    ) : (
+      <QRCode value={booking.accessCode} size={isMobile ? 150 : 200} level="H" />
+    )}
+    <Typography
+      sx={{
+        fontSize: '0.72rem',
+        color: COLORS.textSecondary,
+        letterSpacing: 1.5,
+        textTransform: 'uppercase',
+      }}
+    >
+      Buchung · Nr. {booking.accessCode}
+    </Typography>
+  </Box>
+);
 
 const BookingDetailsModal = ({
   open,
@@ -49,12 +120,12 @@ const BookingDetailsModal = ({
         maxWidth="sm"
         fullWidth
         fullScreen={isMobile}
-        PaperProps={{ sx: { borderRadius: isMobile ? 0 : '16px' } }}
+        PaperProps={{ sx: { borderRadius: isMobile ? 0 : RADII.panel } }}
       >
         {/* Gradient Header */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+            background: COLORS.primaryGradient,
             px: 3,
             py: 2,
             display: 'flex',
@@ -62,7 +133,7 @@ const BookingDetailsModal = ({
             alignItems: 'center',
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
             QR-Code
           </Typography>
           <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.8)' }}>
@@ -73,15 +144,7 @@ const BookingDetailsModal = ({
           <SimpleQRView booking={booking} isMobile={isMobile} />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={onClose}
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontWeight: 600,
-              color: '#64748b',
-            }}
-          >
+          <Button onClick={onClose} sx={closeButtonSx}>
             Schließen
           </Button>
         </DialogActions>
@@ -96,12 +159,12 @@ const BookingDetailsModal = ({
       maxWidth="md"
       fullWidth
       fullScreen={isMobile}
-      PaperProps={{ sx: { borderRadius: isMobile ? 0 : '16px' } }}
+      PaperProps={{ sx: { borderRadius: isMobile ? 0 : RADII.panel } }}
     >
       {/* Gradient Header */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+          background: COLORS.primaryGradient,
           px: 3,
           py: 2,
           display: 'flex',
@@ -109,7 +172,7 @@ const BookingDetailsModal = ({
           alignItems: 'center',
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>
           Reservierungsdetails
         </Typography>
         <IconButton size="small" onClick={onClose} sx={{ color: 'rgba(255,255,255,0.8)' }}>
@@ -119,7 +182,7 @@ const BookingDetailsModal = ({
       <DialogContent sx={{ pt: 3 }}>
         {loadingDetails ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress sx={{ color: '#0891b2' }} />
+            <CircularProgress sx={{ color: COLORS.primary }} />
           </Box>
         ) : bookingDetails ? (
           <BookingDetailsContent
@@ -131,20 +194,12 @@ const BookingDetailsModal = ({
           />
         ) : (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress sx={{ color: '#0891b2' }} />
+            <CircularProgress sx={{ color: COLORS.primary }} />
           </Box>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button
-          onClick={onClose}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 600,
-            color: '#64748b',
-          }}
-        >
+        <Button onClick={onClose} sx={closeButtonSx}>
           Schließen
         </Button>
       </DialogActions>
@@ -168,10 +223,10 @@ const DetailRow = ({ icon: Icon, label, children }) => (
         mt: 0.3,
       }}
     >
-      <Icon sx={{ fontSize: 18, color: '#0891b2' }} />
+      <Icon sx={{ fontSize: 18, color: COLORS.primary }} />
     </Box>
     <Box>
-      <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 0.2 }}>
+      <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', mb: 0.2 }}>
         {label}
       </Typography>
       {children}
@@ -183,45 +238,47 @@ const DetailRow = ({ icon: Icon, label, children }) => (
 const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, onDownloadQR }) => {
   return (
     <Box>
-      {/* Main Info Card */}
+      {/* Haupt-Infokarte */}
       <Box
         sx={{
-          border: '1px solid rgba(8,145,178,0.12)',
-          borderLeft: '3px solid #0891b2',
-          borderRadius: '14px',
+          backgroundColor: 'white',
+          border: `1px solid ${COLORS.border}`,
+          borderLeft: `3px solid ${COLORS.primary}`,
+          borderRadius: RADII.card,
+          boxShadow: SHADOWS.subtle,
           p: 2.5,
           mb: 3,
-          backgroundColor: '#fafcfe',
         }}
       >
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#0f172a' }}>
+        <Typography
+          variant="h6"
+          sx={{ mb: 2, fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}
+        >
           {booking.businessId?.businessName || 'N/A'}
         </Typography>
 
-        {/* Status chips */}
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 2.5 }}>
+        {/* Status-Pills */}
+        <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', mb: 2.5 }}>
           <Chip
             label={getStatusLabel(booking.status)}
-            color={getStatusColor(booking.status)}
             size="small"
-            sx={{ fontWeight: 600 }}
+            sx={pillChipSx(STATUS_CHIP_COLORS[booking.status])}
           />
           <Chip
             label={getPaymentStatusLabel(booking.paymentStatus)}
-            color={getPaymentStatusColor(booking.paymentStatus)}
             size="small"
-            sx={{ fontWeight: 600 }}
+            sx={pillChipSx(PAYMENT_CHIP_COLORS[booking.paymentStatus])}
           />
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {/* Address */}
+          {/* Adresse */}
           <DetailRow icon={LocationOnIcon} label="Adresse">
             <Typography
               variant="body2"
               sx={{
                 cursor: 'pointer',
-                color: '#0891b2',
+                color: COLORS.primary,
                 fontWeight: 500,
                 '&:hover': { textDecoration: 'underline' },
               }}
@@ -231,9 +288,9 @@ const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, 
             </Typography>
           </DetailRow>
 
-          {/* Date */}
+          {/* Datum */}
           <DetailRow icon={CalendarTodayIcon} label="Datum">
-            <Typography variant="body2" sx={{ fontWeight: 500, color: '#0f172a' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: COLORS.textHeading }}>
               {new Date(booking.startTime).toLocaleDateString('de-DE', {
                 weekday: 'long',
                 year: 'numeric',
@@ -243,61 +300,61 @@ const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, 
             </Typography>
           </DetailRow>
 
-          {/* Persons */}
+          {/* Personen */}
           <DetailRow icon={PeopleIcon} label="Personen">
-            <Typography variant="body2" sx={{ fontWeight: 500, color: '#0f172a' }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: COLORS.textHeading }}>
               {booking.personCount}
             </Typography>
           </DetailRow>
 
-          {/* Gender */}
+          {/* Geschlecht */}
           {booking.genderPreference && (
             <DetailRow icon={PersonIcon} label="Geschlecht">
-              <Typography variant="body2" sx={{ fontWeight: 500, color: '#0f172a' }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, color: COLORS.textHeading }}>
                 {getGenderLabel(booking.genderPreference)}
               </Typography>
             </DetailRow>
           )}
         </Box>
 
-        {/* Price */}
+        {/* Preis-Akzentbox */}
         <Box
           sx={{
             mt: 2.5,
-            backgroundColor: '#f0f9ff',
-            borderLeft: '3px solid #0891b2',
+            backgroundColor: COLORS.accentBoxBg,
+            borderLeft: `3px solid ${COLORS.primary}`,
             borderRadius: '10px',
             px: 2,
             py: 1.5,
           }}
         >
-          <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 0.2 }}>
+          <Typography variant="caption" sx={{ color: COLORS.textSecondary, display: 'block', mb: 0.2 }}>
             Gesamtbetrag
           </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: '#0891b2' }}>
-            {'\u20AC'}{Number(booking.totalFee || 0).toFixed(2)}
+          <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.primary, letterSpacing: '-0.02em' }}>
+            {'€'}{Number(booking.totalFee || 0).toFixed(2)}
           </Typography>
         </Box>
 
-        {/* Payment Details */}
+        {/* Zahlungsdetails */}
         {bookingDetails?.payment && (
           <>
-            <Divider sx={{ my: 2 }} />
+            <Divider sx={{ my: 2, borderColor: COLORS.border }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Box>
-                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Zahlungsmethode
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#0f172a' }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: COLORS.textHeading }}>
                   {getPaymentMethodLabel(bookingDetails.payment)}
                 </Typography>
               </Box>
               {(bookingDetails.payment.transactionId || bookingDetails.payment.paymentIntentId) && (
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                     Transaktions-ID
                   </Typography>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#334155' }}>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', color: COLORS.textPrimary }}>
                     {bookingDetails.payment.transactionId || bookingDetails.payment.paymentIntentId}
                   </Typography>
                 </Box>
@@ -306,9 +363,9 @@ const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, 
           </>
         )}
 
-        {/* Created Date */}
-        <Divider sx={{ my: 2 }} />
-        <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+        {/* Buchungsdatum */}
+        <Divider sx={{ my: 2, borderColor: COLORS.border }} />
+        <Typography variant="caption" sx={{ color: COLORS.textLight }}>
           Reserviert am {new Date(booking.createdAt).toLocaleDateString('de-DE', {
             year: 'numeric',
             month: 'long',
@@ -319,50 +376,28 @@ const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, 
         </Typography>
       </Box>
 
-      {/* QR Code Section */}
+      {/* QR-Ticket */}
       {booking.accessCode && (
         <Box
           sx={{
-            border: '1px solid rgba(8,145,178,0.12)',
-            borderRadius: '14px',
+            backgroundColor: COLORS.backgroundLight,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: RADII.card,
             p: 2.5,
             textAlign: 'center',
           }}
         >
-          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 700, color: '#0f172a' }}>
-            QR-Code
+          <Typography
+            variant="subtitle1"
+            sx={{ mb: 2, fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}
+          >
+            Ihr Zugang
           </Typography>
 
-          <Box
-            sx={{
-              display: 'inline-flex',
-              justifyContent: 'center',
-              p: 2.5,
-              bgcolor: '#f0f9ff',
-              borderRadius: '14px',
-              mb: 2,
-            }}
-          >
-            <div id="qr-code-svg-detail">
-              <QRCode
-                value={booking.accessCode}
-                size={isMobile ? 150 : 200}
-                level="H"
-              />
-            </div>
-          </Box>
+          <QrTicket booking={booking} isMobile={isMobile} htmlId="qr-code-svg-detail" />
 
-          <Typography
-            variant="h5"
-            sx={{
-              fontFamily: 'monospace',
-              fontWeight: 700,
-              letterSpacing: 3,
-              mb: 2,
-              color: '#0891b2',
-            }}
-          >
-            {booking.accessCode}
+          <Typography variant="body2" sx={{ color: COLORS.textSecondary, mb: 2 }}>
+            QR-Code am Eingang vorzeigen – fertig.
           </Typography>
 
           <Button
@@ -371,15 +406,18 @@ const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, 
             onClick={onDownloadQR}
             fullWidth
             sx={{
-              borderRadius: '10px',
+              borderRadius: RADII.button,
               textTransform: 'none',
               fontWeight: 600,
-              color: '#0891b2',
-              borderColor: '#0891b2',
+              color: COLORS.primary,
+              borderColor: COLORS.primary,
+              transition: 'transform 0.2s, box-shadow 0.2s',
               '&:hover': {
-                borderColor: '#0e7490',
+                borderColor: COLORS.primaryDark,
                 backgroundColor: 'rgba(8,145,178,0.06)',
+                transform: 'translateY(-1px)',
               },
+              '&:active': { transform: 'translateY(0) scale(0.98)' },
             }}
           >
             QR-Code herunterladen
@@ -394,41 +432,16 @@ const BookingDetailsContent = ({ booking, bookingDetails, isMobile, onOpenMaps, 
 const SimpleQRView = ({ booking, isMobile }) => {
   return (
     <Box sx={{ textAlign: 'center' }}>
-      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 700, color: '#0f172a' }}>
+      <Typography
+        variant="subtitle1"
+        sx={{ mb: 2, fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}
+      >
         Ihr QR-Code
       </Typography>
 
-      <Box
-        sx={{
-          display: 'inline-flex',
-          justifyContent: 'center',
-          p: 2.5,
-          bgcolor: '#f0f9ff',
-          borderRadius: '14px',
-          mb: 2,
-        }}
-      >
-        <QRCode
-          value={booking.accessCode}
-          size={isMobile ? 150 : 200}
-          level="H"
-        />
-      </Box>
+      <QrTicket booking={booking} isMobile={isMobile} />
 
-      <Typography
-        variant="h5"
-        sx={{
-          fontFamily: 'monospace',
-          fontWeight: 700,
-          letterSpacing: 3,
-          mb: 1,
-          color: '#0891b2',
-        }}
-      >
-        {booking.accessCode}
-      </Typography>
-
-      <Typography variant="body2" sx={{ color: '#64748b' }}>
+      <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
         {booking.businessId?.businessName}
       </Typography>
     </Box>

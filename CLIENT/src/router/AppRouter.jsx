@@ -119,7 +119,7 @@ const AppRouter = () => {
   // Bu sayede Elements provider olmadan StripeCardForm render edilmeyecek
   if (stripePromise) {
     wrappedContent = (
-      <Elements stripe={stripePromise}>
+      <Elements stripe={stripePromise} options={{ locale: 'de' }}>
         {wrappedContent}
       </Elements>
     );

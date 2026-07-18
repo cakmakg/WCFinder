@@ -8,6 +8,7 @@ import WcIcon from '@mui/icons-material/Wc';
 import AccessibleIcon from '@mui/icons-material/Accessible';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { COLORS } from '../../theme/designTokens';
 
 const STATUS_CONFIG = {
   available: { color: '#16a34a', label: 'Verfügbar' },
@@ -60,7 +61,7 @@ export const MarkerPopup = ({ toiletItem }) => {
             width: 36,
             height: 36,
             borderRadius: '10px',
-            background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+            background: COLORS.primaryGradient,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -74,9 +75,10 @@ export const MarkerPopup = ({ toiletItem }) => {
           {/* Üst satır: İşletme adı */}
           <Typography
             sx={{
-              fontWeight: 700,
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
               fontSize: '0.82rem',
-              color: '#0f172a',
+              color: COLORS.textHeading,
               lineHeight: 1.3,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -91,7 +93,7 @@ export const MarkerPopup = ({ toiletItem }) => {
             <Typography
               sx={{
                 fontSize: '0.7rem',
-                color: '#94a3b8',
+                color: COLORS.textLight,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -102,7 +104,7 @@ export const MarkerPopup = ({ toiletItem }) => {
               {toiletItem.name}
             </Typography>
 
-            <Box sx={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: '#e2e8f0', flexShrink: 0 }} />
+            <Box sx={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: COLORS.border, flexShrink: 0 }} />
 
             {/* Durum */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, flexShrink: 0 }}>
@@ -132,7 +134,7 @@ export const MarkerPopup = ({ toiletItem }) => {
             sx={{
               fontSize: '0.85rem',
               fontWeight: 800,
-              color: isFree ? '#16a34a' : '#0891b2',
+              color: isFree ? '#16a34a' : COLORS.primary,
               lineHeight: 1,
               whiteSpace: 'nowrap',
             }}
@@ -145,7 +147,7 @@ export const MarkerPopup = ({ toiletItem }) => {
               width: 20,
               height: 20,
               borderRadius: '6px',
-              background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+              background: COLORS.primaryGradient,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

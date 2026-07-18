@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 
 const reviews = [
   {
@@ -41,8 +40,6 @@ const reviews = [
 ];
 
 const ReviewsSection = () => {
-  const { t } = useTranslation();
-
   return (
     <Box
       component="section"
@@ -99,7 +96,7 @@ const ReviewsSection = () => {
               fontSize: { xs: "1.75rem", md: "2.5rem" },
             }}
           >
-            {t("startPage.reviews.title")}
+            Das sagen unsere Nutzer
           </Typography>
           <Box
             sx={{
@@ -114,7 +111,7 @@ const ReviewsSection = () => {
               variant="body1"
               sx={{ color: "#64748b", fontWeight: 600 }}
             >
-              4,9 • 2.847 {t("startPage.reviews.reviewsCount")}
+              4,9 · 2.847 Bewertungen
             </Typography>
           </Box>
         </Box>

@@ -17,6 +17,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useExport } from '../../hooks/useExport';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 
 /**
  * ExportButton Component
@@ -138,7 +139,15 @@ const ExportButton = ({
               ) : null
             }
             endIcon={!exporting && <ExpandMoreIcon />}
-            sx={sx}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: RADII.button,
+              borderColor: COLORS.primary,
+              color: COLORS.primary,
+              '&:hover': { borderColor: COLORS.primaryDark, bgcolor: COLORS.accentBoxBg },
+              ...sx
+            }}
           >
             {exporting ? 'Exportiere...' : showLabel ? 'Exportieren' : ''}
           </Button>
@@ -158,7 +167,12 @@ const ExportButton = ({
           horizontal: 'right'
         }}
         PaperProps={{
-          sx: { minWidth: 200 }
+          sx: {
+            minWidth: 200,
+            borderRadius: RADII.button,
+            border: `1px solid ${COLORS.border}`,
+            boxShadow: SHADOWS.subtle
+          }
         }}
       >
         {availableFormats.map((format) => (

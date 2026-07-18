@@ -75,38 +75,6 @@ const StartPage = () => {
         structuredData={schemas}
       />
 
-      {/* Decorative background blobs */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: { xs: "200px", md: "400px" },
-          height: { xs: "200px", md: "400px" },
-          background:
-            "linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(6,182,212,0.05) 100%)",
-          borderRadius: "50%",
-          filter: "blur(60px)",
-          zIndex: 0,
-          transform: "translate(30%, -30%)",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          width: { xs: "150px", md: "300px" },
-          height: { xs: "150px", md: "300px" },
-          background:
-            "linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(14,116,144,0.05) 100%)",
-          borderRadius: "50%",
-          filter: "blur(60px)",
-          zIndex: 0,
-          transform: "translate(-30%, 30%)",
-        }}
-      />
-
       <Box sx={{ position: "relative", zIndex: 1 }}>
         <StartPageHeader
           onLoginClick={() => setAuthModalOpen(true)}
@@ -115,7 +83,6 @@ const StartPage = () => {
         <StartPageHero
           isSearching={isSearching}
           setIsSearching={setIsSearching}
-          onPartnerClick={handlePartnerClick}
         />
 
         {/* Data-rich stats — immediately after hero for authority signal */}

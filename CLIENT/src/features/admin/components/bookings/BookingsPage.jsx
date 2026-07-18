@@ -39,10 +39,50 @@ import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from "framer-motion";
 import { adminService } from "../../services/adminService";
 import { DateRangePicker, ExportButton } from "../shared";
+import { COLORS, RADII, SHADOWS } from "../../../../theme/designTokens";
+
+const PANEL_SX = {
+  bgcolor: COLORS.backgroundWhite,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle,
+};
+
+const INPUT_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    "& fieldset": { borderColor: COLORS.border },
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary },
+};
+
+const OUTLINED_BUTTON_SX = {
+  textTransform: "none",
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  borderColor: COLORS.border,
+  color: COLORS.primary,
+  "&:hover": { borderColor: COLORS.primary, bgcolor: COLORS.accentBoxBg },
+};
+
+const TABLE_HEAD_SX = {
+  "& .MuiTableCell-head": {
+    bgcolor: COLORS.backgroundLight,
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderBottom: `1px solid ${COLORS.border}`,
+  },
+};
 
 const BookingsPage = () => {
+  const reduceMotion = useReducedMotion();
   const [usages, setUsages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -178,15 +218,15 @@ const BookingsPage = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case "completed":
-        return { bg: "#16a34a15", color: "#16a34a", label: "Abgeschlossen" };
+        return { bg: "#ecfdf5", color: "#059669", label: "Abgeschlossen" };
       case "pending":
-        return { bg: "#f59e0b15", color: "#f59e0b", label: "Ausstehend" };
+        return { bg: "#fffbeb", color: "#b45309", label: "Ausstehend" };
       case "confirmed":
-        return { bg: "#0891b215", color: "#0891b2", label: "Bestätigt" };
+        return { bg: "#f0f9ff", color: "#0891b2", label: "Bestätigt" };
       case "cancelled":
-        return { bg: "#dc262615", color: "#dc2626", label: "Storniert" };
+        return { bg: "#fef2f2", color: "#dc2626", label: "Storniert" };
       default:
-        return { bg: "#6b728015", color: "#6b7280", label: status };
+        return { bg: "#f1f5f9", color: "#64748b", label: status };
     }
   };
 
@@ -224,15 +264,31 @@ const BookingsPage = () => {
     });
   };
 
+  const statCards = [
+    { label: "Gesamt", value: stats.total, color: COLORS.textHeading },
+    { label: "Abgeschlossen", value: stats.completed, color: "#059669" },
+    { label: "Ausstehend", value: stats.pending, color: "#b45309" },
+    { label: "Storniert", value: stats.cancelled, color: "#dc2626" },
+    { label: "Gesamtumsatz", value: formatCurrency(stats.totalRevenue), color: COLORS.primary },
+  ];
+
   return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
     <Box>
       {/* Header */}
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{ mb: 1, fontWeight: 800, color: COLORS.textHeading, letterSpacing: "-0.02em" }}
+          >
             Buchungsverwaltung
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
             Alle Buchungen anzeigen und verwalten
           </Typography>
         </Box>
@@ -241,6 +297,7 @@ const BookingsPage = () => {
           startIcon={<RefreshIcon />}
           onClick={fetchBookings}
           disabled={loading}
+          sx={OUTLINED_BUTTON_SX}
         >
           Aktualisieren
         </Button>
@@ -248,70 +305,24 @@ const BookingsPage = () => {
 
       {/* Statistics Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Gesamt
-              </Typography>
-              <Typography variant="h5" fontWeight={700}>
-                {stats.total}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Abgeschlossen
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#16a34a" }}>
-                {stats.completed}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Ausstehend
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#f59e0b" }}>
-                {stats.pending}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Storniert
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#dc2626" }}>
-                {stats.cancelled}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                Gesamtumsatz
-              </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#0891b2" }}>
-                {formatCurrency(stats.totalRevenue)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {statCards.map((card) => (
+          <Grid item xs={6} sm={4} md={2.4} key={card.label}>
+            <Card elevation={0} sx={PANEL_SX}>
+              <CardContent>
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
+                  {card.label}
+                </Typography>
+                <Typography variant="h5" fontWeight={700} sx={{ color: card.color }}>
+                  {card.value}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper elevation={0} sx={{ ...PANEL_SX, p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={4}>
             <TextField
@@ -320,17 +331,18 @@ const BookingsPage = () => {
               placeholder="Suchen (Betrieb, Benutzer, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              sx={INPUT_SX}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon />
+                    <SearchIcon sx={{ color: COLORS.textSecondary }} />
                   </InputAdornment>
                 ),
               }}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth size="small" sx={INPUT_SX}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={statusFilter}
@@ -351,6 +363,7 @@ const BookingsPage = () => {
               variant="outlined"
               startIcon={<FilterListIcon />}
               onClick={() => setShowDatePicker(!showDatePicker)}
+              sx={OUTLINED_BUTTON_SX}
             >
               Zeitraum
             </Button>
@@ -377,10 +390,10 @@ const BookingsPage = () => {
       </Paper>
 
       {/* Table */}
-      <Paper>
+      <Paper elevation={0} sx={{ ...PANEL_SX, overflow: "hidden" }}>
         <TableContainer>
-          <Table>
-            <TableHead>
+          <Table sx={{ "& .MuiTableCell-root": { borderColor: COLORS.border } }}>
+            <TableHead sx={TABLE_HEAD_SX}>
               <TableRow>
                 <TableCell>
                   <TableSortLabel
@@ -424,14 +437,18 @@ const BookingsPage = () => {
               ) : paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
-                    <Typography color="text.secondary">Keine Einträge gefunden</Typography>
+                    <Typography sx={{ color: COLORS.textSecondary }}>Keine Einträge gefunden</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedData.map((usage) => {
                   const statusInfo = getStatusColor(usage.status);
                   return (
-                    <TableRow key={usage._id} hover>
+                    <TableRow
+                      key={usage._id}
+                      hover
+                      sx={{ "&:hover": { bgcolor: COLORS.backgroundLight } }}
+                    >
                       <TableCell>{formatDate(usage.createdAt || usage.startTime)}</TableCell>
                       <TableCell>
                         {usage.businessId?.businessName || usage.businessName || "N/A"}
@@ -451,7 +468,8 @@ const BookingsPage = () => {
                           sx={{
                             bgcolor: statusInfo.bg,
                             color: statusInfo.color,
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            borderRadius: "999px",
                           }}
                         />
                       </TableCell>
@@ -491,19 +509,27 @@ const BookingsPage = () => {
       </Paper>
 
       {/* View Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Buchungsdetails</DialogTitle>
+      <Dialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: COLORS.textHeading }}>
+          Buchungsdetails
+        </DialogTitle>
         <DialogContent>
           {selectedUsage && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Buchungs-ID
                 </Typography>
                 <Typography variant="body1">{selectedUsage._id}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Betrieb
                 </Typography>
                 <Typography variant="body1">
@@ -511,7 +537,7 @@ const BookingsPage = () => {
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Benutzer
                 </Typography>
                 <Typography variant="body1">
@@ -519,7 +545,7 @@ const BookingsPage = () => {
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Betrag
                 </Typography>
                 <Typography variant="body1" fontWeight={600}>
@@ -527,7 +553,7 @@ const BookingsPage = () => {
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Status
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
@@ -537,12 +563,14 @@ const BookingsPage = () => {
                     sx={{
                       bgcolor: getStatusColor(selectedUsage.status).bg,
                       color: getStatusColor(selectedUsage.status).color,
+                      fontWeight: 600,
+                      borderRadius: "999px",
                     }}
                   />
                 </Box>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                   Erstellungsdatum
                 </Typography>
                 <Typography variant="body1">
@@ -551,7 +579,7 @@ const BookingsPage = () => {
               </Grid>
               {selectedUsage.startTime && (
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                     Startzeit
                   </Typography>
                   <Typography variant="body1">
@@ -563,28 +591,55 @@ const BookingsPage = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Schließen</Button>
+          <Button
+            onClick={() => setViewDialogOpen(false)}
+            sx={{ textTransform: "none", fontWeight: 600, borderRadius: RADII.button }}
+          >
+            Schließen
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Buchung löschen</DialogTitle>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: COLORS.textHeading }}>
+          Buchung löschen
+        </DialogTitle>
         <DialogContent>
           <Typography>
             Sind Sie sicher, dass Sie diese Buchung löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Abbrechen</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            sx={{ textTransform: "none", fontWeight: 600, borderRadius: RADII.button, color: COLORS.textSecondary }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            onClick={confirmDelete}
+            variant="outlined"
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: RADII.button,
+              color: "#dc2626",
+              borderColor: "#dc2626",
+              "&:hover": { borderColor: "#b91c1c", bgcolor: "#fef2f2" },
+            }}
+          >
             Löschen
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
+    </motion.div>
   );
 };
 
 export default BookingsPage;
-

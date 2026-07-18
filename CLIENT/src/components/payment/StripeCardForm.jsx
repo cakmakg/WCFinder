@@ -12,23 +12,26 @@ import {
   Alert,
   CircularProgress,
   TextField,
+  Typography,
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
+import { COLORS, RADII, SHADOWS } from '../../theme/designTokens';
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
     base: {
-      color: '#32325d',
+      color: COLORS.textHeading,
       fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
       fontSmoothing: 'antialiased',
       fontSize: '16px',
       '::placeholder': {
-        color: '#aab7c4',
+        color: COLORS.textLight,
       },
+      iconColor: COLORS.primary,
     },
     invalid: {
-      color: '#fa755a',
-      iconColor: '#fa755a',
+      color: '#ef4444',
+      iconColor: '#ef4444',
     },
   },
   hidePostalCode: true,
@@ -37,15 +40,34 @@ const CARD_ELEMENT_OPTIONS = {
 const INPUT_SX = {
   mb: 2,
   '& .MuiOutlinedInput-root': {
-    borderRadius: '12px',
+    borderRadius: RADII.input,
     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-      borderColor: '#0891b2',
+      borderColor: COLORS.primary,
       borderWidth: '2px',
     },
   },
   '& .MuiInputLabel-root.Mui-focused': {
-    color: '#0891b2',
+    color: COLORS.primary,
   },
+};
+
+// Primär-Button im StartPage-Stil: Verlauf, Hover-Lift, Active-Scale
+const SUBMIT_BUTTON_SX = {
+  py: 1.5,
+  textTransform: 'none',
+  fontSize: '1rem',
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  background: COLORS.primaryGradient,
+  boxShadow: SHADOWS.brand,
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    background: COLORS.primaryGradientHover,
+    boxShadow: SHADOWS.brandHover,
+    transform: 'translateY(-1px)',
+  },
+  '&:active': { transform: 'scale(0.98)' },
+  '&:disabled': { background: '#cbd5e1', color: 'white', boxShadow: 'none' },
 };
 
 export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => {
@@ -60,7 +82,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
   // ✅ SECURITY: Stripe ve Elements kontrolü
   if (!stripe || !elements) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
+      <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.button }}>
         Stripe ist derzeit nicht verfügbar. Bitte verwenden Sie PayPal oder kontaktieren Sie den Administrator.
       </Alert>
     );
@@ -198,13 +220,14 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
       <Box
         sx={{
           p: 2,
-          border: '1.5px solid rgba(8,145,178,0.2)',
-          borderRadius: '12px',
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: RADII.input,
           mb: 2,
-          bgcolor: 'background.paper',
-          transition: 'border-color 0.2s',
+          bgcolor: COLORS.backgroundWhite,
+          transition: 'border-color 0.2s, box-shadow 0.2s',
           '&:focus-within': {
-            borderColor: '#0891b2',
+            borderColor: COLORS.primary,
+            boxShadow: SHADOWS.subtle,
           },
         }}
       >
@@ -212,7 +235,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: '10px' }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.button }}>
           {error}
         </Alert>
       )}
@@ -224,21 +247,7 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
         size="large"
         disabled={!stripe || processing}
         startIcon={!processing && <LockIcon />}
-        sx={{
-          py: 1.5,
-          textTransform: 'none',
-          fontSize: '1rem',
-          fontWeight: 700,
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #0284c7 0%, #0e7490 100%)',
-          },
-          '&:disabled': {
-            background: '#94a3b8',
-            color: 'white',
-          },
-        }}
+        sx={SUBMIT_BUTTON_SX}
       >
         {processing ? (
           <CircularProgress size={24} color="inherit" />
@@ -246,6 +255,14 @@ export const StripeCardForm = ({ clientSecret, onSuccess, onError, amount }) => 
           `€ ${amount.toFixed(2)} Jetzt bezahlen`
         )}
       </Button>
+
+      {/* SSL-Vertrauenssignal */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 1.5 }}>
+        <LockIcon sx={{ fontSize: '0.85rem', color: COLORS.textLight }} />
+        <Typography sx={{ fontSize: '0.75rem', color: COLORS.textLight, fontWeight: 500 }}>
+          SSL-verschlüsselt – Ihre Kartendaten werden sicher übertragen
+        </Typography>
+      </Box>
     </Box>
   );
 };

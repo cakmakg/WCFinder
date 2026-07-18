@@ -28,6 +28,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { payoutService } from '../../services/payoutService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { formatDate } from '../../utils/dateHelpers';
@@ -35,6 +36,37 @@ import { DateRangePicker, ExportButton, AdvancedFilters } from '../shared';
 import { useDateRange } from '../../hooks/useDateRange';
 import { useExport } from '../../hooks/useExport';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
+
+// Admin-Designsprache: Stil-Konstanten
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+  overflow: 'hidden'
+};
+
+const tableHeadRowSx = {
+  backgroundColor: COLORS.backgroundLight,
+  '& .MuiTableCell-head': {
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderColor: COLORS.border
+  }
+};
+
+const tableBodyRowSx = {
+  '& .MuiTableCell-root': { borderColor: COLORS.border },
+  '&:hover': { backgroundColor: COLORS.backgroundLight }
+};
+
+// Status-Pills: weiche Hintergründe mit dunkler Schrift (Semantik unverändert)
+const statusChipSx = {
+  completed: { backgroundColor: '#ecfdf5', color: '#059669', '& .MuiChip-icon': { color: '#059669' } },
+  pending: { backgroundColor: '#fffbeb', color: '#d97706', '& .MuiChip-icon': { color: '#d97706' } },
+  failed: { backgroundColor: '#fef2f2', color: '#dc2626', '& .MuiChip-icon': { color: '#dc2626' } },
+  default: { backgroundColor: '#f1f5f9', color: COLORS.textSecondary }
+};
 
 /**
  * PayoutHistoryTable Component
@@ -212,18 +244,9 @@ const PayoutHistoryTable = () => {
     });
   };
 
-  // Get status color
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'failed':
-        return 'error';
-      default:
-        return 'default';
-    }
+  // Get status chip style (Semantik: grün/amber/rot bleibt erhalten)
+  const getStatusChipSx = (status) => {
+    return statusChipSx[status] || statusChipSx.default;
   };
 
   // Get status icon
@@ -277,7 +300,7 @@ const PayoutHistoryTable = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: COLORS.primary }} />
       </Box>
     );
   }
@@ -310,7 +333,7 @@ const PayoutHistoryTable = () => {
 
       {/* Export and Summary */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
           {filteredPayouts.length} Auszahlungen gefunden
         </Typography>
         <ExportButton
@@ -329,11 +352,11 @@ const PayoutHistoryTable = () => {
       </Stack>
 
       {/* Table */}
-      <Paper>
+      <Paper elevation={0} sx={panelSx}>
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow>
+              <TableRow sx={tableHeadRowSx}>
                 <TableCell>Datum</TableCell>
                 <TableCell>Geschäft</TableCell>
                 <TableCell align="right">Betrag</TableCell>
@@ -347,35 +370,38 @@ const PayoutHistoryTable = () => {
             <TableBody>
               {paginatedPayouts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
-                    <Typography color="text.secondary">
+                  <TableCell colSpan={8} align="center" sx={{ py: 8, borderColor: COLORS.border }}>
+                    <Typography sx={{ color: COLORS.textSecondary }}>
                       Keine Auszahlungen gefunden
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedPayouts.map((payout) => (
-                  <TableRow key={payout._id} hover>
+                  <TableRow key={payout._id} sx={tableBodyRowSx}>
                     <TableCell>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>
                         {formatDate(payout.createdAt)}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                         {formatDate(payout.createdAt, 'HH:mm')}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
+                      <Typography variant="body2" fontWeight={600} sx={{ color: COLORS.textPrimary }}>
                         {payout.businessName}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight={600} color="primary">
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 700, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}
+                      >
                         {formatCurrency(payout.amount)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>
                         {getPaymentMethodLabel(payout.paymentMethod)}
                       </Typography>
                     </TableCell>
@@ -385,22 +411,27 @@ const PayoutHistoryTable = () => {
                           icon={<ReceiptIcon />}
                           label={payout.rechnungsnummer}
                           size="small"
-                          color="info"
-                          variant="outlined"
                           clickable
+                          sx={{
+                            borderRadius: '999px',
+                            fontWeight: 600,
+                            backgroundColor: COLORS.accentBoxBg,
+                            color: COLORS.primaryDark,
+                            '& .MuiChip-icon': { color: COLORS.primaryDark }
+                          }}
                           onClick={() => {
                             // TODO: Navigate to invoice detail or open dialog
                             console.log('Rechnung:', payout.rechnungId);
                           }}
                         />
                       ) : (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
                           -
                         </Typography>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
                         {payout.referenceNumber || payout.transactionReference || '-'}
                       </Typography>
                     </TableCell>
@@ -413,13 +444,14 @@ const PayoutHistoryTable = () => {
                           'Fehlgeschlagen'
                         }
                         size="small"
-                        color={getStatusColor(payout.status)}
+                        sx={{ borderRadius: '999px', fontWeight: 600, ...getStatusChipSx(payout.status) }}
                       />
                     </TableCell>
                     <TableCell align="center">
                       <IconButton
                         size="small"
                         onClick={(e) => handleMenuOpen(e, payout)}
+                        sx={{ color: COLORS.textSecondary }}
                       >
                         <MoreVertIcon />
                       </IconButton>
@@ -451,6 +483,13 @@ const PayoutHistoryTable = () => {
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            borderRadius: RADII.button,
+            border: `1px solid ${COLORS.border}`,
+            boxShadow: SHADOWS.subtle
+          }
+        }}
       >
         <MenuItem onClick={handleMenuClose}>
           <ListItemIcon>

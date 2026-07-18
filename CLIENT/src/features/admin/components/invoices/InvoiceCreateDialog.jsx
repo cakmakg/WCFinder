@@ -31,11 +31,20 @@ import {
   Business as BusinessIcon,
   Euro as EuroIcon
 } from '@mui/icons-material';
+import { COLORS, RADII } from '../../../../theme/designTokens';
 import { payoutService } from '../../services/payoutService';
 import { invoiceService } from '../../services/invoiceService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { formatDate } from '../../utils/dateHelpers';
 import { toastErrorNotify } from '../../../../helper/ToastNotify';
+
+const gradientButtonSx = {
+  background: COLORS.primaryGradient,
+  borderRadius: RADII.button,
+  textTransform: 'none',
+  fontWeight: 600,
+  '&:hover': { background: COLORS.primaryGradientHover },
+};
 
 /**
  * InvoiceCreateDialog Component
@@ -127,13 +136,13 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 2 }
+        sx: { borderRadius: RADII.panel }
       }}
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
-          <ReceiptIcon color="primary" />
-          <Typography variant="h6" fontWeight={600}>
+          <ReceiptIcon sx={{ color: COLORS.primary }} />
+          <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: '-0.02em' }}>
             Rechnung erstellen
           </Typography>
         </Box>
@@ -141,7 +150,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
 
       <DialogContent dividers>
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.input }}>
             {error}
           </Alert>
         )}
@@ -156,7 +165,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Rechnung wird erstellt für:
             </Typography>
-            <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+            <Paper variant="outlined" sx={{ p: 2, mb: 2, borderRadius: RADII.input, borderColor: COLORS.border }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
@@ -172,7 +181,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
                     <EuroIcon color="success" fontSize="small" />
                     <Typography variant="subtitle2">Betrag</Typography>
                   </Box>
-                  <Typography variant="h5" fontWeight={600} color="success.main">
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrency(payoutData.amount)}
                   </Typography>
                 </Grid>
@@ -195,7 +204,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               Wählen Sie eine abgeschlossene Auszahlung:
             </Typography>
-            <Paper variant="outlined">
+            <Paper variant="outlined" sx={{ borderRadius: RADII.input, borderColor: COLORS.border, overflow: 'hidden' }}>
               <List sx={{ maxHeight: 400, overflow: 'auto' }}>
                 {completedPayouts.map((payout) => (
                   <ListItem
@@ -205,9 +214,10 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
                     onClick={() => handleSelectPayout(payout)}
                     sx={{
                       borderBottom: '1px solid',
-                      borderColor: 'divider',
+                      borderColor: COLORS.border,
+                      '&:hover': { bgcolor: COLORS.backgroundLight },
                       '&.Mui-selected': {
-                        bgcolor: 'primary.50'
+                        bgcolor: COLORS.accentBoxBg
                       }
                     }}
                   >
@@ -219,8 +229,8 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
                           </Typography>
                           <Chip
                             label="Abgeschlossen"
-                            color="success"
                             size="small"
+                            sx={{ borderRadius: '999px', bgcolor: '#ecfdf5', color: '#059669', fontWeight: 600 }}
                           />
                         </Box>
                       }
@@ -237,7 +247,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
                     />
                     <ListItemSecondaryAction>
                       <Box textAlign="right">
-                        <Typography variant="h6" fontWeight={600} color="primary">
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}>
                           {formatCurrency(payout.amount)}
                         </Typography>
                         <Checkbox
@@ -259,7 +269,16 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
             <Typography variant="subtitle2" gutterBottom>
               Ausgewählte Auszahlung:
             </Typography>
-            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'primary.50' }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                bgcolor: COLORS.accentBoxBg,
+                borderColor: COLORS.border,
+                borderLeft: `3px solid ${COLORS.primary}`,
+                borderRadius: RADII.input,
+              }}
+            >
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Typography variant="caption" color="text.secondary">
@@ -273,7 +292,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
                   <Typography variant="caption" color="text.secondary">
                     Betrag
                   </Typography>
-                  <Typography variant="h6" fontWeight={600} color="primary">
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrency(selectedPayout.amount)}
                   </Typography>
                 </Grid>
@@ -283,7 +302,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
         )}
 
         {/* Kleinunternehmer Option */}
-        <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: 'grey.50' }}>
+        <Paper variant="outlined" sx={{ p: 2, mt: 2, bgcolor: COLORS.backgroundLight, borderColor: COLORS.border, borderRadius: RADII.input }}>
           <FormControlLabel
             control={
               <Switch
@@ -305,7 +324,7 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
           />
         </Paper>
 
-        <Alert severity="info" sx={{ mt: 2 }}>
+        <Alert severity="info" sx={{ mt: 2, borderRadius: RADII.input }}>
           <Typography variant="body2">
             <strong>§14 UStG / XRechnung 3.0:</strong> Nach der Erstellung wird die Rechnung automatisch als PDF 
             und XRechnung XML (EN 16931) generiert. Das System ist GoBD-konform mit vollständigem Audit-Log.
@@ -314,14 +333,19 @@ const InvoiceCreateDialog = ({ open, onClose, onSuccess, payoutData = null }) =>
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={handleClose} disabled={loading}>
+        <Button
+          onClick={handleClose}
+          disabled={loading}
+          sx={{ textTransform: 'none', fontWeight: 600, color: COLORS.textSecondary }}
+        >
           Abbrechen
         </Button>
         <Button
           variant="contained"
           onClick={handleCreateInvoice}
           disabled={loading || !selectedPayout}
-          startIcon={loading ? <CircularProgress size={20} /> : <ReceiptIcon />}
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ReceiptIcon />}
+          sx={{ ...gradientButtonSx, px: 3 }}
         >
           {loading ? 'Erstelle...' : 'Rechnung erstellen'}
         </Button>

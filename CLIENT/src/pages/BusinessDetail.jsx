@@ -7,7 +7,6 @@ import {
   Box,
   Paper,
   Typography,
-  Grid,
   Chip,
   Button,
   CircularProgress,
@@ -15,6 +14,8 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from 'framer-motion';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -30,6 +31,7 @@ import { MapTileLayer } from '../components/map/MapTileLayer';
 import useAxios from '../hook/useAxios';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateLocalBusinessSchema, generateBreadcrumbSchema, generateTitle, generateDescription, generateKeywords } from '../utils/seoHelpers';
+import { COLORS, RADII, SHADOWS, PAGE_HEADER_BG, DOT_GRID, TYPOGRAPHY } from '../theme/designTokens';
 
 // Leaflet icon fix
 delete L.Icon.Default.prototype._getIconUrl;
@@ -46,6 +48,7 @@ const BusinessDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { axiosWithToken } = useAxios();
+  const reduce = useReducedMotion();
 
   const [business, setBusiness] = useState(null);
   const [toilets, setToilets] = useState([]);
@@ -112,10 +115,10 @@ const BusinessDetail = () => {
       <Box sx={{
         display: 'flex', flexDirection: 'column',
         justifyContent: 'center', alignItems: 'center',
-        minHeight: '100vh', gap: 2, bgcolor: '#f8fafc',
+        minHeight: '100vh', gap: 2, bgcolor: COLORS.backgroundLight,
       }}>
-        <CircularProgress size={48} thickness={3} sx={{ color: '#0891b2' }} />
-        <Typography sx={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 500 }}>
+        <CircularProgress size={48} thickness={3} sx={{ color: COLORS.primary }} />
+        <Typography sx={{ color: COLORS.textLight, fontSize: '0.9rem', fontWeight: 500 }}>
           {t('common.loading')}
         </Typography>
       </Box>
@@ -125,16 +128,16 @@ const BusinessDetail = () => {
   // ── Error ──
   if (error || !business) {
     return (
-      <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', py: 4 }}>
+      <Box sx={{ bgcolor: COLORS.backgroundLight, minHeight: '100vh', py: 4 }}>
         <Container maxWidth="lg">
-          <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.input }}>
             {error || t('businessDetail.businessNotFound')}
           </Alert>
           <Button
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate('/home')}
             sx={{
-              color: '#0891b2', textTransform: 'none', fontWeight: 600,
+              color: COLORS.primary, textTransform: 'none', fontWeight: 600,
               borderRadius: '20px', px: 2,
               '&:hover': { backgroundColor: 'rgba(8,145,178,0.07)' },
             }}
@@ -154,17 +157,17 @@ const BusinessDetail = () => {
   const businessUrl = `${baseUrl}/business/${id}`;
   const businessSchema = business ? generateLocalBusinessSchema(business) : null;
   const breadcrumbSchema = business ? generateBreadcrumbSchema([
-    { name: 'Home', url: baseUrl },
-    { name: 'Businesses', url: `${baseUrl}/home` },
+    { name: 'Startseite', url: baseUrl },
+    { name: 'Unternehmen', url: `${baseUrl}/home` },
     { name: business.businessName, url: businessUrl },
   ]) : null;
 
-  const seoTitle = business ? generateTitle(business) : 'Business Details | WCFinder';
-  const seoDescription = business ? generateDescription(business) : 'Find and book toilets at this business location.';
-  const seoKeywords = business ? generateKeywords(business) : 'toilet, wc, tuvalet, booking';
+  const seoTitle = business ? generateTitle(business) : 'Geschäftsdetails | WCFinder';
+  const seoDescription = business ? generateDescription(business) : 'Toiletten an diesem Standort finden und buchen.';
+  const seoKeywords = business ? generateKeywords(business) : 'toilette, wc, buchung';
 
   return (
-    <Box component="main" sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
+    <Box component="main" sx={{ minHeight: '100vh', bgcolor: COLORS.backgroundLight }}>
       <SEOHead
         title={seoTitle}
         description={seoDescription}
@@ -175,189 +178,243 @@ const BusinessDetail = () => {
         canonical={businessUrl}
       />
 
-      {/* ── Hero Header ── */}
+      {/* ── Heller Seitenkopf ── */}
       <Box
         component="header"
         sx={{
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-          pt: { xs: 3, sm: 4 },
+          background: PAGE_HEADER_BG,
+          pt: { xs: 3.5, sm: 4.5 },
           pb: { xs: 3, sm: 4 },
           px: 0,
           position: 'relative',
           overflow: 'hidden',
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: -40, right: -40,
-            width: 200, height: 200,
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-            pointerEvents: 'none',
-          },
+          borderBottom: `1px solid ${COLORS.border}`,
         }}
       >
-        <Container maxWidth="lg">
-          {/* Geri butonu */}
-          <Button
-            startIcon={<ArrowBackIcon sx={{ fontSize: '1rem !important' }} />}
-            onClick={() => navigate('/home')}
-            size="small"
-            sx={{
-              mb: 2.5,
-              color: 'rgba(255,255,255,0.85)',
-              backgroundColor: 'rgba(255,255,255,0.12)',
-              borderRadius: '20px',
-              px: 2,
-              py: 0.5,
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              textTransform: 'none',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                color: 'white',
-              },
-            }}
+        {/* Dezentes Punktraster als Textur */}
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            ...DOT_GRID,
+            maskImage: 'linear-gradient(180deg, rgba(0,0,0,0.7), transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            Zurück
-          </Button>
-
-          {/* Badges */}
-          <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
-            <Chip
-              icon={<BusinessIcon sx={{ fontSize: '0.8rem !important', color: 'rgba(255,255,255,0.9) !important' }} />}
-              label={business.businessType}
+            {/* Zurück-Button */}
+            <Button
+              startIcon={<ArrowBackIcon sx={{ fontSize: '1rem !important' }} />}
+              onClick={() => navigate('/home')}
               size="small"
               sx={{
-                backgroundColor: 'rgba(255,255,255,0.18)',
-                color: 'white',
+                mb: 2.5,
+                color: COLORS.primary,
+                backgroundColor: 'rgba(8,145,178,0.08)',
+                borderRadius: '20px',
+                px: 2,
+                py: 0.5,
+                fontSize: '0.82rem',
                 fontWeight: 600,
-                fontSize: '0.72rem',
-                border: '1px solid rgba(255,255,255,0.25)',
-                backdropFilter: 'blur(8px)',
-                '& .MuiChip-icon': { color: 'rgba(255,255,255,0.9)' },
-              }}
-            />
-            <Chip
-              label={business.approvalStatus === 'approved' ? t('businessDetail.verified') : t('businessDetail.pending')}
-              size="small"
-              sx={{
-                backgroundColor: business.approvalStatus === 'approved'
-                  ? 'rgba(22,163,74,0.25)' : 'rgba(234,179,8,0.25)',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '0.72rem',
-                border: `1px solid ${business.approvalStatus === 'approved' ? 'rgba(22,163,74,0.4)' : 'rgba(234,179,8,0.4)'}`,
-              }}
-            />
-          </Box>
-
-          {/* İşletme adı */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-            <Typography
-              variant="h1"
-              component="h1"
-              sx={{
-                fontWeight: 800,
-                fontSize: { xs: '1.6rem', sm: '2rem' },
-                color: 'white',
-                lineHeight: 1.2,
-                letterSpacing: '-0.01em',
+                textTransform: 'none',
+                border: '1px solid rgba(8,145,178,0.2)',
+                '&:hover': {
+                  backgroundColor: 'rgba(8,145,178,0.14)',
+                  color: COLORS.primaryDark,
+                },
               }}
             >
-              {business.businessName}
-            </Typography>
-            {business.approvalStatus === 'approved' && (
-              <VerifiedIcon sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.4rem', flexShrink: 0 }} />
-            )}
-          </Box>
+              Zurück
+            </Button>
 
-          {/* İstatistik satırı */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, sm: 2.5 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <AccessTimeIcon sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)' }} />
-              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-                {business.openingHours || t('businessDetail.today')}
-              </Typography>
+            {/* Badges */}
+            <Box sx={{ display: 'flex', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
+              <Chip
+                icon={<BusinessIcon sx={{ fontSize: '0.8rem !important' }} />}
+                label={business.businessType}
+                size="small"
+                sx={{
+                  backgroundColor: COLORS.accentBoxBg,
+                  color: COLORS.primaryDark,
+                  fontWeight: 600,
+                  fontSize: '0.72rem',
+                  border: '1px solid rgba(8,145,178,0.25)',
+                  '& .MuiChip-icon': { color: COLORS.primary },
+                }}
+              />
+              <Chip
+                label={business.approvalStatus === 'approved' ? t('businessDetail.verified') : t('businessDetail.pending')}
+                size="small"
+                sx={{
+                  backgroundColor: business.approvalStatus === 'approved' ? '#dcfce7' : '#fef3c7',
+                  color: business.approvalStatus === 'approved' ? '#16a34a' : '#d97706',
+                  fontWeight: 600,
+                  fontSize: '0.72rem',
+                  border: `1px solid ${business.approvalStatus === 'approved' ? 'rgba(22,163,74,0.25)' : 'rgba(217,119,6,0.25)'}`,
+                }}
+              />
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <WcIcon sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)' }} />
-              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-                {toilets.length} {toilets.length === 1 ? t('businessDetail.toilet') : t('businessDetail.toilets')}
+
+            {/* Name des Unternehmens */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Typography
+                variant="h1"
+                component="h1"
+                sx={{
+                  ...TYPOGRAPHY.pageTitle,
+                  fontSize: { xs: '1.6rem', sm: '2.1rem' },
+                  lineHeight: 1.2,
+                }}
+              >
+                {business.businessName}
               </Typography>
+              {business.approvalStatus === 'approved' && (
+                <VerifiedIcon sx={{ color: COLORS.primary, fontSize: '1.4rem', flexShrink: 0 }} />
+              )}
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-              <LocationOnIcon sx={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.75)' }} />
-              <Typography sx={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-                {business.address?.street}, {business.address?.postalCode} {business.address?.city}
-              </Typography>
+
+            {/* Info-Zeile */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, sm: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <AccessTimeIcon sx={{ fontSize: '0.9rem', color: COLORS.textLight }} />
+                <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, fontWeight: 500 }}>
+                  {business.openingHours || t('businessDetail.today')}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <WcIcon sx={{ fontSize: '0.9rem', color: COLORS.textLight }} />
+                <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, fontWeight: 500 }}>
+                  {toilets.length} {toilets.length === 1 ? t('businessDetail.toilet') : t('businessDetail.toilets')}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <LocationOnIcon sx={{ fontSize: '0.9rem', color: COLORS.textLight }} />
+                <Typography sx={{ fontSize: '0.82rem', color: COLORS.textSecondary, fontWeight: 500 }}>
+                  {business.address?.street}, {business.address?.postalCode} {business.address?.city}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
+          </motion.div>
         </Container>
       </Box>
 
-      {/* ── Main Content ── */}
+      {/* ── Hauptinhalt ── */}
       <Container maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5 } }}>
-        <Grid container spacing={2.5} component="article">
+        <Box
+          component="article"
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 7fr) minmax(0, 5fr)' },
+            gap: 2.5,
+            alignItems: 'start',
+          }}
+        >
 
-          {/* Sol kolon */}
-          <Grid item xs={12} md={7} component="section">
+          {/* Linke Spalte */}
+          <Box component="section" sx={{ minWidth: 0 }}>
 
-            {/* Harita */}
-            <Paper
-              sx={{
-                mb: 2.5,
-                overflow: 'hidden',
-                borderRadius: '16px',
-                border: '1px solid rgba(8,145,178,0.1)',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-              }}
-              component="section"
+            {/* Karte */}
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5 }}
             >
-              <MapContainer
-                center={position}
-                zoom={15}
-                style={{ height: isMobile ? '220px' : '280px', width: '100%' }}
-                scrollWheelZoom={false}
+              <Paper
+                sx={{
+                  mb: 2.5,
+                  overflow: 'hidden',
+                  borderRadius: RADII.panel,
+                  border: `1px solid ${COLORS.border}`,
+                  boxShadow: SHADOWS.subtle,
+                  transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: SHADOWS.hover,
+                  },
+                }}
+                component="section"
               >
-                <MapTileLayer mapStyle="positron" />
-                <Marker position={position} />
-              </MapContainer>
-            </Paper>
-
-            {/* Tuvalet listesi */}
-            {toilets.length > 0 ? (
-              <Box component="section">
-                <ToiletList toilets={toilets} />
-              </Box>
-            ) : (
-              <Paper sx={{ p: 3, borderRadius: '16px' }} component="section">
-                <Alert severity="info" sx={{ borderRadius: '10px' }}>
-                  {t('businessDetail.noToilets')}
-                </Alert>
+                <MapContainer
+                  center={position}
+                  zoom={15}
+                  style={{ height: isMobile ? '220px' : '280px', width: '100%' }}
+                  scrollWheelZoom={false}
+                >
+                  <MapTileLayer mapStyle="positron" />
+                  <Marker position={position} />
+                </MapContainer>
               </Paper>
-            )}
-          </Grid>
+            </motion.div>
 
-          {/* Sağ kolon — Booking */}
-          <Grid item xs={12} md={5} component="aside">
+            {/* Toilettenliste */}
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.08 }}
+            >
+              {toilets.length > 0 ? (
+                <Box component="section">
+                  <ToiletList toilets={toilets} />
+                </Box>
+              ) : (
+                <Paper
+                  sx={{
+                    p: 3,
+                    borderRadius: RADII.panel,
+                    border: `1px solid ${COLORS.border}`,
+                    boxShadow: SHADOWS.subtle,
+                  }}
+                  component="section"
+                >
+                  <Alert severity="info" sx={{ borderRadius: '10px' }}>
+                    {t('businessDetail.noToilets')}
+                  </Alert>
+                </Paper>
+              )}
+            </motion.div>
+          </Box>
+
+          {/* Rechte Spalte — Buchung */}
+          <Box component="aside" sx={{ minWidth: 0 }}>
             <Box sx={{
               position: { xs: 'static', md: 'sticky' },
               top: { md: 24 },
             }}>
-              {toilets.length > 0 ? (
-                <BookingPanel business={business} toilets={toilets} />
-              ) : (
-                <Paper sx={{ p: 3, borderRadius: '16px' }}>
-                  <Alert severity="warning" sx={{ borderRadius: '10px' }}>
-                    {t('businessDetail.reservationNotPossible')}
-                  </Alert>
-                </Paper>
-              )}
+              <motion.div
+                initial={reduce ? false : { opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.16 }}
+              >
+                {toilets.length > 0 ? (
+                  <BookingPanel business={business} toilets={toilets} />
+                ) : (
+                  <Paper
+                    sx={{
+                      p: 3,
+                      borderRadius: RADII.panel,
+                      border: `1px solid ${COLORS.border}`,
+                      boxShadow: SHADOWS.subtle,
+                    }}
+                  >
+                    <Alert severity="warning" sx={{ borderRadius: '10px' }}>
+                      {t('businessDetail.reservationNotPossible')}
+                    </Alert>
+                  </Paper>
+                )}
+              </motion.div>
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
     </Box>
   );

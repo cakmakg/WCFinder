@@ -20,6 +20,18 @@ import { de } from 'date-fns/locale';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useDateRange } from '../../hooks/useDateRange';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
+
+const INPUT_SX = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '& fieldset': { borderColor: COLORS.border },
+    '&:hover fieldset': { borderColor: COLORS.primary },
+    '&.Mui-focused fieldset': { borderColor: COLORS.primary }
+  },
+  '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary }
+};
 
 /**
  * DateRangePicker Component
@@ -97,13 +109,23 @@ const DateRangePicker = ({
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={de}>
-      <Paper elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'divider', ...sx }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          bgcolor: COLORS.backgroundWhite,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: RADII.card,
+          boxShadow: SHADOWS.subtle,
+          ...sx
+        }}
+      >
         <Stack spacing={2}>
           {/* Header */}
           <Box display="flex" alignItems="center" justifyContent="space-between">
             <Box display="flex" alignItems="center" gap={1}>
-              <CalendarTodayIcon color="primary" fontSize="small" />
-              <Typography variant="subtitle2" fontWeight={600}>
+              <CalendarTodayIcon fontSize="small" sx={{ color: COLORS.primary }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }}>
                 Zeitraum wählen
               </Typography>
             </Box>
@@ -135,7 +157,26 @@ const DateRangePicker = ({
                 key={preset.value}
                 variant={dateRange.preset === preset.value ? 'contained' : 'outlined'}
                 onClick={() => handlePresetChange(preset.value)}
-                sx={{ fontSize: '0.75rem', py: 0.75 }}
+                sx={{
+                  fontSize: '0.75rem',
+                  py: 0.75,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  ...(dateRange.preset === preset.value
+                    ? {
+                        bgcolor: COLORS.primary,
+                        '&:hover': { bgcolor: COLORS.primaryDark }
+                      }
+                    : {
+                        borderColor: COLORS.border,
+                        color: COLORS.textSecondary,
+                        '&:hover': {
+                          borderColor: COLORS.primary,
+                          color: COLORS.primary,
+                          bgcolor: COLORS.accentBoxBg
+                        }
+                      })
+                }}
               >
                 {preset.label}
               </Button>
@@ -152,7 +193,8 @@ const DateRangePicker = ({
                 slotProps={{
                   textField: {
                     size: 'small',
-                    fullWidth: true
+                    fullWidth: true,
+                    sx: INPUT_SX
                   }
                 }}
                 maxDate={dateRange.endDate || undefined}
@@ -167,7 +209,8 @@ const DateRangePicker = ({
                 slotProps={{
                   textField: {
                     size: 'small',
-                    fullWidth: true
+                    fullWidth: true,
+                    sx: INPUT_SX
                   }
                 }}
                 minDate={dateRange.startDate || undefined}
@@ -179,10 +222,9 @@ const DateRangePicker = ({
           <Box
             sx={{
               p: 1.5,
-              bgcolor: 'primary.50',
-              borderRadius: 1,
-              border: '1px solid',
-              borderColor: 'primary.200'
+              bgcolor: COLORS.accentBoxBg,
+              borderRadius: '8px',
+              borderLeft: `3px solid ${COLORS.primary}`
             }}
           >
             <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
@@ -198,7 +240,7 @@ const DateRangePicker = ({
                 <Typography variant="caption" color="text.secondary" display="block" mt={1} mb={0.5}>
                   Vergleichszeitraum:
                 </Typography>
-                <Typography variant="body2" fontWeight={500} color="secondary.main">
+                <Typography variant="body2" fontWeight={500} sx={{ color: COLORS.primaryDark }}>
                   {new Date(dateRange.comparisonPeriod.startDate).toLocaleDateString('de-DE')} -{' '}
                   {new Date(dateRange.comparisonPeriod.endDate).toLocaleDateString('de-DE')}
                 </Typography>

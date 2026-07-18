@@ -1,18 +1,20 @@
 // features/admin/components/dashboard/ChannelDistributionChart.jsx
-// Channel distribution pie chart component
+// Kreisdiagramm zur Statusverteilung der Betriebe
 
 import React from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { COLORS as TOKENS, SHADOWS } from "../../../../theme/designTokens";
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+// Markenkonforme Cyan-Familie für Diagrammsegmente
+const COLORS = ["#0891b2", "#0e7490", "#06b6d4", "#67e8f9", "#155e75", "#a5f3fc"];
 
 const ChannelDistributionChart = ({ data, loading }) => {
   if (loading) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 1 }}>
-        <CircularProgress size={30} />
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+        <CircularProgress size={30} sx={{ color: TOKENS.primary }} />
+        <Typography variant="body2" sx={{ fontSize: "0.75rem", color: TOKENS.textLight }}>
           Lädt Daten...
         </Typography>
       </Box>
@@ -22,7 +24,7 @@ const ChannelDistributionChart = ({ data, loading }) => {
   if (!data || data.length === 0) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+        <Typography variant="body2" sx={{ fontSize: "0.75rem", color: TOKENS.textLight }}>
           Keine Daten verfügbar
         </Typography>
       </Box>
@@ -47,15 +49,15 @@ const ChannelDistributionChart = ({ data, loading }) => {
             }}
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip 
-            contentStyle={{ 
-              background: 'white', 
-              border: 'none', 
-              borderRadius: '12px', 
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+          <Tooltip
+            contentStyle={{
+              background: 'white',
+              border: `1px solid ${TOKENS.border}`,
+              borderRadius: '12px',
+              boxShadow: SHADOWS.subtle,
               fontSize: '13px',
               padding: '10px',
             }}
@@ -75,11 +77,11 @@ const ChannelDistributionChart = ({ data, loading }) => {
                 width: 12,
                 height: 12,
                 borderRadius: '50%',
-                bgcolor: item.color || COLORS[index % COLORS.length],
+                bgcolor: COLORS[index % COLORS.length],
                 flexShrink: 0,
               }}
             />
-            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+            <Typography variant="caption" sx={{ color: TOKENS.textSecondary, fontWeight: 500 }}>
               {item.name}
             </Typography>
           </Box>
@@ -90,4 +92,3 @@ const ChannelDistributionChart = ({ data, loading }) => {
 };
 
 export default ChannelDistributionChart;
-

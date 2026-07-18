@@ -15,6 +15,8 @@ import {
   Alert,
   Divider
 } from '@mui/material';
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Assessment as ReportIcon,
   TrendingUp as TrendingUpIcon,
@@ -22,6 +24,7 @@ import {
   Business as BusinessIcon,
   Euro as EuroIcon
 } from '@mui/icons-material';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { adminService } from '../../services/adminService';
 import { reportService } from '../../services/reportService';
 import { DateRangePicker, ExportButton } from '../shared';
@@ -31,11 +34,37 @@ import BusinessPerformanceTable from './BusinessPerformanceTable';
 import MonthlyReportsPage from './MonthlyReportsPage';
 import StatCard from '../dashboard/StatCard';
 
+// Admin-Designsprache: Stil-Konstanten
+const sectionTitleSx = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: '-0.02em'
+};
+
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+  overflow: 'hidden'
+};
+
+const cardSx = {
+  height: '100%',
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle
+};
+
+const moneySx = { fontVariantNumeric: 'tabular-nums', fontWeight: 700 };
+
 /**
  * ReportsPage Component
  * Main page for viewing and exporting reports
  */
 const ReportsPage = () => {
+  const reduce = useReducedMotion();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,6 +79,13 @@ const ReportsPage = () => {
     startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
     endDate: new Date()
   });
+
+  // Einmaliges Einblenden pro Seite (mit Reduced-Motion-Guard)
+  const pageFade = {
+    initial: reduce ? false : { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
+  };
 
   // Fetch data
   useEffect(() => {
@@ -135,27 +171,28 @@ const ReportsPage = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: COLORS.primary }} />
       </Box>
     );
   }
 
   return (
+    <motion.div {...pageFade}>
     <Box>
       {/* Header */}
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>
         <Box>
-          <Typography variant="h5" fontWeight={600} gutterBottom>
+          <Typography variant="h5" sx={sectionTitleSx} gutterBottom>
             Berichte & Analysen
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
             Detaillierte Finanzberichte und Geschäftsanalysen
           </Typography>
         </Box>
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: RADII.input }}>
           {error}
         </Alert>
       )}
@@ -176,7 +213,7 @@ const ReportsPage = () => {
             title="Gesamtumsatz"
             value={`€${profitLossStats.totalRevenue.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`}
             icon={EuroIcon}
-            color="#0891b2"
+            color={COLORS.primary}
             subtitle="Im gewählten Zeitraum"
           />
         </Grid>
@@ -185,7 +222,7 @@ const ReportsPage = () => {
             title="Plattform Kommission"
             value={`€${profitLossStats.platformCommission.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`}
             icon={CommissionIcon}
-            color="#16a34a"
+            color={COLORS.primaryDark}
             subtitle={`${profitLossStats.profitMargin.toFixed(1)}% Marge`}
           />
         </Grid>
@@ -194,7 +231,7 @@ const ReportsPage = () => {
             title="Geschäft Einnahmen"
             value={`€${profitLossStats.businessPayouts.toLocaleString('de-DE', { minimumFractionDigits: 2 })}`}
             icon={BusinessIcon}
-            color="#f59e0b"
+            color="#06b6d4"
             subtitle="Nach Kommission"
           />
         </Grid>
@@ -203,27 +240,30 @@ const ReportsPage = () => {
             title="Transaktionen"
             value={commissionStats.transactionCount.toLocaleString('de-DE')}
             icon={TrendingUpIcon}
-            color="#dc2626"
+            color={COLORS.textSecondary}
             subtitle={`Ø €${commissionStats.averageTransaction.toFixed(2)}`}
           />
         </Grid>
       </Grid>
 
       {/* Tabs */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper elevation={0} sx={{ mb: 3, ...panelSx }}>
         <Tabs
           value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
+            borderBottom: `1px solid ${COLORS.border}`,
+            backgroundColor: COLORS.backgroundLight,
             '& .MuiTab-root': {
               minHeight: 64,
               textTransform: 'none',
-              fontWeight: 500
-            }
+              fontWeight: 600,
+              color: COLORS.textSecondary,
+              '&.Mui-selected': { color: COLORS.primary }
+            },
+            '& .MuiTabs-indicator': { backgroundColor: COLORS.primary }
           }}
         >
           {tabs.map((tab) => (
@@ -243,7 +283,7 @@ const ReportsPage = () => {
               <Grid container spacing={3}>
                 {/* Monthly Reports */}
                 <Grid item xs={12}>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                  <Typography variant="h6" sx={sectionTitleSx} gutterBottom>
                     Monatliche Übersicht
                   </Typography>
                   <Grid container spacing={2}>
@@ -287,33 +327,33 @@ const ReportsPage = () => {
           {/* Profit/Loss Tab */}
           {activeTab === 4 && (
             <Box>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+              <Typography variant="h6" sx={sectionTitleSx} gutterBottom>
                 Gewinn & Verlust Analyse
               </Typography>
 
               <Grid container spacing={3}>
                 {/* Profit/Loss Summary */}
                 <Grid item xs={12} md={6}>
-                  <Card variant="outlined">
+                  <Card elevation={0} sx={cardSx}>
                     <CardContent>
-                      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                      <Typography variant="subtitle1" sx={sectionTitleSx} gutterBottom>
                         Einnahmen
                       </Typography>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography color="text.secondary">Gesamtumsatz:</Typography>
-                        <Typography fontWeight={600}>
+                        <Typography sx={{ color: COLORS.textSecondary }}>Gesamtumsatz:</Typography>
+                        <Typography sx={moneySx}>
                           €{profitLossStats.totalRevenue.toFixed(2)}
                         </Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography color="text.secondary">Abgeschlossen:</Typography>
-                        <Typography fontWeight={500} color="success.main">
+                        <Typography sx={{ color: COLORS.textSecondary }}>Abgeschlossen:</Typography>
+                        <Typography sx={{ ...moneySx, color: '#059669' }}>
                           €{profitLossStats.completedRevenue.toFixed(2)}
                         </Typography>
                       </Box>
                       <Box display="flex" justifyContent="space-between">
-                        <Typography color="text.secondary">Ausstehend:</Typography>
-                        <Typography fontWeight={500} color="warning.main">
+                        <Typography sx={{ color: COLORS.textSecondary }}>Ausstehend:</Typography>
+                        <Typography sx={{ ...moneySx, color: '#d97706' }}>
                           €{profitLossStats.pendingRevenue.toFixed(2)}
                         </Typography>
                       </Box>
@@ -322,29 +362,40 @@ const ReportsPage = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <Card variant="outlined">
+                  <Card elevation={0} sx={cardSx}>
                     <CardContent>
-                      <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                      <Typography variant="subtitle1" sx={sectionTitleSx} gutterBottom>
                         Ausgaben & Gewinn
                       </Typography>
                       <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography color="text.secondary">Geschäft Auszahlungen:</Typography>
-                        <Typography fontWeight={500} color="error.main">
+                        <Typography sx={{ color: COLORS.textSecondary }}>Geschäft Auszahlungen:</Typography>
+                        <Typography sx={{ ...moneySx, color: '#dc2626' }}>
                           -€{profitLossStats.businessPayouts.toFixed(2)}
                         </Typography>
                       </Box>
-                      <Divider sx={{ my: 1 }} />
-                      <Box display="flex" justifyContent="space-between" mb={1}>
-                        <Typography fontWeight={600}>Nettogewinn (Kommission):</Typography>
-                        <Typography fontWeight={700} color="success.main">
-                          €{profitLossStats.netProfit.toFixed(2)}
-                        </Typography>
-                      </Box>
-                      <Box display="flex" justifyContent="space-between">
-                        <Typography color="text.secondary">Gewinnmarge:</Typography>
-                        <Typography fontWeight={600} color="primary">
-                          {profitLossStats.profitMargin.toFixed(2)}%
-                        </Typography>
+                      <Divider sx={{ my: 1, borderColor: COLORS.border }} />
+                      <Box
+                        sx={{
+                          backgroundColor: COLORS.accentBoxBg,
+                          borderLeft: `3px solid ${COLORS.primary}`,
+                          borderRadius: RADII.input,
+                          p: 1.5
+                        }}
+                      >
+                        <Box display="flex" justifyContent="space-between" mb={0.5}>
+                          <Typography fontWeight={600} sx={{ color: COLORS.textHeading }}>
+                            Nettogewinn (Kommission):
+                          </Typography>
+                          <Typography sx={{ ...moneySx, fontWeight: 800, color: '#059669' }}>
+                            €{profitLossStats.netProfit.toFixed(2)}
+                          </Typography>
+                        </Box>
+                        <Box display="flex" justifyContent="space-between">
+                          <Typography sx={{ color: COLORS.textSecondary }}>Gewinnmarge:</Typography>
+                          <Typography sx={{ ...moneySx, color: COLORS.primary }}>
+                            {profitLossStats.profitMargin.toFixed(2)}%
+                          </Typography>
+                        </Box>
                       </Box>
                     </CardContent>
                   </Card>
@@ -372,6 +423,7 @@ const ReportsPage = () => {
         </Box>
       </Paper>
     </Box>
+    </motion.div>
   );
 };
 
@@ -392,4 +444,3 @@ function getLastMonths(count) {
 }
 
 export default ReportsPage;
-

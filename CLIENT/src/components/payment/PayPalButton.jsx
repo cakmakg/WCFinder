@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { PayPalButtons, usePayPalScriptReducer } from '@paypal/react-paypal-js';
-import { Box, Alert, CircularProgress } from '@mui/material';
+import { Box, Alert, CircularProgress, Typography } from '@mui/material';
+import LockIcon from '@mui/icons-material/Lock';
 import paymentService from '../../services/paymentService';
+import { COLORS, RADII } from '../../theme/designTokens';
 
 export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
   const [error, setError] = useState(null);
@@ -13,7 +15,7 @@ export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
   if (isPending) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress size={24} />
+        <CircularProgress size={24} sx={{ color: COLORS.primary }} />
       </Box>
     );
   }
@@ -21,7 +23,7 @@ export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
   // PayPal script yüklenemediyse veya hata varsa
   if (isRejected || !isResolved) {
     return (
-      <Alert severity="warning" sx={{ mb: 2 }}>
+      <Alert severity="warning" sx={{ mb: 2, borderRadius: RADII.button }}>
         PayPal ist derzeit nicht verfügbar. Bitte wählen Sie eine andere Zahlungsmethode.
       </Alert>
     );
@@ -30,7 +32,7 @@ export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
   return (
     <Box>
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: RADII.button }}>
           {error}
         </Alert>
       )}
@@ -69,6 +71,14 @@ export const PayPalButton = ({ usageId, _amount, onSuccess, onError }) => {
           onError(err);
         }}
       />
+
+      {/* SSL-Vertrauenssignal */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, mt: 1 }}>
+        <LockIcon sx={{ fontSize: '0.85rem', color: COLORS.textLight }} />
+        <Typography sx={{ fontSize: '0.75rem', color: COLORS.textLight, fontWeight: 500 }}>
+          SSL-verschlüsselt – sichere Zahlung über PayPal
+        </Typography>
+      </Box>
     </Box>
   );
 };

@@ -2,11 +2,14 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from 'framer-motion';
 import useCrudCall from '../../hook/useCrudCall';
 import BusinessCard from '../BusinessCard';
 import { BusinessSearchBar } from './BusinessSearchBar';
 import { useBusinessSearch } from '../../hook/useBusinessSearch';
 import { useBusinessFilter } from '../../hook/useBusinessFilter';
+import { COLORS, RADII } from '../../theme/designTokens';
 import {
   Box,
   Typography,
@@ -26,6 +29,7 @@ const BusinessList = ({
 }) => {
   const { t } = useTranslation();
   const theme = useTheme();
+  const reduce = useReducedMotion();
 
   const { getCrudData } = useCrudCall();
   const { business, loading, error } = useSelector((state) => state.crud);
@@ -93,7 +97,7 @@ const BusinessList = ({
       pb: 3,
       height: '100%',
       overflowY: 'auto',
-      backgroundColor: '#f8fafc',
+      backgroundColor: COLORS.backgroundLight,
       boxSizing: 'border-box',
     }}>
       <BusinessSearchBar
@@ -111,8 +115,8 @@ const BusinessList = ({
             size="small"
             label={`${filteredBusinesses?.length || 0} ${t('businessList.locationsFound')}`}
             sx={{
-              backgroundColor: 'rgba(8,145,178,0.08)',
-              color: '#0891b2',
+              backgroundColor: COLORS.accentBoxBg,
+              color: COLORS.primary,
               fontWeight: 600,
               fontSize: '0.75rem',
               height: '24px',
@@ -125,8 +129,8 @@ const BusinessList = ({
       {/* Loading */}
       {loading && (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, gap: 2 }}>
-          <CircularProgress size={36} thickness={3} sx={{ color: '#0891b2' }} />
-          <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.85rem' }}>
+          <CircularProgress size={36} thickness={3} sx={{ color: COLORS.primary }} />
+          <Typography variant="body2" sx={{ color: COLORS.textLight, fontWeight: 500, fontSize: '0.85rem' }}>
             {t('common.loading')}
           </Typography>
         </Box>
@@ -142,20 +146,27 @@ const BusinessList = ({
       {/* Liste */}
       {!loading && !error && filteredBusinesses && filteredBusinesses.length > 0 ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {filteredBusinesses.map((businessItem) => (
-            <Box
+          {filteredBusinesses.map((businessItem, index) => (
+            <motion.div
               key={businessItem._id}
-              sx={{ flexShrink: 0, cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onBusinessClick(businessItem);
-              }}
+              initial={reduce ? false : { opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: Math.min(index * 0.08, 0.4) }}
             >
-              <BusinessCard
-                business={businessItem}
-                isSelected={selectedBusinessId === businessItem._id}
-              />
-            </Box>
+              <Box
+                sx={{ flexShrink: 0, cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBusinessClick(businessItem);
+                }}
+              >
+                <BusinessCard
+                  business={businessItem}
+                  isSelected={selectedBusinessId === businessItem._id}
+                />
+              </Box>
+            </motion.div>
           ))}
         </Box>
       ) : (
@@ -172,18 +183,18 @@ const BusinessList = ({
             <Box sx={{
               width: 52,
               height: 52,
-              borderRadius: '14px',
-              backgroundColor: 'rgba(8,145,178,0.08)',
+              borderRadius: RADII.card,
+              backgroundColor: COLORS.accentBoxBg,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
               {search
-                ? <SearchOffIcon sx={{ fontSize: '1.6rem', color: '#0891b2' }} />
-                : <StorefrontIcon sx={{ fontSize: '1.6rem', color: '#0891b2' }} />
+                ? <SearchOffIcon sx={{ fontSize: '1.6rem', color: COLORS.primary }} />
+                : <StorefrontIcon sx={{ fontSize: '1.6rem', color: COLORS.primary }} />
               }
             </Box>
-            <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.85rem' }}>
+            <Typography variant="body2" sx={{ color: COLORS.textLight, fontWeight: 500, fontSize: '0.85rem' }}>
               {search
                 ? t('businessList.noResults', { search })
                 : t('businessList.noLocations')

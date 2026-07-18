@@ -27,7 +27,57 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon
 } from '@mui/icons-material';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { ExportButton } from '../shared';
+
+// Admin-Designsprache: Stil-Konstanten
+const sectionTitleSx = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: '-0.02em'
+};
+
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+  overflow: 'hidden'
+};
+
+const inputSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: COLORS.primary
+    }
+  }
+};
+
+const tableHeadRowSx = {
+  backgroundColor: COLORS.backgroundLight,
+  '& .MuiTableCell-head': {
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderColor: COLORS.border
+  }
+};
+
+const tableBodyRowSx = {
+  '& .MuiTableCell-root': { borderColor: COLORS.border },
+  '&:hover': { backgroundColor: COLORS.backgroundLight }
+};
+
+const moneySx = { fontVariantNumeric: 'tabular-nums' };
+
+// Status-Pills: weiche Hintergründe mit dunkler Schrift (Semantik unverändert)
+const statusPillSx = {
+  approved: { backgroundColor: '#ecfdf5', color: '#059669' },
+  pending: { backgroundColor: '#fffbeb', color: '#d97706' },
+  rejected: { backgroundColor: '#fef2f2', color: '#dc2626' },
+  default: { backgroundColor: '#f1f5f9', color: COLORS.textSecondary }
+};
 
 /**
  * BusinessPerformanceTable Component
@@ -121,14 +171,9 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
     return types[type] || type;
   }
 
-  // Get status color
-  function getStatusColor(status) {
-    const colors = {
-      approved: 'success',
-      pending: 'warning',
-      rejected: 'error'
-    };
-    return colors[status] || 'default';
+  // Get status pill style (Semantik: grün/amber/rot bleibt erhalten)
+  function getStatusPillSx(status) {
+    return statusPillSx[status] || statusPillSx.default;
   }
 
   // Column definitions
@@ -148,7 +193,7 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
     <Box>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-        <Typography variant="h6" fontWeight={600}>
+        <Typography variant="h6" sx={sectionTitleSx}>
           Geschäfts-Performance
         </Typography>
 
@@ -161,11 +206,11 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
+                  <SearchIcon fontSize="small" sx={{ color: COLORS.textSecondary }} />
                 </InputAdornment>
               )
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: 200, ...inputSx }}
           />
           <ExportButton
             data={exportData}
@@ -176,37 +221,48 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
       </Box>
 
       {/* Summary Row */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          mb: 2,
+          backgroundColor: COLORS.accentBoxBg,
+          border: `1px solid ${COLORS.border}`,
+          borderLeft: `3px solid ${COLORS.primary}`,
+          borderRadius: RADII.card,
+          boxShadow: SHADOWS.subtle
+        }}
+      >
         <Stack direction="row" spacing={4} justifyContent="center" flexWrap="wrap">
           <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
               Geschäfte
             </Typography>
-            <Typography variant="h6" fontWeight={600}>
+            <Typography variant="h6" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
               {filteredData.length}
             </Typography>
           </Box>
           <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
               Gesamtumsatz
             </Typography>
-            <Typography variant="h6" fontWeight={600} color="primary">
+            <Typography variant="h6" sx={{ ...moneySx, fontWeight: 800, color: COLORS.primary }}>
               €{totals.totalRevenue.toFixed(2)}
             </Typography>
           </Box>
           <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
               Kommission
             </Typography>
-            <Typography variant="h6" fontWeight={600} color="success.main">
+            <Typography variant="h6" sx={{ ...moneySx, fontWeight: 800, color: '#059669' }}>
               €{totals.platformCommission.toFixed(2)}
             </Typography>
           </Box>
           <Box textAlign="center">
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
               Buchungen
             </Typography>
-            <Typography variant="h6" fontWeight={600}>
+            <Typography variant="h6" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
               {totals.bookingCount}
             </Typography>
           </Box>
@@ -214,11 +270,11 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
       </Paper>
 
       {/* Table */}
-      <Paper variant="outlined">
+      <Paper elevation={0} sx={panelSx}>
         <TableContainer>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.50' }}>
+              <TableRow sx={tableHeadRowSx}>
                 {columns.map((column) => (
                   <TableCell
                     key={column.id}
@@ -243,8 +299,8 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
             <TableBody>
               {paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={columns.length} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">
+                  <TableCell colSpan={columns.length} align="center" sx={{ py: 4, borderColor: COLORS.border }}>
+                    <Typography sx={{ color: COLORS.textSecondary }}>
                       Keine Geschäfte gefunden
                     </Typography>
                   </TableCell>
@@ -255,7 +311,7 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
                   const isTopThree = rank <= 3;
 
                   return (
-                    <TableRow key={business.businessId} hover>
+                    <TableRow key={business.businessId} sx={tableBodyRowSx}>
                       {/* Rank */}
                       <TableCell>
                         <Chip
@@ -263,10 +319,12 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
                           size="small"
                           sx={{
                             minWidth: 28,
+                            borderRadius: '999px',
+                            fontVariantNumeric: 'tabular-nums',
                             bgcolor: isTopThree
                               ? rank === 1 ? '#ffd700' : rank === 2 ? '#c0c0c0' : '#cd7f32'
-                              : 'grey.200',
-                            color: isTopThree ? 'white' : 'text.primary',
+                              : '#f1f5f9',
+                            color: isTopThree ? 'white' : COLORS.textSecondary,
                             fontWeight: 600
                           }}
                         />
@@ -275,14 +333,20 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
                       {/* Business Name */}
                       <TableCell>
                         <Box>
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography variant="body2" fontWeight={600} sx={{ color: COLORS.textPrimary }}>
                             {business.businessName}
                           </Typography>
                           <Chip
                             label={business.status}
                             size="small"
-                            color={getStatusColor(business.status)}
-                            sx={{ height: 18, fontSize: '0.65rem', mt: 0.5 }}
+                            sx={{
+                              height: 18,
+                              fontSize: '0.65rem',
+                              mt: 0.5,
+                              borderRadius: '999px',
+                              fontWeight: 600,
+                              ...getStatusPillSx(business.status)
+                            }}
                           />
                         </Box>
                       </TableCell>
@@ -292,27 +356,32 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
                         <Chip
                           label={getBusinessTypeLabel(business.businessType)}
                           size="small"
-                          variant="outlined"
+                          sx={{
+                            borderRadius: '999px',
+                            fontWeight: 600,
+                            backgroundColor: '#f1f5f9',
+                            color: COLORS.textSecondary
+                          }}
                         />
                       </TableCell>
 
                       {/* Revenue */}
                       <TableCell align="right">
-                        <Typography variant="body2" fontWeight={600} color="primary">
+                        <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: COLORS.primary }}>
                           €{business.totalRevenue.toFixed(2)}
                         </Typography>
                       </TableCell>
 
                       {/* Commission */}
                       <TableCell align="right">
-                        <Typography variant="body2" color="success.main">
+                        <Typography variant="body2" sx={{ ...moneySx, color: '#059669' }}>
                           €{business.platformCommission.toFixed(2)}
                         </Typography>
                       </TableCell>
 
                       {/* Bookings */}
                       <TableCell align="center">
-                        <Typography variant="body2" fontWeight={500}>
+                        <Typography variant="body2" fontWeight={500} sx={moneySx}>
                           {business.bookingCount}
                         </Typography>
                       </TableCell>
@@ -327,10 +396,14 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
                               width: 50,
                               height: 6,
                               borderRadius: 3,
-                              bgcolor: 'grey.200'
+                              backgroundColor: COLORS.border,
+                              '& .MuiLinearProgress-bar': {
+                                borderRadius: 3,
+                                backgroundColor: COLORS.primary
+                              }
                             }}
                           />
-                          <Typography variant="caption">
+                          <Typography variant="caption" sx={{ ...moneySx, color: COLORS.textSecondary }}>
                             {business.completionRate.toFixed(0)}%
                           </Typography>
                         </Box>
@@ -338,7 +411,7 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
 
                       {/* Average Value */}
                       <TableCell align="right">
-                        <Typography variant="body2">
+                        <Typography variant="body2" sx={moneySx}>
                           €{business.averageBookingValue.toFixed(2)}
                         </Typography>
                       </TableCell>
@@ -353,12 +426,12 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
                               size="small"
                               readOnly
                             />
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                               ({business.reviewCount})
                             </Typography>
                           </Box>
                         ) : (
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                             Keine
                           </Typography>
                         )}
@@ -391,4 +464,3 @@ const BusinessPerformanceTable = ({ data = [], _dateRange }) => {
 };
 
 export default BusinessPerformanceTable;
-

@@ -15,6 +15,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import { COLORS, RADII, SHADOWS } from '../theme/designTokens';
 
 // İşletme tipine göre renk
 const TYPE_COLORS = {
@@ -55,21 +56,21 @@ const BusinessCard = ({ business, isSelected }) => {
     <Card
       sx={{
         width: '100%',
-        borderRadius: '14px',
-        border: `1.5px solid ${isSelected ? '#0891b2' : '#e2e8f0'}`,
+        borderRadius: RADII.card,
+        border: `1px solid ${isSelected ? COLORS.primary : COLORS.border}`,
         boxShadow: isSelected
           ? '0 4px 20px rgba(8,145,178,0.15)'
-          : '0 1px 4px rgba(0,0,0,0.05)',
-        backgroundColor: isSelected ? 'rgba(8,145,178,0.02)' : 'white',
-        transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
+          : SHADOWS.subtle,
+        backgroundColor: isSelected ? COLORS.accentBoxBg : 'white',
+        transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
         position: 'relative',
         overflow: 'hidden',
         '&:hover': {
-          boxShadow: '0 8px 24px rgba(8,145,178,0.14)',
-          transform: 'translateY(-2px)',
-          border: '1.5px solid #0891b2',
+          boxShadow: SHADOWS.hover,
+          transform: 'translateY(-4px)',
+          border: `1px solid ${COLORS.primary}`,
         },
-        // Sol accent çizgisi
+        // Sol accent çizgisi (Akzentkarte: 3px Primärlinie links)
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -77,14 +78,12 @@ const BusinessCard = ({ business, isSelected }) => {
           top: 0,
           bottom: 0,
           width: '3px',
-          borderRadius: '14px 0 0 14px',
-          background: isSelected
-            ? 'linear-gradient(180deg, #0891b2, #06b6d4)'
-            : 'transparent',
+          borderRadius: `${RADII.card} 0 0 ${RADII.card}`,
+          background: isSelected ? COLORS.primary : 'transparent',
           transition: 'background 0.25s ease',
         },
         '&:hover::before': {
-          background: 'linear-gradient(180deg, #0891b2, #06b6d4)',
+          background: COLORS.primary,
         },
       }}
     >
@@ -115,8 +114,8 @@ const BusinessCard = ({ business, isSelected }) => {
               }}
             />
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-              <StarRoundedIcon sx={{ fontSize: '0.9rem', color: '#f59e0b' }} />
-              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, fontSize: '0.78rem' }}>
+              <StarRoundedIcon sx={{ fontSize: '0.9rem', color: COLORS.warning }} />
+              <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 700, fontSize: '0.78rem' }}>
                 {rating}
               </Typography>
             </Box>
@@ -126,10 +125,11 @@ const BusinessCard = ({ business, isSelected }) => {
           <Typography
             variant="subtitle1"
             sx={{
-              fontWeight: 700,
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
               fontSize: '0.95rem',
               mb: 0.75,
-              color: '#0f172a',
+              color: COLORS.textHeading,
               lineHeight: 1.3,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -144,20 +144,20 @@ const BusinessCard = ({ business, isSelected }) => {
 
           {/* Opening hours */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-            <AccessTimeIcon sx={{ fontSize: '0.85rem', color: '#94a3b8', mr: 0.5, flexShrink: 0 }} />
-            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 500 }}>
+            <AccessTimeIcon sx={{ fontSize: '0.85rem', color: COLORS.textLight, mr: 0.5, flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontSize: '0.8rem', fontWeight: 500 }}>
               {business.openingHours || '09:00 – 18:00'}
             </Typography>
           </Box>
 
           {/* Address */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.25 }}>
-            <LocationOnIcon sx={{ fontSize: '0.85rem', color: '#0891b2', mr: 0.5, mt: 0.15, flexShrink: 0 }} />
+            <LocationOnIcon sx={{ fontSize: '0.85rem', color: COLORS.primary, mr: 0.5, mt: 0.15, flexShrink: 0 }} />
             <Typography
               variant="caption"
               sx={{
                 fontSize: '0.8rem',
-                color: '#64748b',
+                color: COLORS.textSecondary,
                 lineHeight: 1.4,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -176,13 +176,13 @@ const BusinessCard = ({ business, isSelected }) => {
           {/* Footer: price + arrow */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.25 }}>
-              <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+              <Typography variant="caption" sx={{ color: COLORS.textLight, fontSize: '0.75rem' }}>
                 {t('businessCard.from')}
               </Typography>
               <Typography
                 sx={{
                   fontWeight: 800,
-                  color: '#0891b2',
+                  color: COLORS.primary,
                   fontSize: '1.1rem',
                   lineHeight: 1,
                   mx: 0.25,
@@ -190,7 +190,7 @@ const BusinessCard = ({ business, isSelected }) => {
               >
                 €1
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+              <Typography variant="caption" sx={{ color: COLORS.textLight, fontSize: '0.75rem' }}>
                 {t('common.perDay')}
               </Typography>
             </Box>
@@ -201,21 +201,21 @@ const BusinessCard = ({ business, isSelected }) => {
                 height: 28,
                 borderRadius: '9px',
                 background: isSelected
-                  ? 'linear-gradient(135deg, #0891b2, #06b6d4)'
+                  ? COLORS.primaryGradient
                   : 'rgba(8,145,178,0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 0.25s ease',
                 '.MuiCard-root:hover &': {
-                  background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+                  background: COLORS.primaryGradient,
                 },
               }}
             >
               <ArrowForwardIosIcon
                 sx={{
                   fontSize: '0.7rem',
-                  color: isSelected ? 'white' : '#0891b2',
+                  color: isSelected ? 'white' : COLORS.primary,
                   '.MuiCard-root:hover &': { color: 'white' },
                   transition: 'color 0.25s ease',
                 }}

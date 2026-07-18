@@ -46,12 +46,59 @@ import {
   AccountBalance as BankIcon,
   Send as PayoutIcon,
 } from '@mui/icons-material';
+import { motion, useReducedMotion } from 'framer-motion';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { monthlyReportService } from '../../services/monthlyReportService';
 import { invoiceService } from '../../services/invoiceService';
 import { payoutService } from '../../services/payoutService';
 import { adminService } from '../../services/adminService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
+
+// Pill-Statuschips: weicher Hintergrund + dunkler Text (Admin-Variante)
+const CHIP_PALETTES = {
+  success: { bg: '#ecfdf5', color: '#059669' },
+  warning: { bg: '#fffbeb', color: '#d97706' },
+  error: { bg: '#fef2f2', color: '#dc2626' },
+  default: { bg: '#f1f5f9', color: '#64748b' },
+};
+
+const pillChipSx = (palette = 'default') => {
+  const { bg, color } = CHIP_PALETTES[palette] || CHIP_PALETTES.default;
+  return {
+    borderRadius: '999px',
+    bgcolor: bg,
+    color,
+    fontWeight: 600,
+    border: 'none',
+    '& .MuiChip-icon': { color },
+  };
+};
+
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '&:hover fieldset': { borderColor: COLORS.primary },
+    '&.Mui-focused fieldset': { borderColor: COLORS.primary },
+  },
+  '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary },
+};
+
+const gradientButtonSx = {
+  background: COLORS.primaryGradient,
+  borderRadius: RADII.button,
+  textTransform: 'none',
+  fontWeight: 600,
+  '&:hover': { background: COLORS.primaryGradientHover },
+};
+
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle,
+};
 
 /**
  * FinanzmanagementPage
@@ -60,6 +107,8 @@ import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNo
  * - PDF herunterladen
  */
 const FinanzmanagementPage = () => {
+  const reduceMotion = useReducedMotion();
+
   // State
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState([]);
@@ -297,20 +346,25 @@ const FinanzmanagementPage = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: COLORS.primary }} />
       </Box>
     );
   }
 
   return (
-    <Box>
+    <Box
+      component={motion.div}
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+    >
       {/* Header */}
       <Paper
         sx={{
           mb: 3,
           p: 3,
-          background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-          borderRadius: '16px',
+          background: COLORS.primaryGradient,
+          borderRadius: RADII.panel,
           color: 'white',
           display: 'flex',
           justifyContent: 'space-between',
@@ -320,7 +374,7 @@ const FinanzmanagementPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={700} sx={{ color: 'white' }}>
+          <Typography variant="h5" sx={{ color: 'white', fontWeight: 800, letterSpacing: '-0.02em' }}>
             Finanzmanagement
           </Typography>
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}>
@@ -335,7 +389,7 @@ const FinanzmanagementPage = () => {
             bgcolor: 'rgba(255,255,255,0.2)',
             color: 'white',
             '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-            borderRadius: '12px',
+            borderRadius: RADII.button,
             textTransform: 'none',
             fontWeight: 600,
           }}
@@ -347,38 +401,38 @@ const FinanzmanagementPage = () => {
       {/* Summary Cards */}
       <Grid container spacing={2} mb={3}>
         <Grid item xs={6} sm={3}>
-          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #0891b2' }}>
+          <Card sx={{ ...panelSx, borderLeft: `3px solid ${COLORS.primary}` }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>Berichte</Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#0f172a' }}>{totals.reportCount}</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>Berichte</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.textHeading, fontVariantNumeric: 'tabular-nums' }}>{totals.reportCount}</Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #0891b2' }}>
+          <Card sx={{ ...panelSx, borderLeft: `3px solid ${COLORS.primary}` }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>Gesamtumsatz</Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#0891b2' }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>Gesamtumsatz</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}>
                 {formatCurrency(totals.totalRevenue)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #6366f1' }}>
+          <Card sx={{ ...panelSx, borderLeft: '3px solid #6366f1' }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>Plattformgebühr</Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#6366f1' }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>Plattformgebühr</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#6366f1', fontVariantNumeric: 'tabular-nums' }}>
                 {formatCurrency(totals.platformFee)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Card sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', borderLeft: '3px solid #16a34a' }}>
+          <Card sx={{ ...panelSx, borderLeft: '3px solid #059669' }}>
             <CardContent sx={{ py: 2 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>Geschäftsanteil</Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#16a34a' }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>Geschäftsanteil</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                 {formatCurrency(totals.businessRevenue)}
               </Typography>
             </CardContent>
@@ -387,7 +441,7 @@ const FinanzmanagementPage = () => {
       </Grid>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 2, borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <Paper sx={{ ...panelSx, p: 2, mb: 2 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={4}>
             <TextField
@@ -396,6 +450,7 @@ const FinanzmanagementPage = () => {
               placeholder="Geschäft suchen..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              sx={fieldSx}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -413,6 +468,7 @@ const FinanzmanagementPage = () => {
               label="Jahr"
               value={yearFilter}
               onChange={(e) => setYearFilter(parseInt(e.target.value))}
+              sx={fieldSx}
             >
               {availableYears.map(year => (
                 <MenuItem key={year} value={year}>{year}</MenuItem>
@@ -427,6 +483,7 @@ const FinanzmanagementPage = () => {
               label="Monat"
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
+              sx={fieldSx}
             >
               <MenuItem value="all">Alle Monate</MenuItem>
               {monthNames.map((name, idx) => (
@@ -443,17 +500,22 @@ const FinanzmanagementPage = () => {
       </Paper>
 
       {/* Reports Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: '14px', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+      <TableContainer component={Paper} sx={{ ...panelSx, overflow: 'hidden' }}>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: '#f8fafc' }}>
-              <TableCell><strong>Geschäft</strong></TableCell>
-              <TableCell><strong>Zeitraum</strong></TableCell>
-              <TableCell align="right"><strong>Umsatz</strong></TableCell>
-              <TableCell align="right"><strong>Geschäftsanteil</strong></TableCell>
-              <TableCell align="center"><strong>Rechnung</strong></TableCell>
-              <TableCell align="center"><strong>Auszahlung</strong></TableCell>
-              <TableCell align="center"><strong>Aktion</strong></TableCell>
+            <TableRow
+              sx={{
+                bgcolor: COLORS.backgroundLight,
+                '& th': { fontWeight: 600, color: COLORS.textSecondary, borderColor: COLORS.border },
+              }}
+            >
+              <TableCell>Geschäft</TableCell>
+              <TableCell>Zeitraum</TableCell>
+              <TableCell align="right">Umsatz</TableCell>
+              <TableCell align="right">Geschäftsanteil</TableCell>
+              <TableCell align="center">Rechnung</TableCell>
+              <TableCell align="center">Auszahlung</TableCell>
+              <TableCell align="center">Aktion</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -473,7 +535,15 @@ const FinanzmanagementPage = () => {
                   const hasInvoice = !!invoice;
                   
                   return (
-                    <TableRow key={report._id} hover sx={{ borderLeft: `3px solid ${hasInvoice ? '#16a34a' : '#f59e0b'}` }}>
+                    <TableRow
+                      key={report._id}
+                      hover
+                      sx={{
+                        borderLeft: `3px solid ${hasInvoice ? '#059669' : '#d97706'}`,
+                        '& td': { borderColor: COLORS.border },
+                        '&:hover': { bgcolor: COLORS.backgroundLight },
+                      }}
+                    >
                       <TableCell>
                         <Box display="flex" alignItems="center" gap={1}>
                           <BusinessIcon fontSize="small" color="action" />
@@ -491,12 +561,12 @@ const FinanzmanagementPage = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2" fontWeight={500}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
                           {formatCurrency(report.financials?.totalRevenue || 0)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2" fontWeight={600} color="success.main">
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#059669', fontVariantNumeric: 'tabular-nums' }}>
                           {formatCurrency(report.financials?.businessRevenue || 0)}
                         </Typography>
                       </TableCell>
@@ -506,16 +576,14 @@ const FinanzmanagementPage = () => {
                             icon={<PaidIcon fontSize="small" />}
                             label={invoice.rechnungsnummer}
                             size="small"
-                            color="success"
-                            variant="outlined"
+                            sx={pillChipSx('success')}
                           />
                         ) : (
                           <Chip
                             icon={<PendingIcon fontSize="small" />}
                             label="Ausstehend"
                             size="small"
-                            color="warning"
-                            variant="outlined"
+                            sx={pillChipSx('warning')}
                           />
                         )}
                       </TableCell>
@@ -528,8 +596,7 @@ const FinanzmanagementPage = () => {
                                 icon={<PendingIcon fontSize="small" />}
                                 label="Offen"
                                 size="small"
-                                color="default"
-                                variant="outlined"
+                                sx={pillChipSx('warning')}
                               />
                             );
                           }
@@ -539,8 +606,7 @@ const FinanzmanagementPage = () => {
                               icon={payout.status === 'completed' ? <PaidIcon fontSize="small" /> : <PendingIcon fontSize="small" />}
                               label={display.label}
                               size="small"
-                              color={display.color}
-                              variant="outlined"
+                              sx={pillChipSx(display.color)}
                             />
                           );
                         })()}
@@ -583,18 +649,18 @@ const FinanzmanagementPage = () => {
         onClose={() => setInvoiceDialogOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden' } }}
+        PaperProps={{ sx: { borderRadius: RADII.panel, overflow: 'hidden' } }}
       >
         <DialogTitle
           sx={{
-            background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
+            background: COLORS.primaryGradient,
             color: 'white',
             py: 2.5,
           }}
         >
           <Box display="flex" alignItems="center" gap={1}>
             <InvoiceIcon sx={{ color: 'white' }} />
-            <Typography variant="h6" fontWeight={700} sx={{ color: 'white' }}>Rechnung</Typography>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 800, letterSpacing: '-0.02em' }}>Rechnung</Typography>
           </Box>
         </DialogTitle>
         <DialogContent dividers>
@@ -613,19 +679,19 @@ const FinanzmanagementPage = () => {
                 
                 return (
                   <Stack spacing={2}>
-                    <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <Box sx={{ bgcolor: COLORS.backgroundLight, p: 2, borderRadius: RADII.input, border: `1px solid ${COLORS.border}` }}>
                       <Grid container spacing={2}>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Rechnungsnummer</Typography>
-                          <Typography variant="body1" fontWeight={600}>{invoice.rechnungsnummer}</Typography>
+                          <Typography variant="body1" fontWeight={700}>{invoice.rechnungsnummer}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Status</Typography>
                           <Box>
-                            <Chip 
-                              label={invoice.status} 
-                              size="small" 
-                              color={invoice.status === 'bezahlt' ? 'success' : 'warning'}
+                            <Chip
+                              label={invoice.status}
+                              size="small"
+                              sx={pillChipSx(invoice.status === 'bezahlt' ? 'success' : 'warning')}
                             />
                           </Box>
                         </Grid>
@@ -653,19 +719,19 @@ const FinanzmanagementPage = () => {
                     
                     <Divider />
                     
-                    <Box sx={{ backgroundColor: '#f0f9ff', borderLeft: '3px solid #0891b2', borderRadius: '12px', p: 2 }}>
+                    <Box sx={{ backgroundColor: COLORS.accentBoxBg, borderLeft: `3px solid ${COLORS.primary}`, borderRadius: RADII.input, p: 2 }}>
                       <Grid container spacing={2}>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Netto</Typography>
-                          <Typography variant="body1">{formatCurrency(invoice.summen?.nettobetrag)}</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(invoice.summen?.nettobetrag)}</Typography>
                         </Grid>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">MwSt (19%)</Typography>
-                          <Typography variant="body1">{formatCurrency(invoice.summen?.mehrwertsteuer?.betrag)}</Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(invoice.summen?.mehrwertsteuer?.betrag)}</Typography>
                         </Grid>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Gesamt</Typography>
-                          <Typography variant="h6" fontWeight={700} color="primary.main">
+                          <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.primary, fontVariantNumeric: 'tabular-nums' }}>
                             {formatCurrency(invoice.summen?.bruttobetrag)}
                           </Typography>
                         </Grid>
@@ -680,11 +746,11 @@ const FinanzmanagementPage = () => {
                       return (
                         <Box>
                           <Box display="flex" alignItems="center" gap={1} mb={1}>
-                            <BankIcon fontSize="small" sx={{ color: '#0891b2' }} />
-                            <Typography variant="subtitle2">Bankverbindung des Inhabers</Typography>
+                            <BankIcon fontSize="small" sx={{ color: COLORS.primary }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }}>Bankverbindung des Inhabers</Typography>
                           </Box>
                           {bank?.iban ? (
-                            <Box sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <Box sx={{ bgcolor: COLORS.backgroundLight, p: 2, borderRadius: RADII.input, border: `1px solid ${COLORS.border}` }}>
                               <Grid container spacing={1.5}>
                                 <Grid item xs={6}>
                                   <Typography variant="caption" color="text.secondary">Kontoinhaber</Typography>
@@ -759,14 +825,7 @@ const FinanzmanagementPage = () => {
                             startIcon={creatingPayout ? <CircularProgress size={18} color="inherit" /> : <PayoutIcon />}
                             onClick={() => handleCreatePayout(selectedReport)}
                             disabled={creatingPayout || !bank?.iban}
-                            sx={{
-                              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-                              borderRadius: '12px',
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              px: 3,
-                              '&:hover': { background: 'linear-gradient(135deg, #0e7490 0%, #155e75 100%)' },
-                            }}
+                            sx={{ ...gradientButtonSx, px: 3 }}
                           >
                             Auszahlung erstellen ({formatCurrency(selectedReport?.financials?.businessRevenue || 0)})
                           </Button>
@@ -785,7 +844,10 @@ const FinanzmanagementPage = () => {
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setInvoiceDialogOpen(false)}>
+          <Button
+            onClick={() => setInvoiceDialogOpen(false)}
+            sx={{ textTransform: 'none', fontWeight: 600, color: COLORS.textSecondary }}
+          >
             Schließen
           </Button>
           <Button
@@ -793,16 +855,9 @@ const FinanzmanagementPage = () => {
             startIcon={downloading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
             onClick={handleDownloadPDF}
             disabled={downloading || !getInvoiceForReport(selectedReport?._id)}
-            sx={{
-              background: 'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)',
-              borderRadius: '12px',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              '&:hover': { background: 'linear-gradient(135deg, #0e7490 0%, #155e75 100%)' },
-            }}
+            sx={{ ...gradientButtonSx, px: 3 }}
           >
-            PDF Herunterladen
+            PDF herunterladen
           </Button>
         </DialogActions>
       </Dialog>
@@ -823,9 +878,9 @@ const FinanzmanagementPage = () => {
             zIndex: 9999
           }}
         >
-          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: '16px' }}>
-            <CircularProgress sx={{ mb: 2, color: '#0891b2' }} />
-            <Typography fontWeight={600} sx={{ color: '#0f172a' }}>Rechnung wird erstellt...</Typography>
+          <Paper sx={{ p: 4, textAlign: 'center', borderRadius: RADII.panel }}>
+            <CircularProgress sx={{ mb: 2, color: COLORS.primary }} />
+            <Typography fontWeight={600} sx={{ color: COLORS.textHeading }}>Rechnung wird erstellt...</Typography>
           </Paper>
         </Box>
       )}

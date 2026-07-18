@@ -28,13 +28,59 @@ import {
   Wc as WcIcon,
   Save as SaveIcon,
 } from "@mui/icons-material";
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from "framer-motion";
 import apiClient from "../../../shared/utils/apiClient";
 import { searchLocation } from "../../../services/geocoding";
 import useCrudCall from "../../../hook/useCrudCall";
+import { COLORS, RADII, SHADOWS } from "../../../theme/designTokens";
+
+const PANEL_SX = {
+  bgcolor: COLORS.backgroundWhite,
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+};
+
+const INPUT_SX = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    "& fieldset": { borderColor: COLORS.border },
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary },
+};
+
+const OUTLINED_BUTTON_SX = {
+  textTransform: "none",
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  borderColor: COLORS.border,
+  color: COLORS.primary,
+  "&:hover": { borderColor: COLORS.primary, bgcolor: COLORS.accentBoxBg },
+};
+
+const CONTAINED_BUTTON_SX = {
+  textTransform: "none",
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  background: COLORS.primaryGradient,
+  boxShadow: SHADOWS.brand,
+  "&:hover": { background: COLORS.primaryGradientHover },
+};
+
+const SECTION_TITLE_SX = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: "-0.02em",
+};
 
 const steps = ["Inhaber", "Geschäft", "Toilette"];
 
 const BusinessManagementForm = () => {
+  const reduceMotion = useReducedMotion();
   const { getCrudData } = useCrudCall();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -345,8 +391,8 @@ const BusinessManagementForm = () => {
   const renderOwnerForm = () => (
     <Box sx={{ mt: 3 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-        <PersonIcon color="primary" />
-        <Typography variant="h6" fontWeight={600}>
+        <PersonIcon sx={{ color: COLORS.primary }} />
+        <Typography variant="h6" sx={SECTION_TITLE_SX}>
           Inhaber-Informationen
         </Typography>
       </Box>
@@ -355,6 +401,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Benutzername"
             value={ownerData.username}
             onChange={(e) => handleOwnerChange("username", e.target.value)}
@@ -365,6 +412,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="E-Mail"
             type="email"
             value={ownerData.email}
@@ -376,6 +424,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Passwort"
             type="password"
             value={ownerData.password}
@@ -386,7 +435,7 @@ const BusinessManagementForm = () => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth disabled>
+          <FormControl fullWidth disabled sx={INPUT_SX}>
             <InputLabel>Rolle</InputLabel>
             <Select value={ownerData.role} label="Rolle">
               <MenuItem value="owner">Inhaber</MenuItem>
@@ -414,8 +463,8 @@ const BusinessManagementForm = () => {
   const renderBusinessForm = () => (
     <Box sx={{ mt: 3 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-        <BusinessIcon color="primary" />
-        <Typography variant="h6" fontWeight={600}>
+        <BusinessIcon sx={{ color: COLORS.primary }} />
+        <Typography variant="h6" sx={SECTION_TITLE_SX}>
           Geschäftsinformationen
         </Typography>
       </Box>
@@ -424,6 +473,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Geschäftsname"
             value={businessData.businessName}
             onChange={(e) =>
@@ -434,7 +484,7 @@ const BusinessManagementForm = () => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth required>
+          <FormControl fullWidth required sx={INPUT_SX}>
             <InputLabel>Geschäftstyp</InputLabel>
             <Select
               value={businessData.businessType}
@@ -462,6 +512,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Straße"
             value={businessData.address.street}
             onChange={(e) =>
@@ -474,6 +525,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Stadt"
             value={businessData.address.city}
             onChange={(e) =>
@@ -486,6 +538,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Postleitzahl"
             value={businessData.address.postalCode}
             onChange={(e) =>
@@ -498,6 +551,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Land"
             value={businessData.address.country}
             onChange={(e) =>
@@ -517,7 +571,7 @@ const BusinessManagementForm = () => {
               variant="outlined"
               onClick={handleFindCoordinates}
               disabled={loading || findingCoordinates || !businessData.address.street || !businessData.address.city || !businessData.address.postalCode}
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 200, ...OUTLINED_BUTTON_SX }}
             >
               {findingCoordinates ? (
                 <>
@@ -543,6 +597,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Öffnungszeiten"
             value={businessData.openingHours}
             onChange={(e) =>
@@ -554,7 +609,7 @@ const BusinessManagementForm = () => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
+          <FormControl fullWidth sx={INPUT_SX}>
             <InputLabel>Genehmigungsstatus</InputLabel>
             <Select
               value={businessData.approvalStatus}
@@ -577,8 +632,8 @@ const BusinessManagementForm = () => {
   const renderToiletForm = () => (
     <Box sx={{ mt: 3 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-        <WcIcon color="primary" />
-        <Typography variant="h6" fontWeight={600}>
+        <WcIcon sx={{ color: COLORS.primary }} />
+        <Typography variant="h6" sx={SECTION_TITLE_SX}>
           Toiletten-Informationen
         </Typography>
       </Box>
@@ -587,6 +642,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Toilettenname"
             value={toiletData.name}
             onChange={(e) => handleToiletChange("name", e.target.value)}
@@ -598,6 +654,7 @@ const BusinessManagementForm = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
+            sx={INPUT_SX}
             label="Gebühr (EUR)"
             type="number"
             value={toiletData.fee}
@@ -644,7 +701,7 @@ const BusinessManagementForm = () => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
+          <FormControl fullWidth sx={INPUT_SX}>
             <InputLabel>Status</InputLabel>
             <Select
               value={toiletData.status}
@@ -663,17 +720,22 @@ const BusinessManagementForm = () => {
   );
 
   return (
-    <Paper sx={{ p: 4, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+    <Paper elevation={0} sx={{ ...PANEL_SX, p: 4 }}>
+      <Typography variant="h5" sx={{ mb: 3, ...SECTION_TITLE_SX }}>
         Geschäftsverwaltung
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+      <Typography variant="body2" sx={{ mb: 4, color: COLORS.textSecondary }}>
         Erstellen Sie Inhaber-, Geschäfts- und Toiletten-Datensätze zusammen. 
         Sie können die Datensatzerstellung, die Sie in MongoDB Compass durchgeführt haben, hier durchführen.
       </Typography>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: RADII.input }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
@@ -681,14 +743,22 @@ const BusinessManagementForm = () => {
       {success && (
         <Alert
           severity="success"
-          sx={{ mb: 3 }}
+          sx={{ mb: 3, borderRadius: RADII.input }}
           onClose={() => setSuccess(null)}
         >
           {success}
         </Alert>
       )}
 
-      <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+      <Stepper
+        activeStep={activeStep}
+        sx={{
+          mb: 4,
+          "& .MuiStepIcon-root.Mui-active": { color: COLORS.primary },
+          "& .MuiStepIcon-root.Mui-completed": { color: COLORS.primaryDark },
+          "& .MuiStepLabel-label.Mui-active": { fontWeight: 600, color: COLORS.textHeading },
+        }}
+      >
         {steps.map((label) => (
           <Step key={label}>
             <StepLabel>{label}</StepLabel>
@@ -707,6 +777,7 @@ const BusinessManagementForm = () => {
           disabled={activeStep === 0 || loading}
           onClick={handleBack}
           variant="outlined"
+          sx={OUTLINED_BUTTON_SX}
         >
           Zurück
         </Button>
@@ -716,6 +787,7 @@ const BusinessManagementForm = () => {
               variant="contained"
               onClick={handleNext}
               disabled={loading}
+              sx={CONTAINED_BUTTON_SX}
             >
               Weiter
             </Button>
@@ -725,6 +797,7 @@ const BusinessManagementForm = () => {
               onClick={handleSubmit}
               disabled={loading}
               startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
+              sx={CONTAINED_BUTTON_SX}
             >
               {loading ? "Wird gespeichert..." : "Speichern"}
             </Button>
@@ -732,6 +805,7 @@ const BusinessManagementForm = () => {
         </Box>
       </Box>
     </Paper>
+    </motion.div>
   );
 };
 

@@ -24,6 +24,8 @@ import {
   Stack,
   Divider
 } from '@mui/material';
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from 'framer-motion';
 import AddIcon from '@mui/icons-material/Add';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PendingIcon from '@mui/icons-material/Pending';
@@ -31,11 +33,71 @@ import HistoryIcon from '@mui/icons-material/History';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import EuroIcon from '@mui/icons-material/Euro';
 import BusinessIcon from '@mui/icons-material/Business';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { payoutService } from '../../services/payoutService';
 import { formatCurrency } from '../../utils/exportHelpers';
 import { toastSuccessNotify, toastErrorNotify } from '../../../../helper/ToastNotify';
 import PayoutCreateDialog from './PayoutCreateDialog';
 import PayoutHistoryTable from './PayoutHistoryTable';
+
+// Admin-Designsprache: Stil-Konstanten
+const sectionTitleSx = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: '-0.02em'
+};
+
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+  overflow: 'hidden'
+};
+
+const statCardSx = {
+  height: '100%',
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle
+};
+
+const containedButtonSx = {
+  background: COLORS.primaryGradient,
+  textTransform: 'none',
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  boxShadow: SHADOWS.brand,
+  '&:hover': {
+    background: COLORS.primaryGradientHover,
+    boxShadow: SHADOWS.brandHover
+  }
+};
+
+const outlinedButtonSx = {
+  textTransform: 'none',
+  fontWeight: 600,
+  borderRadius: RADII.button
+};
+
+const tableHeadRowSx = {
+  backgroundColor: COLORS.backgroundLight,
+  '& .MuiTableCell-head': {
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderColor: COLORS.border
+  }
+};
+
+const tableBodyRowSx = {
+  '& .MuiTableCell-root': { borderColor: COLORS.border },
+  '&:hover': { backgroundColor: COLORS.backgroundLight }
+};
+
+const moneySx = {
+  fontVariantNumeric: 'tabular-nums'
+};
 
 /**
  * PayoutsPage Component
@@ -43,6 +105,7 @@ import PayoutHistoryTable from './PayoutHistoryTable';
  * Features: pending payouts list, create payout, complete payout, history
  */
 const PayoutsPage = () => {
+  const reduce = useReducedMotion();
   const [loading, setLoading] = useState(true);
   const [pendingPayouts, setPendingPayouts] = useState([]);
   const [payoutStats, setPayoutStats] = useState(null);
@@ -50,6 +113,13 @@ const PayoutsPage = () => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Einmaliges Einblenden pro Seite (mit Reduced-Motion-Guard)
+  const pageFade = {
+    initial: reduce ? false : { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
+  };
 
   // Fetch pending payouts
   useEffect(() => {
@@ -141,7 +211,7 @@ const PayoutsPage = () => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+        <CircularProgress sx={{ color: COLORS.primary }} />
       </Box>
     );
   }
@@ -149,29 +219,33 @@ const PayoutsPage = () => {
   // Render main view or history view
   if (showHistory) {
     return (
-      <Box>
-        <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h5" fontWeight={600}>
-            Auszahlungs-Verlauf
-          </Typography>
-          <Button
-            variant="outlined"
-            startIcon={<PendingIcon />}
-            onClick={() => setShowHistory(false)}
-          >
-            Ausstehende Auszahlungen
-          </Button>
+      <motion.div {...pageFade}>
+        <Box>
+          <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h5" sx={sectionTitleSx}>
+              Auszahlungs-Verlauf
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<PendingIcon />}
+              onClick={() => setShowHistory(false)}
+              sx={outlinedButtonSx}
+            >
+              Ausstehende Auszahlungen
+            </Button>
+          </Box>
+          <PayoutHistoryTable />
         </Box>
-        <PayoutHistoryTable />
-      </Box>
+      </motion.div>
     );
   }
 
   return (
+    <motion.div {...pageFade}>
     <Box>
       {/* Header */}
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h5" fontWeight={600}>
+        <Typography variant="h5" sx={sectionTitleSx}>
           Auszahlungsverwaltung
         </Typography>
         <Stack direction="row" spacing={2}>
@@ -179,6 +253,7 @@ const PayoutsPage = () => {
             variant="outlined"
             startIcon={<HistoryIcon />}
             onClick={() => setShowHistory(true)}
+            sx={outlinedButtonSx}
           >
             Verlauf anzeigen
           </Button>
@@ -186,6 +261,7 @@ const PayoutsPage = () => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => handleOpenCreateDialog()}
+            sx={containedButtonSx}
           >
             Neue Auszahlung
           </Button>
@@ -196,15 +272,15 @@ const PayoutsPage = () => {
       {payoutStats && (
         <Grid container spacing={3} mb={3}>
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={statCardSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <EuroIcon color="primary" sx={{ mr: 1 }} />
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <EuroIcon sx={{ mr: 1, color: COLORS.primary }} />
+                  <Typography variant="subtitle2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                     Gesamt Ausstehend
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600}>
+                <Typography variant="h4" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
                   {formatCurrency(payoutStats.totalPending)}
                 </Typography>
               </CardContent>
@@ -212,15 +288,15 @@ const PayoutsPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={statCardSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <BusinessIcon color="success" sx={{ mr: 1 }} />
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <BusinessIcon sx={{ mr: 1, color: COLORS.primaryDark }} />
+                  <Typography variant="subtitle2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                     Geschäfte
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600}>
+                <Typography variant="h4" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
                   {payoutStats.businessCount}
                 </Typography>
               </CardContent>
@@ -228,15 +304,15 @@ const PayoutsPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={statCardSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <ReceiptIcon color="info" sx={{ mr: 1 }} />
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <ReceiptIcon sx={{ mr: 1, color: '#06b6d4' }} />
+                  <Typography variant="subtitle2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                     Zahlungen
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600}>
+                <Typography variant="h4" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
                   {payoutStats.paymentCount}
                 </Typography>
               </CardContent>
@@ -244,15 +320,15 @@ const PayoutsPage = () => {
           </Grid>
 
           <Grid item xs={12} sm={6} md={3}>
-            <Card>
+            <Card elevation={0} sx={statCardSx}>
               <CardContent>
                 <Box display="flex" alignItems="center" mb={1}>
-                  <EuroIcon color="warning" sx={{ mr: 1 }} />
-                  <Typography variant="subtitle2" color="text.secondary">
+                  <EuroIcon sx={{ mr: 1, color: COLORS.warning }} />
+                  <Typography variant="subtitle2" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                     Ø pro Geschäft
                   </Typography>
                 </Box>
-                <Typography variant="h4" fontWeight={600}>
+                <Typography variant="h4" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
                   {formatCurrency(payoutStats.averagePerBusiness)}
                 </Typography>
               </CardContent>
@@ -262,23 +338,23 @@ const PayoutsPage = () => {
       )}
 
       {/* Pending Payouts by Business */}
-      <Paper>
-        <Box p={2} bgcolor="grey.50" borderBottom={1} borderColor="divider">
-          <Typography variant="h6" fontWeight={600}>
+      <Paper elevation={0} sx={panelSx}>
+        <Box p={2} sx={{ backgroundColor: COLORS.backgroundLight, borderBottom: `1px solid ${COLORS.border}` }}>
+          <Typography variant="h6" sx={sectionTitleSx}>
             Ausstehende Auszahlungen nach Geschäft
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
             Gruppierte Ansicht aller ausstehenden Zahlungen
           </Typography>
         </Box>
 
         {pendingPayouts.length === 0 ? (
           <Box p={4} textAlign="center">
-            <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">
+            <CheckCircleIcon sx={{ fontSize: 64, color: COLORS.success, mb: 2 }} />
+            <Typography variant="h6" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
               Keine ausstehenden Auszahlungen
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
               Alle Zahlungen wurden ausgezahlt
             </Typography>
           </Box>
@@ -286,7 +362,7 @@ const PayoutsPage = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow sx={tableHeadRowSx}>
                   <TableCell>Geschäft</TableCell>
                   <TableCell align="center">Zahlungen</TableCell>
                   <TableCell align="right">Betrag</TableCell>
@@ -296,13 +372,13 @@ const PayoutsPage = () => {
               </TableHead>
               <TableBody>
                 {pendingPayouts.map((item) => (
-                  <TableRow key={item.businessId} hover>
+                  <TableRow key={item.businessId} sx={tableBodyRowSx}>
                     <TableCell>
                       <Box>
-                        <Typography variant="body1" fontWeight={600}>
+                        <Typography variant="body1" fontWeight={600} sx={{ color: COLORS.textPrimary }}>
                           {item.businessName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
                           ID: {item.businessId}
                         </Typography>
                       </Box>
@@ -311,12 +387,16 @@ const PayoutsPage = () => {
                       <Chip
                         label={`${item.paymentCount} Zahlungen`}
                         size="small"
-                        color="info"
-                        variant="outlined"
+                        sx={{
+                          borderRadius: '999px',
+                          fontWeight: 600,
+                          backgroundColor: '#f1f5f9',
+                          color: COLORS.textSecondary
+                        }}
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <Typography variant="body1" fontWeight={600} color="primary">
+                      <Typography variant="body1" sx={{ ...moneySx, fontWeight: 700, color: COLORS.primary }}>
                         {formatCurrency(item.totalAmount)}
                       </Typography>
                     </TableCell>
@@ -325,14 +405,20 @@ const PayoutsPage = () => {
                         icon={<PendingIcon />}
                         label="Ausstehend"
                         size="small"
-                        color="warning"
+                        sx={{
+                          borderRadius: '999px',
+                          fontWeight: 600,
+                          backgroundColor: '#fffbeb',
+                          color: '#d97706',
+                          '& .MuiChip-icon': { color: '#d97706' }
+                        }}
                       />
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Auszahlung erstellen">
                         <IconButton
                           size="small"
-                          color="primary"
+                          sx={{ color: COLORS.primary }}
                           onClick={() => handleOpenCreateDialog(item)}
                         >
                           <AddIcon />
@@ -348,12 +434,20 @@ const PayoutsPage = () => {
       </Paper>
 
       {/* Info Alert */}
-      <Alert severity="info" sx={{ mt: 3 }}>
-        <Typography variant="body2">
+      <Box
+        sx={{
+          mt: 3,
+          p: 2,
+          backgroundColor: COLORS.accentBoxBg,
+          borderLeft: `3px solid ${COLORS.primary}`,
+          borderRadius: RADII.input
+        }}
+      >
+        <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>
           <strong>Hinweis:</strong> Auszahlungen werden automatisch gruppiert nach Geschäft.
           Klicken Sie auf "Neue Auszahlung", um eine Auszahlung für ein Geschäft zu erstellen.
         </Typography>
-      </Alert>
+      </Box>
 
       {/* Create Payout Dialog */}
       <PayoutCreateDialog
@@ -363,6 +457,7 @@ const PayoutsPage = () => {
         businessData={selectedBusiness}
       />
     </Box>
+    </motion.div>
   );
 };
 

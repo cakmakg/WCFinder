@@ -4,6 +4,7 @@ import { Paper, Box, Typography, Chip, Tooltip } from '@mui/material';
 import WcIcon from '@mui/icons-material/Wc';
 import AccessibleIcon from '@mui/icons-material/Accessible';
 import ChildCareIcon from '@mui/icons-material/ChildCare';
+import { COLORS, RADII, SHADOWS } from '../../theme/designTokens';
 
 const STATUS = {
   available: { color: '#16a34a', bg: '#dcfce7', label: 'Verfügbar' },
@@ -17,9 +18,9 @@ export const ToiletList = ({ toilets }) => {
   return (
     <Paper
       sx={{
-        borderRadius: '16px',
-        border: '1px solid rgba(8,145,178,0.1)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+        borderRadius: RADII.panel,
+        border: `1px solid ${COLORS.border}`,
+        boxShadow: SHADOWS.subtle,
         overflow: 'hidden',
       }}
     >
@@ -34,7 +35,14 @@ export const ToiletList = ({ toilets }) => {
           justifyContent: 'space-between',
         }}
       >
-        <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            color: COLORS.textHeading,
+            letterSpacing: '-0.02em',
+          }}
+        >
           Verfügbare Toiletten
         </Typography>
         <Chip
@@ -85,7 +93,7 @@ export const ToiletList = ({ toilets }) => {
                   width: 36,
                   height: 36,
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
+                  background: COLORS.primaryGradient,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -133,7 +141,7 @@ export const ToiletList = ({ toilets }) => {
                   sx={{
                     fontWeight: 800,
                     fontSize: '1rem',
-                    color: isFree ? '#16a34a' : '#0891b2',
+                    color: isFree ? '#16a34a' : COLORS.primary,
                     lineHeight: 1.2,
                   }}
                 >

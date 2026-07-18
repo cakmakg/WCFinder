@@ -1,21 +1,32 @@
 import React, { useState } from "react";
-import { Box, Container, Grid, Typography, TextField, Button, IconButton, InputAdornment, CircularProgress, useMediaQuery, useTheme } from "@mui/material";
-import { motion } from "framer-motion";
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Button,
+  IconButton,
+  InputAdornment,
+  CircularProgress,
+} from "@mui/material";
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import SearchIcon from "@mui/icons-material/Search";
-import SendIcon from "@mui/icons-material/Send";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import ClearIcon from "@mui/icons-material/Clear";
+import FlowDemo from "./FlowDemo";
+import { COLORS, RADII, SHADOWS } from "./constants";
 
-const StartPageHero = ({ isSearching, setIsSearching, onPartnerClick }) => {
+const StartPageHero = ({ isSearching, setIsSearching }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const reduce = useReducedMotion();
   const [searchLocation, setSearchLocation] = useState("");
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       handleSearch();
     }
@@ -59,15 +70,13 @@ const StartPageHero = ({ isSearching, setIsSearching, onPartnerClick }) => {
             setTimeout(() => {
               navigate(`/home?search=${encodeURIComponent(city)}`);
             }, 300);
-          } catch (error) {
-            console.error("Error getting location name:", error);
+          } catch {
             setSearchLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
             setIsSearching(false);
           }
         },
-        (error) => {
-          console.error("Geolocation error:", error);
-          alert(t("startPage.locationError"));
+        () => {
+          toast.error(t("startPage.locationError"));
           setIsSearching(false);
         },
         {
@@ -77,122 +86,111 @@ const StartPageHero = ({ isSearching, setIsSearching, onPartnerClick }) => {
         }
       );
     } else {
-      alert(t("startPage.locationNotSupported"));
+      toast.error(t("startPage.locationNotSupported"));
     }
   };
 
   return (
     <Box
-      component={motion.div}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
+      component="section"
       sx={{
         position: "relative",
-        height: { xs: "auto", md: "100vh", lg: "100vh" },
-        minHeight: { xs: "600px", md: "700px" },
-        mt: { xs: 0, sm: 0 },
-        overflow: "hidden",
-        py: { xs: 3, md: 0 },
+        minHeight: { md: "100dvh" },
         display: "flex",
         alignItems: "center",
+        pt: { xs: 12, md: 14 },
+        pb: { xs: 6, md: 10 },
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #f0f9ff 0%, #ffffff 85%)",
       }}
     >
-      {/* Background Image with Blur Effect */}
+      {/* Dezentes Punktraster als Textur */}
       <Box
+        aria-hidden="true"
         sx={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: "url('https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1600&q=80')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          filter: "blur(4px)",
-          transform: "scale(1.05)", // Slight scale to avoid blur edges
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "linear-gradient(135deg, rgba(8,145,178,0.3) 0%, rgba(6,182,212,0.25) 100%)",
-          },
+          inset: 0,
+          backgroundImage: "radial-gradient(rgba(8,145,178,0.10) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+          maskImage: "linear-gradient(180deg, rgba(0,0,0,0.7), transparent 70%)",
+          pointerEvents: "none",
         }}
       />
 
-      <Container 
-        maxWidth="lg" 
-        sx={{ 
-          position: "relative", 
-          zIndex: 1, 
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <Grid container spacing={0} alignItems="center" sx={{ height: "100%" }}>
-          <Grid item xs={12} md={5} lg={4}>
-            <motion.div
-              initial={{ x: -30, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 11fr) minmax(0, 10fr)" },
+            gap: { xs: 5, md: 8 },
+            alignItems: "center",
+          }}
+        >
+          {/* Linke Spalte: Botschaft + Suche */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Typography
+              component="h1"
+              sx={{
+                fontWeight: 800,
+                color: COLORS.textPrimary,
+                fontSize: { xs: "2.1rem", sm: "2.6rem", md: "3.1rem" },
+                lineHeight: 1.12,
+                letterSpacing: "-0.02em",
+                mb: 2,
+                textWrap: "balance",
+              }}
             >
-              <Box
-                sx={{
-                  backgroundColor: "white",
-                  borderRadius: '16px',
-                  p: { xs: 3, md: 4 },
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-                  position: "relative",
-                  zIndex: 2,
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <Typography
-                  variant={isMobile ? "h5" : "h4"}
-                  sx={{
-                    fontWeight: "bold",
-                    color: "#1e293b",
-                    mb: 1,
-                    lineHeight: 1.3,
-                    fontSize: { xs: "1.5rem", md: "2rem", lg: "2.25rem" },
-                  }}
-                >
-                  {t("startPage.title")}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: "#64748b",
-                    mb: 3,
-                    fontSize: { xs: "0.875rem", md: "0.95rem" },
-                  }}
-                >
-                  {t("startPage.subtitle") || "Buche ab € 1.60 pro Tag"}
-                </Typography>
+              Finde{" "}
+              <Box component="span" sx={{ color: COLORS.primary }}>
+                saubere Toiletten
+              </Box>{" "}
+              in deiner Nähe
+            </Typography>
 
-                {/* Search form */}
+            <Typography
+              sx={{
+                color: COLORS.textSecondary,
+                fontSize: { xs: "1rem", md: "1.1rem" },
+                lineHeight: 1.6,
+                mb: 4,
+                maxWidth: "42ch",
+              }}
+            >
+              Online buchen, sicher bezahlen und mit QR-Code nutzen – ab 1,60 € pro Tag.
+            </Typography>
+
+            {/* Suchkarte */}
+            <Box
+              sx={{
+                backgroundColor: "white",
+                borderRadius: RADII.panel,
+                border: "1px solid #e2e8f0",
+                boxShadow: SHADOWS.subtle,
+                p: { xs: 2, sm: 2.5 },
+                maxWidth: 480,
+              }}
+            >
+              <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" } }}>
                 <TextField
                   fullWidth
                   variant="outlined"
-                  placeholder={t("startPage.searchPlaceholder") || "Standort suchen"}
+                  placeholder={t("startPage.searchPlaceholder")}
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                   disabled={isSearching}
                   size="medium"
-                  sx={{ mb: 2 }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         {isSearching ? (
                           <CircularProgress size={20} />
                         ) : (
-                          <SearchIcon sx={{ color: "#64748b" }} />
+                          <SearchIcon sx={{ color: COLORS.textSecondary }} />
                         )}
                       </InputAdornment>
                     ),
@@ -200,12 +198,10 @@ const StartPageHero = ({ isSearching, setIsSearching, onPartnerClick }) => {
                       <InputAdornment position="end">
                         <IconButton
                           size="small"
+                          aria-label="Eingabe löschen"
                           onClick={handleClearSearch}
                           disabled={isSearching}
-                          sx={{
-                            color: "#64748b",
-                            "&:hover": { backgroundColor: "#f3f4f6" },
-                          }}
+                          sx={{ color: COLORS.textSecondary }}
                         >
                           <ClearIcon fontSize="small" />
                         </IconButton>
@@ -214,107 +210,79 @@ const StartPageHero = ({ isSearching, setIsSearching, onPartnerClick }) => {
                       <InputAdornment position="end">
                         <IconButton
                           size="small"
+                          aria-label="Meinen Standort verwenden"
                           onClick={handleGetLocation}
                           disabled={isSearching}
-                          sx={{
-                            color: "#64748b",
-                            "&:hover": { backgroundColor: "#f3f4f6" },
-                          }}
+                          sx={{ color: COLORS.textSecondary }}
                         >
                           <MyLocationIcon fontSize="small" />
                         </IconButton>
                       </InputAdornment>
                     ),
                     sx: {
-                      borderRadius: '12px',
+                      borderRadius: RADII.input,
                       backgroundColor: "#f8fafc",
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#e2e8f0",
                       },
                       "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#0891b2",
+                        borderColor: COLORS.primary,
                       },
                       "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#0891b2",
+                        borderColor: COLORS.primary,
                       },
                     },
                   }}
                 />
-
                 <Button
-                  fullWidth
                   variant="contained"
                   onClick={handleSearch}
                   disabled={isSearching}
-                  startIcon={!isSearching && <SendIcon />}
                   sx={{
-                    background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
+                    background: COLORS.primaryGradient,
                     color: "white",
+                    px: 3,
                     py: 1.5,
-                    fontSize: "1rem",
+                    fontSize: "0.95rem",
                     fontWeight: 600,
-                    borderRadius: '12px',
+                    borderRadius: RADII.button,
                     textTransform: "none",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
                     boxShadow: "0 4px 14px rgba(8,145,178,0.3)",
+                    transition: "transform 0.2s, box-shadow 0.2s",
                     "&:hover": {
-                      background: "linear-gradient(135deg, #0e7490 0%, #155e75 100%)",
-                      transform: "translateY(-2px)",
+                      background: COLORS.primaryGradientHover,
+                      transform: "translateY(-1px)",
                       boxShadow: "0 8px 24px rgba(8,145,178,0.4)",
                     },
-                    "&:disabled": {
-                      backgroundColor: "#cbd5e1",
-                      color: "white",
-                    },
+                    "&:active": { transform: "translateY(0) scale(0.98)" },
+                    "&:disabled": { backgroundColor: "#cbd5e1", color: "white" },
                   }}
                 >
-                  {isSearching ? (
-                    <>
-                      <CircularProgress size={20} sx={{ color: "white", mr: 1 }} />
-                      {t("startPage.searching") || "Suche..."}
-                    </>
-                  ) : (
-                    t("startPage.searchButton") || "Suche"
-                  )}
+                  {isSearching ? t("startPage.searching", "Suche…") : t("startPage.searchButton")}
                 </Button>
-
-                {/* Partner werden CTA */}
-                <Box sx={{ mt: 2.5, pt: 2, borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: '#64748b', mb: 1, fontSize: '0.8rem' }}
-                  >
-                    Sie haben ein Geschäft?
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    onClick={onPartnerClick}
-                    size="small"
-                    sx={{
-                      borderColor: '#0891b2',
-                      color: '#0891b2',
-                      fontWeight: 600,
-                      borderRadius: '12px',
-                      textTransform: 'none',
-                      fontSize: '0.85rem',
-                      px: 3,
-                      '&:hover': {
-                        backgroundColor: '#0891b2',
-                        color: 'white',
-                        borderColor: '#0891b2',
-                      },
-                    }}
-                  >
-                    Partner werden
-                  </Button>
-                </Box>
               </Box>
-            </motion.div>
-          </Grid>
-        </Grid>
+              <Typography
+                sx={{ mt: 1.5, fontSize: "0.78rem", color: COLORS.textLight }}
+              >
+                {t("startPage.searchHint")}
+              </Typography>
+            </Box>
+          </motion.div>
+
+          {/* Rechte Spalte: interaktive Ablauf-Demo */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <FlowDemo />
+          </motion.div>
+        </Box>
       </Container>
     </Box>
   );
 };
 
 export default StartPageHero;
-

@@ -1,7 +1,7 @@
 import React from "react";
-import { Box, Container, Grid, Typography, Card, CardContent } from "@mui/material";
+import { Box, Container, Typography } from "@mui/material";
 // eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import MapIcon from "@mui/icons-material/Map";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -9,169 +9,150 @@ import PaymentIcon from "@mui/icons-material/Payment";
 import StarIcon from "@mui/icons-material/Star";
 import QrCodeIcon from "@mui/icons-material/QrCode";
 import LockIcon from "@mui/icons-material/Lock";
+import { COLORS, RADII, SHADOWS } from "./constants";
+
+// Getönte Kacheln lockern das Raster auf (Accent-Box-Muster der Design-Sprache)
+const TINTED_TILES = new Set([0, 4]);
 
 const FeaturesSection = () => {
   const { t } = useTranslation();
+  const reduce = useReducedMotion();
 
   const features = [
     {
-      icon: <MapIcon sx={{ fontSize: 40, color: "#0891b2" }} />,
+      icon: MapIcon,
       title: t("startPage.features.interactiveMap.title"),
       description: t("startPage.features.interactiveMap.description"),
     },
     {
-      icon: <CalendarTodayIcon sx={{ fontSize: 40, color: "#0891b2" }} />,
+      icon: CalendarTodayIcon,
       title: t("startPage.features.easyBooking.title"),
       description: t("startPage.features.easyBooking.description"),
     },
     {
-      icon: <PaymentIcon sx={{ fontSize: 40, color: "#0891b2" }} />,
+      icon: PaymentIcon,
       title: t("startPage.features.securePayment.title"),
       description: t("startPage.features.securePayment.description"),
     },
     {
-      icon: <StarIcon sx={{ fontSize: 40, color: "#0891b2" }} />,
+      icon: StarIcon,
       title: t("startPage.features.reviews.title"),
       description: t("startPage.features.reviews.description"),
     },
     {
-      icon: <QrCodeIcon sx={{ fontSize: 40, color: "#0891b2" }} />,
+      icon: QrCodeIcon,
       title: t("startPage.features.qrCode.title"),
       description: t("startPage.features.qrCode.description"),
     },
     {
-      icon: <LockIcon sx={{ fontSize: 40, color: "#0891b2" }} />,
+      icon: LockIcon,
       title: t("startPage.features.safeClean.title"),
       description: t("startPage.features.safeClean.description"),
     },
   ];
 
   return (
-    <Box 
-      id="features" 
-      sx={{ 
-        py: { xs: 6, md: 10 }, 
+    <Box
+      component="section"
+      id="features"
+      sx={{
+        py: { xs: 6, md: 10 },
         backgroundColor: "white",
-        position: "relative",
-        overflow: "hidden",
       }}
     >
-      {/* ✅ ASYMMETRIC: Decorative element */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: "20%",
-          right: "-200px",
-          width: "500px",
-          height: "500px",
-          background: "linear-gradient(135deg, rgba(8,145,178,0.06) 0%, transparent 100%)",
-          borderRadius: "50%",
-          filter: "blur(60px)",
-          zIndex: 0,
-        }}
-      />
-      
-      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
-        {/* ✅ ASYMMETRIC: Title positioned to the right */}
-        <Box sx={{ 
-          textAlign: { xs: "center", md: "right" }, 
-          mb: 6,
-          maxWidth: { md: "700px" },
-          ml: { md: "auto" },
-        }}>
+      <Container maxWidth="lg">
+        <Box sx={{ mb: { xs: 5, md: 7 }, maxWidth: "620px" }}>
           <Typography
+            component="h2"
             variant="h3"
             sx={{
-              fontWeight: "bold",
-              color: "#1e293b",
+              fontWeight: 800,
+              color: COLORS.textPrimary,
               mb: 2,
               fontSize: { xs: "1.75rem", md: "2.5rem" },
+              letterSpacing: "-0.02em",
             }}
           >
-            {t("startPage.features.title")}
+            Warum WCFinder?
           </Typography>
           <Typography
-            variant="body1"
             sx={{
-              color: "#64748b",
+              color: COLORS.textSecondary,
               fontSize: { xs: "0.95rem", md: "1.05rem" },
               lineHeight: 1.7,
             }}
           >
-            {t("startPage.features.subtitle")}
+            Alles, was du für eine saubere und stressfreie Toilettennutzung brauchst.
           </Typography>
         </Box>
 
-        {/* ✅ ASYMMETRIC: Staggered grid layout */}
-        <Grid container spacing={3}>
-          {features.map((feature, index) => (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
-              key={feature.title}
-              sx={{
-                // ✅ ASYMMETRIC: Alternate card alignment
-                display: "flex",
-                justifyContent: index % 3 === 0 ? "flex-start" : index % 3 === 1 ? "center" : "flex-end",
-              }}
-            >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+            },
+            gap: 3,
+          }}
+        >
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            const tinted = TINTED_TILES.has(index);
+            return (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                key={feature.title}
+                style={{ height: "100%" }}
+                initial={reduce ? false : { opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{ duration: 0.5, delay: (index % 3) * 0.1 }}
               >
-                <Card
+                <Box
                   sx={{
                     height: "100%",
-                    width: "100%",
-                    maxWidth: { md: index % 3 === 1 ? "95%" : "100%" }, // ✅ ASYMMETRIC: Center cards slightly smaller
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-                    borderRadius: '14px',
-                    transition: "all 0.3s ease",
-                    borderLeft: index % 2 === 0 ? "3px solid #0891b2" : "none",
-                    borderRight: index % 2 === 1 ? "3px solid #0891b2" : "none",
+                    p: 3,
+                    borderRadius: RADII.card,
+                    backgroundColor: tinted ? COLORS.accentBoxBg : "white",
+                    border: "1px solid #e2e8f0",
+                    borderLeft: tinted ? `3px solid ${COLORS.primary}` : "1px solid #e2e8f0",
+                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
                     "&:hover": {
-                      transform: "translateY(-4px) rotate(0.5deg)", // ✅ ASYMMETRIC: Slight rotation on hover
-                      boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                      transform: "translateY(-4px)",
+                      boxShadow: SHADOWS.hover,
                     },
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ mb: 2 }}>{feature.icon}</Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: "bold",
-                        color: "#1e293b",
-                        mb: 1,
-                        fontSize: "1.1rem",
-                      }}
-                    >
-                      {feature.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#64748b",
-                        lineHeight: 1.6,
-                        fontSize: "0.9rem",
-                      }}
-                    >
-                      {feature.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                  <Icon sx={{ fontSize: 34, color: COLORS.primary, mb: 1.5 }} />
+                  <Typography
+                    component="h3"
+                    sx={{
+                      fontWeight: 700,
+                      color: COLORS.textPrimary,
+                      mb: 0.75,
+                      fontSize: "1.05rem",
+                    }}
+                  >
+                    {feature.title}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: COLORS.textSecondary,
+                      lineHeight: 1.6,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {feature.description}
+                  </Typography>
+                </Box>
               </motion.div>
-            </Grid>
-          ))}
-        </Grid>
+            );
+          })}
+        </Box>
       </Container>
     </Box>
   );
 };
 
 export default FeaturesSection;
-

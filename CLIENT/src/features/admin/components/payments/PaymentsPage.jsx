@@ -40,10 +40,39 @@ import {
   AccountBalanceWallet,
   FilterList as FilterIcon,
 } from "@mui/icons-material";
+import { motion, useReducedMotion } from "framer-motion";
+import { COLORS, RADII, SHADOWS } from "../../../../theme/designTokens";
 import { adminService } from "../../services/adminService";
 import { DateRangePicker, ExportButton } from "../shared";
 
+const fieldSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    "&:hover fieldset": { borderColor: COLORS.primary },
+    "&.Mui-focused fieldset": { borderColor: COLORS.primary },
+  },
+  "& .MuiInputLabel-root.Mui-focused": { color: COLORS.primary },
+};
+
+const outlineButtonSx = {
+  textTransform: "none",
+  fontWeight: 600,
+  borderRadius: RADII.button,
+  borderColor: COLORS.border,
+  color: COLORS.primary,
+  "&:hover": { borderColor: COLORS.primary, backgroundColor: COLORS.accentBoxBg },
+};
+
+const panelSx = {
+  backgroundColor: "white",
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle,
+};
+
 const PaymentsPage = () => {
+  const reduceMotion = useReducedMotion();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -165,15 +194,15 @@ const PaymentsPage = () => {
     switch (status) {
       case "succeeded":
       case "paid":
-        return { bg: "#16a34a15", color: "#16a34a", label: "Erfolgreich" };
+        return { bg: "#ecfdf5", color: "#059669", label: "Erfolgreich" };
       case "pending":
-        return { bg: "#f59e0b15", color: "#f59e0b", label: "Ausstehend" };
+        return { bg: "#fffbeb", color: "#d97706", label: "Ausstehend" };
       case "failed":
-        return { bg: "#dc262615", color: "#dc2626", label: "Fehlgeschlagen" };
+        return { bg: "#fef2f2", color: "#dc2626", label: "Fehlgeschlagen" };
       case "refunded":
-        return { bg: "#6b728015", color: "#6b7280", label: "Erstattet" };
+        return { bg: "#f1f5f9", color: "#64748b", label: "Erstattet" };
       default:
-        return { bg: "#6b728015", color: "#6b7280", label: status };
+        return { bg: "#f1f5f9", color: "#64748b", label: status };
     }
   };
 
@@ -216,11 +245,16 @@ const PaymentsPage = () => {
   };
 
   return (
-    <Box>
+    <Box
+      component={motion.div}
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+    >
       {/* Header */}
       <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
+          <Typography variant="h4" sx={{ mb: 1, fontWeight: 800, color: COLORS.textHeading, letterSpacing: "-0.02em" }}>
             Zahlungsverwaltung
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -232,6 +266,7 @@ const PaymentsPage = () => {
           startIcon={<RefreshIcon />}
           onClick={fetchPayments}
           disabled={loading}
+          sx={outlineButtonSx}
         >
           Aktualisieren
         </Button>
@@ -240,60 +275,60 @@ const PaymentsPage = () => {
       {/* Statistics Cards */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
+          <Card sx={panelSx}>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
                 Gesamte Zahlungen
               </Typography>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.textHeading, fontVariantNumeric: "tabular-nums" }}>
                 {stats.total}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
+          <Card sx={panelSx}>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
                 Erfolgreich
               </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#16a34a" }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: "#059669", fontVariantNumeric: "tabular-nums" }}>
                 {stats.succeeded}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
+          <Card sx={panelSx}>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
                 Ausstehend
               </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#f59e0b" }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: "#d97706", fontVariantNumeric: "tabular-nums" }}>
                 {stats.pending}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
+          <Card sx={panelSx}>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
                 Gesamtumsatz
               </Typography>
-              <Typography variant="h5" fontWeight={700} sx={{ color: "#0891b2" }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.primary, fontVariantNumeric: "tabular-nums" }}>
                 {formatCurrency(stats.totalRevenue)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
         <Grid item xs={6} sm={4} md={2.4}>
-          <Card>
+          <Card sx={panelSx}>
             <CardContent>
               <Typography variant="caption" color="text.secondary">
                 Durchschnitt
               </Typography>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: COLORS.textHeading, fontVariantNumeric: "tabular-nums" }}>
                 {formatCurrency(stats.averagePayment)}
               </Typography>
             </CardContent>
@@ -302,7 +337,7 @@ const PaymentsPage = () => {
       </Grid>
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ ...panelSx, p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={5}>
             <TextField
@@ -311,6 +346,7 @@ const PaymentsPage = () => {
               placeholder="Suchen (Betrieb, Benutzer, ID)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              sx={fieldSx}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -321,7 +357,7 @@ const PaymentsPage = () => {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
+            <FormControl fullWidth size="small" sx={fieldSx}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={statusFilter}
@@ -343,6 +379,7 @@ const PaymentsPage = () => {
               variant="outlined"
               startIcon={<FilterIcon />}
               onClick={() => setShowDatePicker(!showDatePicker)}
+              sx={outlineButtonSx}
             >
               Zeitraum
             </Button>
@@ -369,11 +406,16 @@ const PaymentsPage = () => {
       </Paper>
 
       {/* Table */}
-      <Paper>
+      <Paper sx={{ ...panelSx, overflow: "hidden" }}>
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow>
+              <TableRow
+                sx={{
+                  bgcolor: COLORS.backgroundLight,
+                  "& th": { fontWeight: 600, color: COLORS.textSecondary, borderColor: COLORS.border },
+                }}
+              >
                 <TableCell>
                   <TableSortLabel
                     active={orderBy === "createdAt"}
@@ -425,7 +467,14 @@ const PaymentsPage = () => {
                 paginatedData.map((payment) => {
                   const statusInfo = getStatusColor(payment.status);
                   return (
-                    <TableRow key={payment._id} hover>
+                    <TableRow
+                      key={payment._id}
+                      hover
+                      sx={{
+                        "& td": { borderColor: COLORS.border },
+                        "&:hover": { bgcolor: COLORS.backgroundLight },
+                      }}
+                    >
                       <TableCell>{formatDate(payment.createdAt)}</TableCell>
                       <TableCell>
                         {payment.businessId?.businessName || "N/A"}
@@ -434,7 +483,7 @@ const PaymentsPage = () => {
                         {payment.userId?.username || payment.userId?.email || "N/A"}
                       </TableCell>
                       <TableCell align="right">
-                        <Typography fontWeight={600}>
+                        <Typography sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                           {formatCurrency(payment.amount)}
                         </Typography>
                       </TableCell>
@@ -446,9 +495,10 @@ const PaymentsPage = () => {
                           label={statusInfo.label}
                           size="small"
                           sx={{
+                            borderRadius: "999px",
                             bgcolor: statusInfo.bg,
                             color: statusInfo.color,
-                            fontWeight: 500,
+                            fontWeight: 600,
                           }}
                         />
                       </TableCell>
@@ -486,8 +536,16 @@ const PaymentsPage = () => {
       </Paper>
 
       {/* View Dialog */}
-      <Dialog open={viewDialogOpen} onClose={() => setViewDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Zahlungsdetails</DialogTitle>
+      <Dialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: RADII.panel } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: "-0.02em" }}>
+          Zahlungsdetails
+        </DialogTitle>
         <DialogContent>
           {selectedPayment && (
             <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -527,7 +585,7 @@ const PaymentsPage = () => {
                 <Typography variant="caption" color="text.secondary">
                   Betrag
                 </Typography>
-                <Typography variant="body1" fontWeight={600} sx={{ fontSize: "1.2rem", color: "#0891b2" }}>
+                <Typography variant="body1" sx={{ fontWeight: 800, fontSize: "1.2rem", color: COLORS.primary, fontVariantNumeric: "tabular-nums" }}>
                   {formatCurrency(selectedPayment.amount)}
                 </Typography>
               </Grid>
@@ -540,6 +598,8 @@ const PaymentsPage = () => {
                     label={getStatusColor(selectedPayment.status).label}
                     size="small"
                     sx={{
+                      borderRadius: "999px",
+                      fontWeight: 600,
                       bgcolor: getStatusColor(selectedPayment.status).bg,
                       color: getStatusColor(selectedPayment.status).color,
                     }}
@@ -565,8 +625,13 @@ const PaymentsPage = () => {
             </Grid>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setViewDialogOpen(false)}>Schließen</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setViewDialogOpen(false)}
+            sx={{ textTransform: "none", fontWeight: 600, color: COLORS.textSecondary }}
+          >
+            Schließen
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

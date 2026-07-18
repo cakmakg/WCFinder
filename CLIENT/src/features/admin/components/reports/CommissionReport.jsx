@@ -38,10 +38,51 @@ import {
   Euro as EuroIcon,
   TrendingUp as TrendingUpIcon
 } from '@mui/icons-material';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
 import { reportService } from '../../services/reportService';
 import { ExportButton } from '../shared';
 
-const COLORS = ['#0891b2', '#16a34a', '#f59e0b', '#dc2626', '#8b5cf6', '#ec4899'];
+// Recharts-Farbfamilie der Designsprache
+const CHART_COLORS = ['#0891b2', '#0e7490', '#06b6d4', '#67e8f9'];
+
+// Admin-Designsprache: Stil-Konstanten
+const sectionTitleSx = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: '-0.02em'
+};
+
+const cardSx = {
+  height: '100%',
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.card,
+  boxShadow: SHADOWS.subtle
+};
+
+const panelSx = {
+  backgroundColor: 'white',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+  overflow: 'hidden'
+};
+
+const tableHeadRowSx = {
+  backgroundColor: COLORS.backgroundLight,
+  '& .MuiTableCell-head': {
+    fontWeight: 600,
+    color: COLORS.textSecondary,
+    borderColor: COLORS.border
+  }
+};
+
+const tableBodyRowSx = {
+  '& .MuiTableCell-root': { borderColor: COLORS.border },
+  '&:hover': { backgroundColor: COLORS.backgroundLight }
+};
+
+const moneySx = { fontVariantNumeric: 'tabular-nums' };
 
 /**
  * CommissionReport Component
@@ -92,15 +133,15 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
       {/* Summary Cards */}
       <Grid container spacing={3} mb={3}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card variant="outlined">
+          <Card elevation={0} sx={cardSx}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <EuroIcon color="primary" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">
+                <EuroIcon sx={{ color: COLORS.primary }} fontSize="small" />
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                   Gesamtumsatz
                 </Typography>
               </Box>
-              <Typography variant="h5" fontWeight={700}>
+              <Typography variant="h5" sx={{ ...moneySx, fontWeight: 800, color: COLORS.textHeading }}>
                 €{commissionStats.totalRevenue.toFixed(2)}
               </Typography>
             </CardContent>
@@ -108,15 +149,15 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card variant="outlined">
+          <Card elevation={0} sx={cardSx}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <CommissionIcon color="success" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">
+                <CommissionIcon sx={{ color: COLORS.primaryDark }} fontSize="small" />
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                   Plattform Kommission
                 </Typography>
               </Box>
-              <Typography variant="h5" fontWeight={700} color="success.main">
+              <Typography variant="h5" sx={{ ...moneySx, fontWeight: 800, color: '#059669' }}>
                 €{commissionStats.platformCommission.toFixed(2)}
               </Typography>
             </CardContent>
@@ -124,15 +165,15 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card variant="outlined">
+          <Card elevation={0} sx={cardSx}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <BusinessIcon color="warning" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">
+                <BusinessIcon sx={{ color: '#06b6d4' }} fontSize="small" />
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                   Geschäft Einnahmen
                 </Typography>
               </Box>
-              <Typography variant="h5" fontWeight={700} color="warning.main">
+              <Typography variant="h5" sx={{ ...moneySx, fontWeight: 800, color: '#d97706' }}>
                 €{commissionStats.businessRevenue.toFixed(2)}
               </Typography>
             </CardContent>
@@ -140,15 +181,15 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card variant="outlined">
+          <Card elevation={0} sx={cardSx}>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={1}>
-                <TrendingUpIcon color="info" fontSize="small" />
-                <Typography variant="caption" color="text.secondary">
+                <TrendingUpIcon sx={{ color: COLORS.primary }} fontSize="small" />
+                <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 600 }}>
                   Kommissionsrate
                 </Typography>
               </Box>
-              <Typography variant="h5" fontWeight={700} color="info.main">
+              <Typography variant="h5" sx={{ ...moneySx, fontWeight: 800, color: COLORS.primary }}>
                 {commissionStats.commissionRate.toFixed(2)}%
               </Typography>
             </CardContent>
@@ -160,8 +201,8 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
       <Grid container spacing={3} mb={3}>
         {/* Pie Chart - Revenue Split */}
         <Grid item xs={12} md={4}>
-          <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          <Paper elevation={0} sx={{ p: 2, height: '100%', ...cardSx }}>
+            <Typography variant="subtitle1" sx={sectionTitleSx} gutterBottom>
               Umsatzverteilung
             </Typography>
             <Box height={250}>
@@ -178,7 +219,7 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   >
                     {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index]} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -192,23 +233,23 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
 
         {/* Bar Chart - Top Businesses */}
         <Grid item xs={12} md={8}>
-          <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+          <Paper elevation={0} sx={{ p: 2, height: '100%', ...cardSx }}>
+            <Typography variant="subtitle1" sx={sectionTitleSx} gutterBottom>
               Top 10 Geschäfte nach Umsatz
             </Typography>
             <Box height={250}>
               <ResponsiveContainer>
                 <BarChart data={topBusinessesData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={(v) => `€${v}`} />
-                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+                  <XAxis type="number" tickFormatter={(v) => `€${v}`} stroke={COLORS.textSecondary} />
+                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} stroke={COLORS.textSecondary} />
                   <Tooltip
                     formatter={(value, name) => [`€${Number(value).toFixed(2)}`, name]}
                     labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
                   />
                   <Legend />
-                  <Bar dataKey="Umsatz" fill="#0891b2" />
-                  <Bar dataKey="Kommission" fill="#16a34a" />
+                  <Bar dataKey="Umsatz" fill={CHART_COLORS[0]} />
+                  <Bar dataKey="Kommission" fill={CHART_COLORS[2]} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -217,9 +258,9 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
       </Grid>
 
       {/* Commission by Business Table */}
-      <Paper variant="outlined">
+      <Paper elevation={0} sx={panelSx}>
         <Box p={2} display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="subtitle1" fontWeight={600}>
+          <Typography variant="subtitle1" sx={sectionTitleSx}>
             Kommission nach Geschäft
           </Typography>
           <ExportButton
@@ -232,7 +273,7 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
         <TableContainer>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: 'grey.50' }}>
+              <TableRow sx={tableHeadRowSx}>
                 <TableCell>Geschäft</TableCell>
                 <TableCell align="right">Umsatz</TableCell>
                 <TableCell align="right">Kommission</TableCell>
@@ -244,8 +285,8 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
             <TableBody>
               {commissionByBusiness.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                    <Typography color="text.secondary">
+                  <TableCell colSpan={6} align="center" sx={{ py: 3, borderColor: COLORS.border }}>
+                    <Typography sx={{ color: COLORS.textSecondary }}>
                       Keine Daten für den gewählten Zeitraum
                     </Typography>
                   </TableCell>
@@ -257,7 +298,7 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
                     : 0;
 
                   return (
-                    <TableRow key={business.businessId} hover>
+                    <TableRow key={business.businessId} sx={tableBodyRowSx}>
                       <TableCell>
                         <Box display="flex" alignItems="center" gap={1}>
                           <Chip
@@ -265,27 +306,30 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
                             size="small"
                             sx={{
                               minWidth: 28,
-                              bgcolor: index < 3 ? COLORS[index] : 'grey.300',
-                              color: index < 3 ? 'white' : 'text.primary'
+                              borderRadius: '999px',
+                              fontWeight: 600,
+                              fontVariantNumeric: 'tabular-nums',
+                              bgcolor: index < 3 ? CHART_COLORS[index] : '#f1f5f9',
+                              color: index < 3 ? 'white' : COLORS.textSecondary
                             }}
                           />
-                          <Typography variant="body2" fontWeight={500}>
+                          <Typography variant="body2" fontWeight={500} sx={{ color: COLORS.textPrimary }}>
                             {business.businessName}
                           </Typography>
                         </Box>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2" fontWeight={600}>
+                        <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: COLORS.textHeading }}>
                           €{business.totalRevenue.toFixed(2)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2" color="success.main" fontWeight={600}>
+                        <Typography variant="body2" sx={{ ...moneySx, fontWeight: 700, color: '#059669' }}>
                           €{business.platformCommission.toFixed(2)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="body2">
+                        <Typography variant="body2" sx={moneySx}>
                           €{business.businessRevenue.toFixed(2)}
                         </Typography>
                       </TableCell>
@@ -293,7 +337,13 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
                         <Chip
                           label={business.transactionCount}
                           size="small"
-                          variant="outlined"
+                          sx={{
+                            borderRadius: '999px',
+                            fontWeight: 600,
+                            fontVariantNumeric: 'tabular-nums',
+                            backgroundColor: '#f1f5f9',
+                            color: COLORS.textSecondary
+                          }}
                         />
                       </TableCell>
                       <TableCell>
@@ -305,10 +355,14 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
                               flex: 1,
                               height: 8,
                               borderRadius: 4,
-                              bgcolor: 'grey.200'
+                              backgroundColor: COLORS.border,
+                              '& .MuiLinearProgress-bar': {
+                                borderRadius: 4,
+                                backgroundColor: COLORS.primary
+                              }
                             }}
                           />
-                          <Typography variant="caption" sx={{ minWidth: 40 }}>
+                          <Typography variant="caption" sx={{ minWidth: 40, ...moneySx, color: COLORS.textSecondary }}>
                             {sharePercent.toFixed(1)}%
                           </Typography>
                         </Box>
@@ -326,4 +380,3 @@ const CommissionReport = ({ payments = [], _dateRange }) => {
 };
 
 export default CommissionReport;
-

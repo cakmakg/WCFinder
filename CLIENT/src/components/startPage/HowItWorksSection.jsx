@@ -1,45 +1,46 @@
 import React from "react";
-import { Box, Container, Grid, Typography, Button } from "@mui/material";
+import { Box, Container, Typography, Button } from "@mui/material";
 // eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import SearchIcon from "@mui/icons-material/Search";
-import PhoneAndroidIcon from "@mui/icons-material/PhoneAndroid";
-import LuggageIcon from "@mui/icons-material/Luggage";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import CreditCardIcon from "@mui/icons-material/CreditCard";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
+import { COLORS, RADII, SHADOWS } from "./constants";
 
 const howItWorksSteps = [
   {
     step: 1,
-    icon: <SearchIcon sx={{ fontSize: 60, color: "#0891b2" }} />,
-    title: "1. Suchen",
-    description: "Finde eine saubere Toilette in deiner Nähe auf der Karte.",
+    icon: SearchIcon,
+    title: "Suchen",
+    description: "Gib deinen Standort ein oder nutze GPS – die Karte zeigt alle WC-Anlagen in deiner Nähe.",
     schemaName: "Standort suchen",
     schemaText:
       "Geben Sie Ihren aktuellen Standort oder eine Stadt in die WCFinder-Suchfunktion ein. Alternativ können Sie GPS nutzen, um öffentliche Toiletten in Ihrer Nähe zu finden.",
   },
   {
     step: 2,
-    icon: <PhoneAndroidIcon sx={{ fontSize: 60, color: "#0891b2" }} />,
-    title: "2. Buchen",
-    description: "Buche deine Toilette online mit Datum, Uhrzeit und Personenanzahl.",
+    icon: EventAvailableIcon,
+    title: "Buchen",
+    description: "Wähle Datum, Uhrzeit und Personenanzahl – deine Toilette wird sofort reserviert.",
     schemaName: "Toilette buchen",
     schemaText:
       "Wählen Sie auf der interaktiven Karte eine passende WC-Anlage aus. Wählen Sie Datum, Uhrzeit und Personenanzahl und klicken Sie auf Jetzt buchen.",
   },
   {
     step: 3,
-    icon: <LuggageIcon sx={{ fontSize: 60, color: "#0891b2" }} />,
-    title: "3. Bezahlen",
-    description: "Sichere Zahlung mit Stripe oder PayPal - schnell und einfach.",
+    icon: CreditCardIcon,
+    title: "Bezahlen",
+    description: "Bezahle sicher mit Stripe oder PayPal – SSL-verschlüsselt und DSGVO-konform.",
     schemaName: "Sicher bezahlen",
     schemaText:
       "Bezahlen Sie sicher mit Kreditkarte über Stripe oder PayPal. Alle Transaktionen sind SSL-verschlüsselt und DSGVO-konform.",
   },
   {
     step: 4,
-    icon: <AccessTimeIcon sx={{ fontSize: 60, color: "#0891b2" }} />,
-    title: "4. Nutzen",
-    description: "Nutze deine reservierte Toilette und hinterlasse eine Bewertung.",
+    icon: QrCode2Icon,
+    title: "Nutzen",
+    description: "Zeig deinen QR-Code am Eingang vor und geh direkt rein – ohne Wartezeit.",
     schemaName: "Toilette nutzen",
     schemaText:
       "Zeigen Sie Ihren QR-Code aus der Bestätigungs-E-Mail vor und nutzen Sie Ihre reservierte Toilette ohne Wartezeit. Hinterlassen Sie danach eine Bewertung.",
@@ -47,6 +48,8 @@ const howItWorksSteps = [
 ];
 
 const HowItWorksSection = ({ onBookNow }) => {
+  const reduce = useReducedMotion();
+
   return (
     <Box
       component="section"
@@ -57,8 +60,6 @@ const HowItWorksSection = ({ onBookNow }) => {
       sx={{
         py: { xs: 6, md: 10 },
         backgroundColor: "white",
-        position: "relative",
-        overflow: "hidden",
       }}
     >
       {/* Hidden HowTo meta for schema.org */}
@@ -69,169 +70,214 @@ const HowItWorksSection = ({ onBookNow }) => {
       />
       <meta itemProp="totalTime" content="PT5M" />
 
-      {/* Decorative blob */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: "-100px",
-          right: "-100px",
-          width: "300px",
-          height: "300px",
-          background:
-            "linear-gradient(135deg, rgba(8,145,178,0.08) 0%, transparent 100%)",
-          borderRadius: "50%",
-          filter: "blur(40px)",
-          zIndex: 0,
-        }}
-      />
-
-      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+      <Container maxWidth="lg">
         {/* Heading */}
-        <Box
-          sx={{
-            mb: 6,
-            textAlign: { xs: "center", md: "left" },
-            maxWidth: { md: "600px" },
-          }}
-        >
+        <Box sx={{ mb: { xs: 5, md: 8 }, maxWidth: "620px" }}>
           <Typography
             component="h2"
             id="how-it-works-heading"
             variant="h3"
             sx={{
               fontWeight: 800,
-              color: "#0891b2",
+              color: COLORS.textPrimary,
               mb: 2,
               fontSize: { xs: "1.75rem", md: "2.5rem" },
+              letterSpacing: "-0.02em",
             }}
           >
             Wie funktioniert das?
           </Typography>
           <Typography
-            variant="body1"
             sx={{
-              color: "#64748b",
+              color: COLORS.textSecondary,
               fontSize: { xs: "0.95rem", md: "1.05rem" },
               lineHeight: 1.7,
             }}
           >
-            Mit WCFinder findest du schnell und einfach saubere Toiletten in
-            deiner Nähe. Buche online, bezahle sicher und nutze deine
-            reservierte Toilette ohne Wartezeit.
+            Von der Suche bis zur Tür in weniger als 2 Minuten – in vier einfachen Schritten.
           </Typography>
         </Box>
 
         {/* Steps — semantic <ol> for HowTo */}
-        <Grid
-          container
+        <Box
           component="ol"
-          spacing={4}
-          sx={{ mb: 4, listStyle: "none", pl: 0 }}
+          sx={{
+            listStyle: "none",
+            p: 0,
+            m: 0,
+            position: "relative",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "repeat(4, 1fr)" },
+            gap: { xs: 0, md: 4 },
+          }}
         >
-          {howItWorksSteps.map((step, index) => (
-            <Grid
-              item
-              component="li"
-              xs={12}
-              sm={6}
-              md={3}
-              key={step.step}
-              itemScope
-              itemType="https://schema.org/HowToStep"
-              sx={{ display: "flex" }}
-            >
-              <meta itemProp="name" content={step.schemaName} />
-              <meta itemProp="text" content={step.schemaText} />
-              <meta itemProp="position" content={String(step.step)} />
+          {/* Verbindungslinie (Desktop), zeichnet sich beim Scrollen */}
+          <Box
+            aria-hidden="true"
+            sx={{
+              display: { xs: "none", md: "block" },
+              position: "absolute",
+              top: 27,
+              left: "12%",
+              right: "12%",
+              height: 2,
+              backgroundColor: "#e2e8f0",
+              overflow: "hidden",
+            }}
+          >
+            <motion.div
+              initial={reduce ? false : { scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, amount: 1 }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+              style={{
+                height: "100%",
+                backgroundColor: COLORS.primary,
+                transformOrigin: "left",
+              }}
+            />
+          </Box>
 
-              <motion.div
-                style={{ width: "100%" }}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+          {howItWorksSteps.map((step, index) => {
+            const Icon = step.icon;
+            const isLast = index === howItWorksSteps.length - 1;
+            return (
+              <Box
+                component="li"
+                key={step.step}
+                itemScope
+                itemType="https://schema.org/HowToStep"
+                sx={{
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: { xs: "row", md: "column" },
+                  gap: { xs: 2.5, md: 0 },
+                  pb: { xs: isLast ? 0 : 4, md: 0 },
+                }}
               >
-                <Box
-                  sx={{
-                    textAlign: {
-                      xs: "center",
-                      md: index % 2 === 0 ? "left" : "right",
-                    },
-                    p: 3,
-                    position: "relative",
-                  }}
+                <meta itemProp="name" content={step.schemaName} />
+                <meta itemProp="text" content={step.schemaText} />
+                <meta itemProp="position" content={String(step.step)} />
+
+                {/* Vertikale Linie (Mobil) */}
+                {!isLast && (
+                  <Box
+                    aria-hidden="true"
+                    sx={{
+                      display: { xs: "block", md: "none" },
+                      position: "absolute",
+                      top: 56,
+                      bottom: 8,
+                      left: 27,
+                      width: 2,
+                      backgroundColor: "#e2e8f0",
+                    }}
+                  />
+                )}
+
+                <motion.div
+                  initial={reduce ? false : { opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{ duration: 0.5, delay: index * 0.12 }}
+                  style={{ display: "flex", flexShrink: 0 }}
                 >
                   <Box
                     sx={{
-                      width: 100,
-                      height: 100,
+                      width: 56,
+                      height: 56,
                       borderRadius: "50%",
-                      backgroundColor: "rgba(8,145,178,0.1)",
+                      backgroundColor: COLORS.accentBoxBg,
+                      border: `2px solid ${COLORS.primary}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      mx: { xs: "auto", md: index % 2 === 0 ? 0 : "auto" },
-                      ml: { md: index % 2 === 0 ? 0 : "auto" },
-                      mr: { md: index % 2 === 0 ? "auto" : 0 },
-                      mb: 2,
                       position: "relative",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        top: index % 2 === 0 ? "-10px" : "auto",
-                        bottom: index % 2 === 0 ? "auto" : "-10px",
-                        left: index % 2 === 0 ? "-10px" : "auto",
-                        right: index % 2 === 0 ? "auto" : "-10px",
-                        width: "120px",
-                        height: "120px",
-                        borderRadius: "50%",
-                        background:
-                          "linear-gradient(135deg, rgba(8,145,178,0.05) 0%, transparent 100%)",
-                        zIndex: -1,
-                      },
+                      zIndex: 1,
+                      mb: { md: 2.5 },
                     }}
                   >
-                    {step.icon}
+                    <Icon sx={{ fontSize: 26, color: COLORS.primary }} />
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: -6,
+                        right: -6,
+                        width: 22,
+                        height: 22,
+                        borderRadius: "50%",
+                        backgroundColor: COLORS.primary,
+                        color: "white",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {step.step}
+                    </Box>
                   </Box>
+                </motion.div>
+
+                <motion.div
+                  initial={reduce ? false : { opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{ duration: 0.5, delay: index * 0.12 + 0.1 }}
+                >
                   <Typography
                     component="h3"
-                    variant="h6"
-                    sx={{ fontWeight: 700, color: "#0f172a", mb: 1 }}
+                    sx={{
+                      fontWeight: 700,
+                      color: COLORS.textPrimary,
+                      fontSize: "1.1rem",
+                      mb: 0.75,
+                    }}
                   >
                     {step.title}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#64748b" }}>
+                  <Typography
+                    sx={{
+                      color: COLORS.textSecondary,
+                      fontSize: "0.9rem",
+                      lineHeight: 1.6,
+                      maxWidth: { md: "26ch" },
+                    }}
+                  >
                     {step.description}
                   </Typography>
-                </Box>
-              </motion.div>
-            </Grid>
-          ))}
-        </Grid>
+                </motion.div>
+              </Box>
+            );
+          })}
+        </Box>
 
-        <Box sx={{ textAlign: "center", mt: 4 }}>
+        <Box sx={{ textAlign: { xs: "center", md: "left" }, mt: { xs: 5, md: 7 } }}>
           <Button
             variant="contained"
             size="large"
             onClick={onBookNow}
             sx={{
-              background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
+              background: COLORS.primaryGradient,
               color: "white",
-              px: 6,
+              px: 5,
               py: 1.5,
-              fontSize: "1.1rem",
+              fontSize: "1rem",
               fontWeight: 600,
               textTransform: "none",
-              borderRadius: "12px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+              borderRadius: RADII.button,
+              boxShadow: SHADOWS.subtle,
+              transition: "transform 0.2s, box-shadow 0.2s",
               "&:hover": {
-                background:
-                  "linear-gradient(135deg, #0e7490 0%, #155e75 100%)",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                background: COLORS.primaryGradientHover,
+                transform: "translateY(-1px)",
+                boxShadow: SHADOWS.hover,
               },
+              "&:active": { transform: "translateY(0) scale(0.98)" },
             }}
           >
-            JETZT BUCHEN
+            Jetzt buchen
           </Button>
         </Box>
       </Container>

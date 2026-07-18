@@ -18,6 +18,7 @@ import BusinessList from '../components/business/BusinessList';
 import Dashboard from './Dashboard';
 import { DRAWER_WIDTH, DRAWER_WIDTH_MOBILE } from '../constants/layout';
 import SEOHead from '../components/SEO/SEOHead';
+import { COLORS } from '../theme/designTokens';
 
 export default function Home() {
   const theme = useTheme();
@@ -78,12 +79,13 @@ export default function Home() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: '#f5f5f5' }}>
+    <Box sx={{ display: 'flex', height: '100vh', backgroundColor: COLORS.backgroundLight }}>
       <SEOHead
-        title="Find Toilets Near You | WCFinder - Toilet Map & Booking"
-        description="Search and find public toilets near you. Browse our map of WC facilities, public restrooms, and toiletten. Book and reserve toilets easily. Tuvalet bulucu, WC finder."
-        keywords="toilet map, wc finder, tuvalet haritası, find toilet near me, public toilet, wc near me, toilet booking, tuvalet rezervasyonu, toilet search"
+        title="Toiletten in deiner Nähe finden | WCFinder – Toilettenkarte & Buchung"
+        description="Finde und buche saubere öffentliche Toiletten in deiner Nähe. Entdecke WC-Anlagen auf der Karte, vergleiche Standorte und reserviere ganz einfach online."
+        keywords="toilettenkarte, wc finder, öffentliche toilette, toilette in der nähe, wc in der nähe, toilette buchen, toilette reservieren, toilettensuche, barrierefreie toilette"
         url="/home"
+        locale="de_DE"
       />
       <CssBaseline />
 
@@ -155,7 +157,7 @@ export default function Home() {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
               backgroundColor: 'white',
-              borderRight: '1px solid rgba(8,145,178,0.1)',
+              borderRight: `1px solid ${COLORS.border}`,
               mt: 8,
               height: 'calc(100% - 64px)',
               boxShadow: '2px 0 12px rgba(0,0,0,0.04)',
@@ -186,7 +188,7 @@ export default function Home() {
         sx={{
           flexGrow: 1,
           width: { lg: `calc(100% - ${DRAWER_WIDTH}px)` },
-          backgroundColor: '#f5f5f5',
+          backgroundColor: COLORS.backgroundLight,
           minHeight: '100vh',
           overflow: 'hidden'
         }}

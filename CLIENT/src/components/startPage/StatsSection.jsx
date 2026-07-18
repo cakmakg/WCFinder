@@ -1,161 +1,151 @@
-import React from "react";
-import { Box, Container, Grid, Typography } from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import { Box, Container, Typography } from "@mui/material";
 // eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
+import { motion, animate, useInView, useReducedMotion } from "framer-motion";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import LocationCityIcon from "@mui/icons-material/LocationCity";
 import BookOnlineIcon from "@mui/icons-material/BookOnline";
 import StarIcon from "@mui/icons-material/Star";
+import { COLORS } from "./constants";
 
 const stats = [
   {
     icon: StorefrontIcon,
-    value: "500+",
+    to: 500,
+    suffix: "+",
     label: "Partner-Standorte",
     sublabel: "in ganz Deutschland",
-    color: "#0891b2",
   },
   {
     icon: LocationCityIcon,
-    value: "50+",
+    to: 50,
+    suffix: "+",
     label: "Städte",
     sublabel: "Berlin, Hamburg, München u.v.m.",
-    color: "#0e7490",
   },
   {
     icon: BookOnlineIcon,
-    value: "10.000+",
+    to: 10000,
+    suffix: "+",
     label: "Buchungen",
     sublabel: "pro Monat",
-    color: "#0891b2",
   },
   {
     icon: StarIcon,
-    value: "4,9 / 5",
+    to: 4.9,
+    decimals: 1,
+    suffix: " / 5",
     label: "Ø Bewertung",
     sublabel: "aus 2.847 Rezensionen",
-    color: "#f59e0b",
   },
 ];
 
+const CountUp = ({ to, decimals = 0, suffix = "" }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const reduce = useReducedMotion();
+  const [value, setValue] = useState(reduce ? to : 0);
+
+  useEffect(() => {
+    if (!inView || reduce) return undefined;
+    const controls = animate(0, to, {
+      duration: 1.6,
+      ease: "easeOut",
+      onUpdate: (v) => setValue(v),
+    });
+    return () => controls.stop();
+  }, [inView, reduce, to]);
+
+  const formatted = value.toLocaleString("de-DE", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+  return (
+    <span ref={ref}>
+      {formatted}
+      {suffix}
+    </span>
+  );
+};
+
 const StatsSection = () => {
+  const reduce = useReducedMotion();
+
   return (
     <Box
       component="section"
       aria-label="WCFinder Statistiken"
       sx={{
-        background: "linear-gradient(135deg, #0891b2 0%, #0e7490 100%)",
-        py: { xs: 5, md: 7 },
-        position: "relative",
-        overflow: "hidden",
+        backgroundColor: "#f8fafc",
+        borderTop: "1px solid #e2e8f0",
+        borderBottom: "1px solid #e2e8f0",
+        py: { xs: 5, md: 6 },
       }}
     >
-      {/* Decorative circles */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: "-80px",
-          right: "-80px",
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,0.05)",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: "-60px",
-          left: "-60px",
-          width: "200px",
-          height: "200px",
-          borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,0.05)",
-        }}
-      />
-
-      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
-        <Grid container spacing={3} justifyContent="center">
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
+            gap: { xs: 4, md: 0 },
+          }}
+        >
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <Grid item xs={6} md={3} key={stat.label}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+              <motion.div
+                key={stat.label}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
+              >
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    px: 2,
+                    borderLeft: {
+                      md: index > 0 ? "1px solid #e2e8f0" : "none",
+                    },
+                  }}
                 >
-                  <Box
+                  <Icon sx={{ fontSize: 26, color: COLORS.primary, mb: 1 }} />
+                  <Typography
                     sx={{
-                      textAlign: "center",
-                      p: { xs: 2, md: 3 },
-                      borderRadius: "16px",
-                      backgroundColor: "rgba(255,255,255,0.1)",
-                      backdropFilter: "blur(4px)",
-                      border: "1px solid rgba(255,255,255,0.15)",
-                      transition: "transform 0.2s, background-color 0.2s",
-                      "&:hover": {
-                        backgroundColor: "rgba(255,255,255,0.18)",
-                        transform: "translateY(-4px)",
-                      },
+                      fontWeight: 800,
+                      color: COLORS.textPrimary,
+                      fontSize: { xs: "1.7rem", md: "2.2rem" },
+                      lineHeight: 1.1,
+                      fontVariantNumeric: "tabular-nums",
+                      letterSpacing: "-0.02em",
                     }}
                   >
-                    <Box
-                      sx={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 48,
-                        height: 48,
-                        borderRadius: "12px",
-                        backgroundColor: "rgba(255,255,255,0.15)",
-                        mb: 1.5,
-                      }}
-                    >
-                      <Icon sx={{ color: "#fff", fontSize: 24 }} />
-                    </Box>
-
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 800,
-                        color: "#fff",
-                        fontSize: { xs: "1.5rem", md: "2rem" },
-                        lineHeight: 1,
-                        mb: 0.5,
-                      }}
-                    >
-                      {stat.value}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "rgba(255,255,255,0.95)",
-                        fontWeight: 700,
-                        fontSize: { xs: "0.8rem", md: "0.9rem" },
-                        mb: 0.25,
-                      }}
-                    >
-                      {stat.label}
-                    </Typography>
-
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "rgba(255,255,255,0.65)",
-                        fontSize: { xs: "0.7rem", md: "0.75rem" },
-                      }}
-                    >
-                      {stat.sublabel}
-                    </Typography>
-                  </Box>
-                </motion.div>
-              </Grid>
+                    <CountUp to={stat.to} decimals={stat.decimals} suffix={stat.suffix} />
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: COLORS.textPrimary,
+                      fontWeight: 600,
+                      fontSize: { xs: "0.85rem", md: "0.95rem" },
+                      mt: 0.5,
+                    }}
+                  >
+                    {stat.label}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: COLORS.textSecondary,
+                      fontSize: { xs: "0.72rem", md: "0.78rem" },
+                    }}
+                  >
+                    {stat.sublabel}
+                  </Typography>
+                </Box>
+              </motion.div>
             );
           })}
-        </Grid>
+        </Box>
       </Container>
     </Box>
   );

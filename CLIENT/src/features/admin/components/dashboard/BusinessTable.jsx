@@ -15,6 +15,7 @@ import {
   Typography,
   Box,
 } from "@mui/material";
+import { COLORS, RADII, SHADOWS } from "../../../../theme/designTokens";
 
 const BusinessTable = ({ data, loading }) => {
   const [orderBy, setOrderBy] = useState("totalSales");
@@ -70,7 +71,7 @@ const BusinessTable = ({ data, loading }) => {
 
   if (loading) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb" }}>
+      <Paper sx={{ p: 3, borderRadius: RADII.panel, boxShadow: SHADOWS.subtle, border: `1px solid ${COLORS.border}` }}>
         <Typography>Lädt...</Typography>
       </Paper>
     );
@@ -78,8 +79,8 @@ const BusinessTable = ({ data, loading }) => {
 
   if (!data || data.length === 0) {
     return (
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e5e7eb" }}>
-        <Typography color="text.secondary">Keine Daten verfügbar</Typography>
+      <Paper sx={{ p: 3, borderRadius: RADII.panel, boxShadow: SHADOWS.subtle, border: `1px solid ${COLORS.border}` }}>
+        <Typography sx={{ color: COLORS.textSecondary }}>Keine Daten verfügbar</Typography>
       </Paper>
     );
   }
@@ -87,19 +88,35 @@ const BusinessTable = ({ data, loading }) => {
   return (
     <Paper
       sx={{
-        borderRadius: 2,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        border: "1px solid #e5e7eb",
-        backgroundColor: "white",
+        borderRadius: RADII.panel,
+        boxShadow: SHADOWS.subtle,
+        border: `1px solid ${COLORS.border}`,
+        backgroundColor: COLORS.backgroundWhite,
+        overflow: "hidden",
       }}
     >
-      <Box sx={{ p: 2.5, borderBottom: "1px solid #e5e7eb" }}>
-        <Typography variant="h6" fontWeight={600} sx={{ color: "#111827", fontSize: "1rem" }}>
+      <Box sx={{ p: 2.5, borderBottom: `1px solid ${COLORS.border}` }}>
+        <Typography variant="h6" sx={{ fontWeight: 800, color: COLORS.textHeading, letterSpacing: "-0.02em", fontSize: "1rem" }}>
           Betriebsumsätze
         </Typography>
       </Box>
       <TableContainer>
-        <Table>
+        <Table
+          sx={{
+            "& .MuiTableHead-root .MuiTableCell-root": {
+              backgroundColor: COLORS.backgroundLight,
+              fontWeight: 600,
+              color: COLORS.textSecondary,
+              borderBottom: `1px solid ${COLORS.border}`,
+            },
+            "& .MuiTableBody-root .MuiTableCell-root": {
+              borderBottom: `1px solid ${COLORS.border}`,
+            },
+            "& .MuiTableBody-root .MuiTableRow-hover:hover": {
+              backgroundColor: COLORS.backgroundLight,
+            },
+          }}
+        >
           <TableHead>
             <TableRow>
               <TableCell>
@@ -154,10 +171,10 @@ const BusinessTable = ({ data, loading }) => {
               <TableRow key={row.id} hover>
                 <TableCell>{row.businessName}</TableCell>
                 <TableCell>{row.owner}</TableCell>
-                <TableCell align="right">{formatCurrency(row.dailySales)}</TableCell>
-                <TableCell align="right">{formatCurrency(row.monthlySales)}</TableCell>
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.dailySales)}</TableCell>
+                <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.monthlySales)}</TableCell>
                 <TableCell align="right">
-                  <Typography fontWeight={600}>{formatCurrency(row.totalSales)}</Typography>
+                  <Typography fontWeight={600} sx={{ fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.totalSales)}</Typography>
                 </TableCell>
               </TableRow>
             ))}

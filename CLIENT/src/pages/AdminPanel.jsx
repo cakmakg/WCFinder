@@ -4,10 +4,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+// eslint-disable-next-line no-unused-vars
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Box,
   Grid,
-  Paper,
   Typography,
   CircularProgress,
   Alert,
@@ -62,24 +63,35 @@ import {
   generateRecentActivity,
   generatePieChartData,
 } from "../features/admin/utils/dashboardUtils";
+import { COLORS, RADII, SHADOWS } from "../theme/designTokens";
 
-// Pie-Chart-Farben
-const PIE_COLORS = ["#16a34a", "#3b82f6", "#8b5cf6", "#f59e0b", "#dc2626", "#6b7280"];
-
-// Styled Card Component
+// Einheitlicher Panel-Stil (Datenpanels: kein Hover-Lift)
 const StyledCard = styled(Card)(() => ({
-  borderRadius: 16,
-  boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
-  border: '1px solid #e5e7eb',
-  backgroundColor: 'white',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-  },
+  borderRadius: RADII.panel,
+  boxShadow: SHADOWS.subtle,
+  border: `1px solid ${COLORS.border}`,
+  backgroundColor: COLORS.backgroundWhite,
 }));
+
+// Wiederkehrender Stil für Bereichsüberschriften in Panels
+const sectionTitleSx = {
+  fontWeight: 800,
+  color: COLORS.textHeading,
+  letterSpacing: "-0.02em",
+};
+
+// Einheitlicher Tooltip-Stil für Recharts
+const chartTooltipStyle = {
+  background: "white",
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: "12px",
+  boxShadow: SHADOWS.subtle,
+  fontSize: "13px",
+};
 
 const AdminPanel = () => {
   const { currentUser, loading: authLoading } = useSelector((state) => state.auth);
+  const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -328,6 +340,12 @@ const AdminPanel = () => {
 
   return (
     <AdminLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {/* Einmaliger Seiten-Fade; bei reduzierter Bewegung deaktiviert */}
+      <motion.div
+        initial={prefersReducedMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
@@ -348,13 +366,13 @@ const AdminPanel = () => {
                 '& .MuiAlert-icon': { color: '#f59e0b' }
               }}
               action={
-                <Button color="inherit" size="small" onClick={() => setActiveTab(2)} sx={{ fontWeight: 600 }}>
+                <Button color="inherit" size="small" onClick={() => setActiveTab(2)} sx={{ fontWeight: 600, textTransform: "none", borderRadius: RADII.button }}>
                   Betriebe anzeigen
                 </Button>
               }
             >
               <Typography variant="body1" fontWeight={600}>
-                ⚠️ {stats.pendingBusinesses} Betriebe warten auf Genehmigung!
+                {stats.pendingBusinesses} Betriebe warten auf Genehmigung!
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
                 Neue Partneranmeldungen warten auf Admin-Genehmigung. Bitte unter &quot;Betriebe&quot; prüfen.
@@ -365,7 +383,7 @@ const AdminPanel = () => {
           {/* Header */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
             <Box>
-              <Typography variant="h5" fontWeight={700} sx={{ color: '#1a1a2e' }}>
+              <Typography variant="h5" sx={sectionTitleSx}>
                 Dashboard
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -382,7 +400,20 @@ const AdminPanel = () => {
                   <MenuItem value="365">Letztes Jahr</MenuItem>
                 </Select>
               </FormControl>
-              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchData} size="small">
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={fetchData}
+                size="small"
+                sx={{
+                  borderRadius: RADII.button,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  color: COLORS.primary,
+                  borderColor: COLORS.primary,
+                  "&:hover": { borderColor: COLORS.primaryDark, backgroundColor: COLORS.accentBoxBg },
+                }}
+              >
                 Aktualisieren
               </Button>
               <ExportButton data={dashboardExportData} filename="dashboard_report" title="Dashboard Export" />
@@ -442,8 +473,8 @@ const AdminPanel = () => {
             <StyledCard>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>Umsatztrend</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>Letzte 12 Monate</Typography>
+                  <Typography variant="h6" sx={sectionTitleSx}>Umsatztrend</Typography>
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>Letzte 12 Monate</Typography>
                 </Box>
                 <RevenueChart data={lineChartData} loading={loading} />
               </CardContent>
@@ -451,8 +482,8 @@ const AdminPanel = () => {
             <StyledCard sx={{ height: '100%' }}>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>Betriebsstatus</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748b' }}>Alle Zeiträume</Typography>
+                  <Typography variant="h6" sx={sectionTitleSx}>Betriebsstatus</Typography>
+                  <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>Alle Zeiträume</Typography>
                 </Box>
                 <ChannelDistributionChart data={pieChartData} loading={loading} />
               </CardContent>
@@ -465,8 +496,8 @@ const AdminPanel = () => {
               <StyledCard sx={{ height: '100%' }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>Buchungsstatus</Typography>
-                    <Typography variant="caption" sx={{ color: '#64748b' }}>Alle Zeiträume</Typography>
+                    <Typography variant="h6" sx={sectionTitleSx}>Buchungsstatus</Typography>
+                    <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>Alle Zeiträume</Typography>
                   </Box>
                   {statusData.length > 0 ? (
                     <>
@@ -479,7 +510,7 @@ const AdminPanel = () => {
                             ))}
                           </Pie>
                           <Tooltip
-                            contentStyle={{ background: 'white', border: 'none', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', fontSize: '13px' }}
+                            contentStyle={chartTooltipStyle}
                             formatter={(value, name) => [`${value} Buchungen`, name]}
                           />
                         </PieChart>
@@ -488,7 +519,7 @@ const AdminPanel = () => {
                         {statusData.map((item) => (
                           <Box key={item.name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.color }} />
-                            <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>{item.name}</Typography>
+                            <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 500 }}>{item.name}</Typography>
                           </Box>
                         ))}
                       </Box>
@@ -505,23 +536,23 @@ const AdminPanel = () => {
               <StyledCard>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>Umsatzstärkste Betriebe</Typography>
-                    <Chip label="Top 10" size="small" sx={{ bgcolor: '#0891b215', color: '#0891b2', fontWeight: 600, fontSize: '0.7rem' }} />
+                    <Typography variant="h6" sx={sectionTitleSx}>Umsatzstärkste Betriebe</Typography>
+                    <Chip label="Top 10" size="small" sx={{ borderRadius: "999px", bgcolor: COLORS.accentBoxBg, color: COLORS.primary, fontWeight: 600, fontSize: '0.7rem' }} />
                   </Box>
                   {topBusinesses.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={topBusinesses} margin={{ top: 10, right: 20, bottom: 60, left: 10 }}>
                         <defs>
                           <linearGradient id="colorBarGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0891b2" stopOpacity={1} />
-                            <stop offset="95%" stopColor="#0891b2" stopOpacity={0.6} />
+                            <stop offset="5%" stopColor={COLORS.primary} stopOpacity={1} />
+                            <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.6} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                        <XAxis dataKey="name" stroke="#94a3b8" style={{ fontSize: "10px" }} tick={{ fill: '#64748b' }} angle={-45} textAnchor="end" height={60} interval={0} />
-                        <YAxis stroke="#94a3b8" style={{ fontSize: "11px" }} tick={{ fill: '#64748b' }} tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(1)}K` : `€${value}`} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} vertical={false} />
+                        <XAxis dataKey="name" stroke={COLORS.textLight} style={{ fontSize: "10px" }} tick={{ fill: COLORS.textSecondary }} angle={-45} textAnchor="end" height={60} interval={0} />
+                        <YAxis stroke={COLORS.textLight} style={{ fontSize: "11px" }} tick={{ fill: COLORS.textSecondary }} tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(1)}K` : `€${value}`} />
                         <Tooltip
-                          contentStyle={{ background: "white", border: "none", borderRadius: "12px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", fontSize: '13px' }}
+                          contentStyle={chartTooltipStyle}
                           formatter={(value) => [formatCurrency(value), 'Umsatz']}
                           cursor={{ fill: 'rgba(8, 145, 178, 0.1)' }}
                         />
@@ -542,33 +573,33 @@ const AdminPanel = () => {
           <StyledCard>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a1a2e' }}>Täglicher Buchungs- & Umsatztrend</Typography>
+                <Typography variant="h6" sx={sectionTitleSx}>Täglicher Buchungs- & Umsatztrend</Typography>
                 <Box sx={{ display: 'flex', gap: 3 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#16a34a' }} />
-                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>Buchungen</Typography>
+                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#06b6d4' }} />
+                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 500 }}>Buchungen</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#0891b2' }} />
-                    <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>Umsatz (€)</Typography>
+                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: COLORS.primaryDark }} />
+                    <Typography variant="caption" sx={{ color: COLORS.textSecondary, fontWeight: 500 }}>Umsatz (€)</Typography>
                   </Box>
                 </Box>
               </Box>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={dailyRevenueData} margin={{ top: 10, right: 30, bottom: 20, left: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" stroke="#94a3b8" style={{ fontSize: "11px" }} tick={{ fill: '#64748b' }} angle={-45} textAnchor="end" height={50} />
-                  <YAxis yAxisId="left" stroke="#94a3b8" style={{ fontSize: "11px" }} tick={{ fill: '#64748b' }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" style={{ fontSize: "11px" }} tick={{ fill: '#64748b' }} tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(1)}K` : `€${value}`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} />
+                  <XAxis dataKey="date" stroke={COLORS.textLight} style={{ fontSize: "11px" }} tick={{ fill: COLORS.textSecondary }} angle={-45} textAnchor="end" height={50} />
+                  <YAxis yAxisId="left" stroke={COLORS.textLight} style={{ fontSize: "11px" }} tick={{ fill: COLORS.textSecondary }} />
+                  <YAxis yAxisId="right" orientation="right" stroke={COLORS.textLight} style={{ fontSize: "11px" }} tick={{ fill: COLORS.textSecondary }} tickFormatter={(value) => value >= 1000 ? `€${(value / 1000).toFixed(1)}K` : `€${value}`} />
                   <Tooltip
-                    contentStyle={{ background: "white", border: "none", borderRadius: "12px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)", fontSize: '13px' }}
+                    contentStyle={chartTooltipStyle}
                     formatter={(value, name) => {
                       if (name === 'bookings') return [value, 'Buchungen'];
                       return [formatCurrency(value), 'Umsatz'];
                     }}
                   />
-                  <Line yAxisId="left" type="monotone" dataKey="bookings" stroke="#16a34a" strokeWidth={2.5} dot={{ fill: '#16a34a', r: 3 }} activeDot={{ r: 5 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#0891b2" strokeWidth={2.5} dot={{ fill: '#0891b2', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line yAxisId="left" type="monotone" dataKey="bookings" stroke="#06b6d4" strokeWidth={2.5} dot={{ fill: '#06b6d4', r: 3 }} activeDot={{ r: 5 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke={COLORS.primaryDark} strokeWidth={2.5} dot={{ fill: COLORS.primaryDark, r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -634,7 +665,7 @@ const AdminPanel = () => {
       {/* Tab 5: Einstellungen */}
       {activeTab === 5 && (
         <Box sx={{ p: 3 }}>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 2 }}>
+          <Typography variant="h4" sx={{ ...sectionTitleSx, mb: 2 }}>
             Einstellungen
           </Typography>
           <Typography color="text.secondary">
@@ -642,6 +673,7 @@ const AdminPanel = () => {
           </Typography>
         </Box>
       )}
+      </motion.div>
     </AdminLayout>
   );
 };

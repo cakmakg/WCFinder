@@ -64,6 +64,18 @@ const StartPageHeader = ({ onLoginClick, onPartnerClick }) => {
                 cursor: "pointer",
                 "&:hover": { color: "#0891b2" },
               }}
+              onClick={() => document.getElementById("wie-funktioniert-das")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              So funktioniert&apos;s
+            </Typography>
+            <Typography
+              sx={{
+                color: "#64748b",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                "&:hover": { color: "#0891b2" },
+              }}
               onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
             >
               {t("startPage.featuresNav")}

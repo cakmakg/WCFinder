@@ -22,6 +22,29 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearIcon from '@mui/icons-material/Clear';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { COLORS, RADII, SHADOWS } from '../../../../theme/designTokens';
+
+const INPUT_SX = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: RADII.input,
+    backgroundColor: COLORS.backgroundLight,
+    '& fieldset': { borderColor: COLORS.border },
+    '&:hover fieldset': { borderColor: COLORS.primary },
+    '&.Mui-focused fieldset': { borderColor: COLORS.primary }
+  },
+  '& .MuiInputLabel-root.Mui-focused': { color: COLORS.primary }
+};
+
+const PILL_CHIP_SX = {
+  bgcolor: COLORS.accentBoxBg,
+  color: COLORS.primary,
+  fontWeight: 600,
+  borderRadius: '999px',
+  '& .MuiChip-deleteIcon': {
+    color: COLORS.primary,
+    '&:hover': { color: COLORS.primaryDark }
+  }
+};
 
 /**
  * AdvancedFilters Component
@@ -113,7 +136,17 @@ const AdvancedFilters = ({
   const activeCount = getActiveFilterCount();
 
   return (
-    <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', ...sx }}>
+    <Paper
+      elevation={0}
+      sx={{
+        bgcolor: COLORS.backgroundWhite,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: RADII.card,
+        boxShadow: SHADOWS.subtle,
+        overflow: 'hidden',
+        ...sx
+      }}
+    >
       {/* Header */}
       <Box
         display="flex"
@@ -121,18 +154,17 @@ const AdvancedFilters = ({
         justifyContent="space-between"
         p={2}
         sx={{
-          bgcolor: 'grey.50',
-          borderBottom: expanded ? '1px solid' : 'none',
-          borderColor: 'divider'
+          bgcolor: COLORS.backgroundLight,
+          borderBottom: expanded ? `1px solid ${COLORS.border}` : 'none'
         }}
       >
         <Box display="flex" alignItems="center" gap={1}>
-          <FilterListIcon color="primary" fontSize="small" />
-          <Typography variant="subtitle2" fontWeight={600}>
+          <FilterListIcon fontSize="small" sx={{ color: COLORS.primary }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: COLORS.textHeading }}>
             Filter
           </Typography>
           {activeCount > 0 && (
-            <Chip label={activeCount} size="small" color="primary" sx={{ height: 20 }} />
+            <Chip label={activeCount} size="small" sx={{ height: 20, ...PILL_CHIP_SX }} />
           )}
         </Box>
 
@@ -142,7 +174,13 @@ const AdvancedFilters = ({
               size="small"
               startIcon={<ClearIcon />}
               onClick={handleReset}
-              sx={{ fontSize: '0.75rem' }}
+              sx={{
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                fontWeight: 600,
+                color: COLORS.primary,
+                '&:hover': { bgcolor: COLORS.accentBoxBg }
+              }}
             >
               Zurücksetzen
             </Button>
@@ -165,6 +203,7 @@ const AdvancedFilters = ({
                 placeholder={searchPlaceholder}
                 value={searchValue}
                 onChange={handleSearchChange}
+                sx={INPUT_SX}
                 InputProps={{
                   startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
                 }}
@@ -175,7 +214,7 @@ const AdvancedFilters = ({
             {filters.length > 0 && (
               <Stack direction="row" spacing={2} flexWrap="wrap">
                 {filters.map((filter) => (
-                  <FormControl key={filter.key} size="small" sx={{ minWidth: 200, flex: 1 }}>
+                  <FormControl key={filter.key} size="small" sx={{ minWidth: 200, flex: 1, ...INPUT_SX }}>
                     {filter.type === 'select' && (
                       <>
                         <InputLabel>{filter.label}</InputLabel>
@@ -248,6 +287,7 @@ const AdvancedFilters = ({
                     <Chip
                       label={`Suche: ${searchValue}`}
                       size="small"
+                      sx={PILL_CHIP_SX}
                       onDelete={() => handleSearchChange({ target: { value: '' } })}
                     />
                   )}
@@ -267,6 +307,7 @@ const AdvancedFilters = ({
                         key={key}
                         label={`${filter.label}: ${displayValue}`}
                         size="small"
+                        sx={PILL_CHIP_SX}
                         onDelete={() => handleFilterChange(key, '')}
                       />
                     );

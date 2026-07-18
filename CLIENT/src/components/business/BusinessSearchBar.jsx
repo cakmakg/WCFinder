@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import { COLORS, RADII } from '../../theme/designTokens';
 
 export const BusinessSearchBar = ({
   search,
@@ -29,9 +30,9 @@ export const BusinessSearchBar = ({
         startAdornment: (
           <InputAdornment position="start">
             {isSearching ? (
-              <CircularProgress size={20} sx={{ color: '#0891b2' }} />
+              <CircularProgress size={20} sx={{ color: COLORS.primary }} />
             ) : (
-              <SearchIcon sx={{ fontSize: '1.2rem', color: '#94a3b8' }} />
+              <SearchIcon sx={{ fontSize: '1.2rem', color: COLORS.textLight }} />
             )}
           </InputAdornment>
         ),
@@ -41,11 +42,11 @@ export const BusinessSearchBar = ({
               size="small"
               onClick={onClear}
               sx={{
-                color: '#94a3b8',
+                color: COLORS.textLight,
                 borderRadius: '8px',
                 '&:hover': {
                   backgroundColor: 'rgba(8,145,178,0.08)',
-                  color: '#0891b2',
+                  color: COLORS.primary,
                 },
               }}
             >
@@ -54,26 +55,24 @@ export const BusinessSearchBar = ({
           </InputAdornment>
         ),
         sx: {
-          backgroundColor: 'white',
-          borderRadius: '14px',
+          backgroundColor: COLORS.backgroundLight,
+          borderRadius: RADII.input,
           fontSize: '0.9rem',
           fontWeight: 500,
-          boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
           transition: 'all 0.25s ease',
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#e2e8f0',
-            borderWidth: '1.5px',
+            borderColor: COLORS.border,
           },
           '&:hover': {
-            boxShadow: '0 3px 10px rgba(0,0,0,0.09)',
             '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#cbd5e1',
+              borderColor: COLORS.primary,
             },
           },
           '&.Mui-focused': {
-            boxShadow: '0 0 0 3px rgba(8,145,178,0.12), 0 2px 8px rgba(0,0,0,0.08)',
+            backgroundColor: 'white',
+            boxShadow: '0 0 0 3px rgba(8,145,178,0.12)',
             '& .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#0891b2',
+              borderColor: COLORS.primary,
               borderWidth: '2px',
             },
           },
