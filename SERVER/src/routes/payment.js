@@ -11,6 +11,7 @@ const {
     createStripePayment,
     createPayPalOrder,
     capturePayPalOrder,
+    paypalRedirect,
     confirmStripePayment,
     stripeWebhook,
     refundPayment,
@@ -23,6 +24,10 @@ const paymentLimiter = require('../middleware/paymentRateLimit');
 
 // ✅ YENİ: Webhook (Auth bypass gerekli - Stripe/PayPal'dan geliyor)
 router.post('/webhook/stripe', stripeWebhook);
+
+// ✅ YENİ: PayPal redirect köprüsü (Auth bypass - alıcının tarayıcısından geliyor)
+// PayPal onay/iptal sonrası buraya döner, buradan uygulama deep-link'ine 302 yapılır.
+router.get('/paypal/redirect', paypalRedirect);
 
 // ✅ YENİ: Kullanıcı kendi ödemelerini görebilir
 router.get('/my-payments', isLogin, myPayments);

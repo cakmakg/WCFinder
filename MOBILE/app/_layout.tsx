@@ -93,7 +93,12 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const stripePublishableKey = Constants.expoConfig?.extra?.stripePublishableKey || '';
+  // `extra.stripePublishableKey` is only present when declared in app config;
+  // fall back to the EXPO_PUBLIC_ env var (a publishable key is safe to inline).
+  const stripePublishableKey =
+    Constants.expoConfig?.extra?.stripePublishableKey ||
+    process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ||
+    '';
 
   const content = (
     <ErrorBoundary>

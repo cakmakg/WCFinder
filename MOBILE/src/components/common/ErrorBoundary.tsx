@@ -72,18 +72,18 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <View style={styles.container}>
           <View style={styles.content}>
-            <Text style={styles.title}>Bir hata oluştu</Text>
+            <Text style={styles.title}>Ein Fehler ist aufgetreten</Text>
             <Text style={styles.subtitle}>
-              Üzgünüz, bir şeyler yanlış gitti. Lütfen tekrar deneyin.
+              Es tut uns leid, etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.
             </Text>
 
             {__DEV__ && this.state.error && (
               <ScrollView style={styles.errorContainer}>
-                <Text style={styles.errorTitle}>Hata Detayı:</Text>
+                <Text style={styles.errorTitle}>Fehlerdetails:</Text>
                 <Text style={styles.errorText}>{this.state.error.toString()}</Text>
                 {this.state.errorInfo && (
                   <>
-                    <Text style={styles.errorTitle}>Component Stack:</Text>
+                    <Text style={styles.errorTitle}>Komponenten-Stack:</Text>
                     <Text style={styles.errorText}>
                       {this.state.errorInfo.componentStack}
                     </Text>
@@ -97,7 +97,7 @@ class ErrorBoundary extends Component<Props, State> {
               onPress={this.resetError}
               style={styles.button}
             >
-              Tekrar Dene
+              Erneut versuchen
             </Button>
           </View>
         </View>

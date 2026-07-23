@@ -1,27 +1,26 @@
 /**
  * useAxios Hook for React Native
  *
- * Provides axios instances with token management
- * Uses expo-secure-store for hardware-backed token persistence (not AsyncStorage)
+ * Provides axios instances with token management.
+ * The authenticated instance is the centralized `api` client (SecureStore-backed
+ * token injection + refresh-and-retry). A separate public instance is used for
+ * unauthenticated calls.
  */
 
-import { useSelector, useDispatch } from 'react-redux';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import axios from 'axios';
 import api from '../services/api';
-import { tokenStorage, clearAllStorage } from '../utils/secureStorage';
-import { logoutSuccess } from '../store/slices/authSlice';
-import { API_URL, API_TIMEOUT, MAX_RETRIES, RETRY_DELAY } from '../config/api';
+import { API_URL, API_TIMEOUT } from '../config/api';
 
 /**
  * Masks sensitive fields in data objects
  */
 const maskSensitiveData = (data: any) => {
   if (!data || typeof data !== 'object') return data;
-  
+
   const sensitiveFields = ['password', 'passwd', 'pwd', 'token', 'accessToken', 'refreshToken'];
   const masked = { ...data };
-  
+
   for (const key in masked) {
     if (sensitiveFields.some(field => key.toLowerCase().includes(field.toLowerCase()))) {
       masked[key] = '***REDACTED***';
@@ -29,54 +28,39 @@ const maskSensitiveData = (data: any) => {
       masked[key] = maskSensitiveData(masked[key]);
     }
   }
-  
+
   return masked;
 };
 
 const useAxios = () => {
-  const { token } = useSelector((state: any) => state.auth);
-  const [asyncToken, setAsyncToken] = useState<string | null>(null);
-
-  const dispatch = useDispatch();
-
-  // Get token from secure storage on mount
-  useEffect(() => {
-    tokenStorage.getAccessToken().then(setAsyncToken).catch(console.error);
-  }, []);
-
-  // Use token from Redux or secure storage
-  const currentToken = token || asyncToken;
-
-  // Use centralized API URL
-  const BASE_URL = API_URL;
-
-  // Use centralized API instance which includes refresh-and-retry logic
+  // Centralized API instance which includes refresh-and-retry logic
   const axiosWithToken = api;
 
   // Public axios instance (no token)
   const axiosPublic = useMemo(() => {
     const instance = axios.create({
-      baseURL: BASE_URL,
+      baseURL: API_URL,
       timeout: API_TIMEOUT,
     });
 
     // Request interceptor
     instance.interceptors.request.use(
       (config) => {
-        const fullURL = `${config.baseURL}${config.url}`;
-        const safeData = config.data ? maskSensitiveData(config.data) : config.data;
-        
-        if (__DEV__) console.log("📤 [Public] Request:", {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          baseURL: config.baseURL,
-          fullURL: fullURL,
-          data: safeData,
-        });
+        if (__DEV__) {
+          const fullURL = `${config.baseURL}${config.url}`;
+          const safeData = config.data ? maskSensitiveData(config.data) : config.data;
+          console.log("📤 [Public] Request:", {
+            method: config.method?.toUpperCase(),
+            url: config.url,
+            baseURL: config.baseURL,
+            fullURL,
+            data: safeData,
+          });
+        }
         return config;
       },
       (error) => {
-        console.error("❌ [Public] Request error:", error);
+        if (__DEV__) console.error("❌ [Public] Request error:", error);
         return Promise.reject(error);
       }
     );
@@ -92,7 +76,8 @@ const useAxios = () => {
         return response;
       },
       (error) => {
-        console.error("❌ [Public] Response error:", {
+        // Avoid leaking response bodies / server messages to production logs
+        if (__DEV__) console.error("❌ [Public] Response error:", {
           status: error.response?.status,
           statusText: error.response?.statusText,
           url: error.config?.url,
@@ -104,10 +89,9 @@ const useAxios = () => {
     );
 
     return instance;
-  }, [BASE_URL]);
+  }, []);
 
   return { axiosWithToken, axiosPublic };
 };
 
 export default useAxios;
-

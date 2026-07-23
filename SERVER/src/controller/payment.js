@@ -130,13 +130,22 @@ module.exports = {
         */
 
     try {
-      const { usageId, bookingData } = req.body;
+      const { usageId, bookingData, returnUrl, cancelUrl } = req.body;
+
+      // Redirect tabanlı (mobil) onay için PayPal seçenekleri. Web akışı
+      // returnUrl/cancelUrl göndermez, bu yüzden options etkisiz kalır.
+      const paypalOptions = {
+        returnUrl,
+        cancelUrl,
+        serverBase: `${req.protocol}://${req.get("host")}`,
+      };
 
       logger.debug('createPayPalOrder called', {
         userId: req.user._id,
         hasUsageId: !!usageId,
         hasBookingData: !!bookingData,
         bookingDataKeys: bookingData ? Object.keys(bookingData) : null,
+        hasRedirectUrls: !!(returnUrl && cancelUrl),
       });
 
       let result;
@@ -144,7 +153,8 @@ module.exports = {
         // Mevcut usage için payment oluştur
         result = await paymentService.createPayPalOrder(
           usageId,
-          req.user._id
+          req.user._id,
+          paypalOptions
         );
       } else if (bookingData) {
         // ✅ YENİ: Booking bilgilerinden payment oluştur (ödeme sonrası usage oluşturulacak)
@@ -154,7 +164,8 @@ module.exports = {
         });
         result = await paymentService.createPayPalOrderFromBooking(
           bookingData,
-          req.user._id
+          req.user._id,
+          paypalOptions
         );
       } else {
         res.errorStatusCode = 400;
@@ -217,6 +228,34 @@ module.exports = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * PayPal redirect bridge (public, no auth).
+   *
+   * PayPal, redirect tabanlı (mobil) onay akışında alıcının tarayıcısını buraya
+   * yönlendirir; biz de uygulamanın deep-link'ine (wcfinder://...) 302 yaparız.
+   * `to` yalnızca uygulama deep-link şemalarına sınırlıdır (open-redirect'i önler).
+   */
+  paypalRedirect: (req, res) => {
+    /*
+      #swagger.tags = ["Payments"]
+      #swagger.summary = "PayPal redirect bridge to app deep link"
+    */
+    const to = req.query.to;
+    const token = req.query.token;
+
+    if (typeof to !== "string" || !/^(wcfinder|exp|exps):\/\//i.test(to)) {
+      res.errorStatusCode = 400;
+      throw new Error("Invalid redirect target");
+    }
+
+    const separator = to.includes("?") ? "&" : "?";
+    const target = token
+      ? `${to}${separator}token=${encodeURIComponent(token)}`
+      : to;
+
+    return res.redirect(302, target);
   },
 
   // ✅ YENİ: Stripe payment'i confirm et ve usage oluştur (frontend'den çağrılır)

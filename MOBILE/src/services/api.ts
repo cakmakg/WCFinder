@@ -54,10 +54,10 @@ api.interceptors.request.use(
 
 // Response interceptor - Handle errors and token refresh
 let isRefreshing = false;
-let failedQueue: Array<{
+let failedQueue: {
   resolve: (value?: any) => void;
   reject: (error?: any) => void;
-}> = [];
+}[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -78,11 +78,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    console.error('[API] Response error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.response?.data?.message || error.message
-    });
+    // Avoid leaking response bodies / server messages to production logs
+    if (__DEV__) {
+      console.error('[API] Response error:', {
+        url: error.config?.url,
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message
+      });
+    }
 
     // If it's a 401 and the request hasn't been retried yet, attempt refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -145,8 +148,11 @@ api.interceptors.response.use(
         }
 
         if (__DEV__) console.log('[API] Attempting token refresh');
-        // Use plain axios to avoid interceptor loops
-        const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+        // Use plain axios to avoid interceptor loops.
+        // Server expects the token nested under `bearer` (see auth controller).
+        const refreshResponse = await axios.post(`${API_URL}/auth/refresh`, {
+          bearer: { refreshToken },
+        });
 
         const newAccessToken = refreshResponse.data?.accessToken || refreshResponse.data?.token || refreshResponse.data?.bearer?.accessToken;
         const newUser = refreshResponse.data?.user || refreshResponse.data?.result || null;
@@ -187,11 +193,12 @@ api.interceptors.response.use(
         isRefreshing = false;
         return Promise.reject(error);
       } catch (refreshError) {
-        console.error('[API] Token refresh failed:', refreshError);
+        // The axios error may carry the request config (incl. auth headers) — dev only
+        if (__DEV__) console.error('[API] Token refresh failed:', refreshError);
         try {
           await clearAllStorage();
         } catch (clearError) {
-          console.error('[API] Failed to clear storage after refresh failure:', clearError);
+          if (__DEV__) console.error('[API] Failed to clear storage after refresh failure:', clearError);
         }
         try {
           const { store } = await import('../store/store');
@@ -208,10 +215,10 @@ api.interceptors.response.use(
 
     // Network errors
     if (error.code === 'ECONNABORTED') {
-      console.error('[API] Request timeout');
+      if (__DEV__) console.error('[API] Request timeout');
       error.message = 'Request timeout - please check your connection';
     } else if (!error.response) {
-      console.error('[API] Network error - no response received');
+      if (__DEV__) console.error('[API] Network error - no response received');
       error.message = 'Network error - please check your connection';
     }
 

@@ -44,6 +44,48 @@ class PaymentService {
   }
 
   /**
+   * ✅ Helper: Mobil (redirect tabanlı) PayPal onayı için return/cancel URL'leri üret.
+   *
+   * PayPal Orders v2 return_url yalnızca http/https kabul eder; mobil uygulama
+   * ise özel şema (wcfinder://) kullanır. Bu yüzden return/cancel URL'lerini
+   * sunucunun kendi /payments/paypal/redirect endpoint'ine yönlendiririz; o da
+   * uygulamanın deep-link'ine 302 yapar. Yalnızca app deep-link şemalarına
+   * (open-redirect'i önlemek için) izin verilir.
+   *
+   * Web (PayPal JS SDK) akışı returnUrl/cancelUrl göndermediği için null döner
+   * ve davranışı değişmez.
+   */
+  buildPayPalRedirectUrls(serverBase, returnUrl, cancelUrl) {
+    const isAppDeepLink = (u) =>
+      typeof u === "string" &&
+      u.length > 0 &&
+      u.length <= 512 &&
+      /^(wcfinder|exp|exps):\/\//i.test(u);
+
+    if (!serverBase || !isAppDeepLink(returnUrl) || !isAppDeepLink(cancelUrl)) {
+      return null;
+    }
+
+    const base = serverBase.replace(/\/+$/, "");
+    return {
+      return_url: `${base}/api/payments/paypal/redirect?to=${encodeURIComponent(returnUrl)}`,
+      cancel_url: `${base}/api/payments/paypal/redirect?to=${encodeURIComponent(cancelUrl)}`,
+    };
+  }
+
+  /**
+   * ✅ Helper: Oluşturulan PayPal order'ından alıcıya gösterilecek onay URL'ini çıkar.
+   */
+  extractPayPalApproveUrl(order) {
+    const links = order?.result?.links;
+    if (!Array.isArray(links)) return undefined;
+    const approve = links.find(
+      (l) => l && (l.rel === "approve" || l.rel === "payer-action")
+    );
+    return approve?.href;
+  }
+
+  /**
    * ✅ Helper: Booking metadata'sını normalize et (tutarlı karşılaştırma için)
    */
   normalizeBookingMetadata(bookingData) {
@@ -446,7 +488,7 @@ class PaymentService {
   /**
    * PayPal ödeme başlat (usageId ile - mevcut kullanım)
    */
-  async createPayPalOrder(usageId, userId) {
+  async createPayPalOrder(usageId, userId, options = {}) {
     // Usage kontrolü
     const usage = await usageRepository.findById(usageId);
     if (!usage) {
@@ -478,7 +520,7 @@ class PaymentService {
     
     const request = new paypal.orders.OrdersCreateRequest();
     request.prefer("return=representation");
-    request.requestBody({
+    const usageOrderBody = {
       intent: "CAPTURE",
       purchase_units: [
         {
@@ -489,7 +531,23 @@ class PaymentService {
           description: `Payment for usage #${usageId}`,
         },
       ],
-    });
+    };
+    // Mobil redirect akışı için return/cancel URL'leri ekle (web'de null → değişmez)
+    const usageRedirectUrls = this.buildPayPalRedirectUrls(
+      options.serverBase,
+      options.returnUrl,
+      options.cancelUrl
+    );
+    if (usageRedirectUrls) {
+      usageOrderBody.application_context = {
+        brand_name: "WCFinder",
+        landing_page: "LOGIN",
+        shipping_preference: "NO_SHIPPING",
+        user_action: "PAY_NOW",
+        ...usageRedirectUrls,
+      };
+    }
+    request.requestBody(usageOrderBody);
 
     let order;
     try {
@@ -538,13 +596,14 @@ class PaymentService {
       orderId: order.result.id,
       amount: usage.totalFee,
       currency: "EUR",
+      approveUrl: this.extractPayPalApproveUrl(order),
     };
   }
 
   /**
    * ✅ YENİ: PayPal ödeme başlat (booking bilgileri ile - ödeme sonrası usage oluşturulacak)
    */
-  async createPayPalOrderFromBooking(bookingData, userId) {
+  async createPayPalOrderFromBooking(bookingData, userId, options = {}) {
     try {
       console.log('[PayPal] createPayPalOrderFromBooking started with userId:', userId);
       
@@ -604,7 +663,7 @@ class PaymentService {
       
       const request = new paypal.orders.OrdersCreateRequest();
       request.prefer("return=representation");
-      request.requestBody({
+      const bookingOrderBody = {
         intent: "CAPTURE",
         purchase_units: [
           {
@@ -615,7 +674,23 @@ class PaymentService {
             description: `Payment for booking at ${business.businessName}`,
           },
         ],
-      });
+      };
+      // Mobil redirect akışı için return/cancel URL'leri ekle (web'de null → değişmez)
+      const bookingRedirectUrls = this.buildPayPalRedirectUrls(
+        options.serverBase,
+        options.returnUrl,
+        options.cancelUrl
+      );
+      if (bookingRedirectUrls) {
+        bookingOrderBody.application_context = {
+          brand_name: "WCFinder",
+          landing_page: "LOGIN",
+          shipping_preference: "NO_SHIPPING",
+          user_action: "PAY_NOW",
+          ...bookingRedirectUrls,
+        };
+      }
+      request.requestBody(bookingOrderBody);
 
       let order;
       try {
@@ -716,6 +791,7 @@ class PaymentService {
         orderId: order.result.id,
         amount: amount,
         currency: "EUR",
+        approveUrl: this.extractPayPalApproveUrl(order),
       };
     } catch (err) {
       console.error('[PayPal] ❌ createPayPalOrderFromBooking error:', err.message || err);

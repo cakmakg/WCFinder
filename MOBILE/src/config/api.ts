@@ -21,7 +21,9 @@ export const getApiUrl = (): string => {
 export const API_URL = getApiUrl();
 
 export const getEnv = (): string => {
-  return Constants.expoConfig?.extra?.env || 'development';
+  // `extra.env` is only populated when app.json/app.config declares it;
+  // EXPO_PUBLIC_ENV (set per EAS build profile in eas.json) is the reliable source.
+  return Constants.expoConfig?.extra?.env || process.env.EXPO_PUBLIC_ENV || 'development';
 };
 
 export const isDevelopment = (): boolean => {

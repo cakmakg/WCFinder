@@ -99,11 +99,11 @@ export const userStorage = {
       const sanitizedData = {
         _id: userData._id,
         username: userData.username,
+        role: userData.role, // Required for owner/admin gating after app restart
+        isActive: userData.isActive,
         email: userData.email,
         firstName: userData.firstName,
         lastName: userData.lastName,
-        isAdmin: userData.isAdmin,
-        isStaff: userData.isStaff,
         // Never store password or other sensitive fields
       };
 

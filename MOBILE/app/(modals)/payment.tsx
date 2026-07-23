@@ -19,6 +19,8 @@ import {
   TextInput
 } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector } from 'react-redux';
 // Conditional Stripe import (may not work in Expo Go)
@@ -33,6 +35,7 @@ try {
 }
 import { BookingData } from '../../src/components/business/BookingPanel';
 import api from '../../src/services/api';
+import { isProduction } from '../../src/config/api';
 import { tokenStorage } from '../../src/utils/secureStorage';
 
 export default function PaymentScreen() {
@@ -53,6 +56,10 @@ export default function PaymentScreen() {
   const [cardholderSurname, setCardholderSurname] = useState('');
   const [billingEmail, setBillingEmail] = useState('');
 
+  // `useStripe` is a module-level binding resolved once at import time (Stripe may
+  // be unavailable in Expo Go). Its truthiness never changes between renders, so the
+  // hook call order is stable at runtime despite the conditional.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const stripe = useStripe ? useStripe() : null;
   const confirmPayment = stripe?.confirmPayment;
 
@@ -122,6 +129,19 @@ export default function PaymentScreen() {
       }
 
       if (paymentIntent?.status === 'Succeeded') {
+        // Create the usage / access code synchronously. This is idempotent with
+        // the Stripe webhook (server guards on payment.usageId) and is essential
+        // in environments where no webhook is configured — otherwise the access
+        // code is never generated. Best-effort: the success screen also polls as
+        // a fallback, and the card was already charged, so we still continue.
+        try {
+          await api.post('/payments/stripe/confirm', {
+            paymentIntentId: paymentIntent.id,
+          });
+        } catch (confirmErr) {
+          if (__DEV__) console.warn('[Payment] stripe/confirm failed; relying on webhook/polling fallback:', confirmErr);
+        }
+
         // Navigate to payment success with booking data and payment info
         router.replace({
           pathname: '/(modals)/payment-success',
@@ -181,12 +201,17 @@ export default function PaymentScreen() {
         throw new Error(`Ungültiger Gesamtbetrag: ${bookingData.pricing.total}`);
       }
 
+      // Don't silently default the gender — it becomes part of the persisted booking
+      if (!bookingData.userGender) {
+        throw new Error('Bitte wählen Sie ein Geschlecht aus.');
+      }
+
       const bookingDataForPayment = {
         businessId: bookingData.business.id,
         toiletId: bookingData.toilet.id,
         personCount: bookingData.personCount || 1,
         startTime,
-        genderPreference: bookingData.userGender || 'Male',
+        genderPreference: bookingData.userGender,
         totalAmount,
       };
 
@@ -216,6 +241,149 @@ export default function PaymentScreen() {
         setError(`Zahlung fehlgeschlagen: ${errorMessage}. Bitte erneut versuchen oder Support kontaktieren.`);
       } else {
         setError(err.response?.data?.message || err.response?.data?.error || err.message || 'Zahlung konnte nicht erstellt werden');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle PayPal payment: create order → open PayPal approval page → capture.
+  // The order is only marked successful after the server-side capture confirms
+  // the buyer actually approved, so no "success" screen without a real payment.
+  const handlePayPalPayment = async () => {
+    if (!bookingData || loading) return;
+
+    if (!token) {
+      setError('Bitte melden Sie sich an, um fortzufahren');
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!bookingData.date) {
+        throw new Error('Buchungsdatum fehlt');
+      }
+      const parsedDate = new Date(bookingData.date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Ungültiges Buchungsdatum');
+      }
+      const startTime = parsedDate.toISOString();
+
+      const totalAmount = typeof bookingData.pricing.total === 'string'
+        ? parseFloat(bookingData.pricing.total)
+        : Number(bookingData.pricing.total);
+
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        throw new Error(`Ungültiger Gesamtbetrag: ${bookingData.pricing.total}`);
+      }
+
+      // Don't silently default the gender — it becomes part of the persisted booking
+      if (!bookingData.userGender) {
+        throw new Error('Bitte wählen Sie ein Geschlecht aus.');
+      }
+
+      const bookingDataForPayment = {
+        businessId: bookingData.business.id,
+        toiletId: bookingData.toilet.id,
+        personCount: bookingData.personCount || 1,
+        startTime,
+        genderPreference: bookingData.userGender,
+        totalAmount,
+      };
+
+      // App deep links PayPal redirects back to after approval / cancellation.
+      // In Expo Go these resolve to exp://…, in a standalone build to wcfinder://…
+      const redirectBase = Linking.createURL('');
+      const returnUrl = Linking.createURL('payment-return');
+      const cancelUrl = Linking.createURL('payment-cancel');
+
+      // 1) Create the PayPal order on our server (with mobile redirect URLs)
+      const createResponse = await api.post('/payments/paypal/create', {
+        bookingData: bookingDataForPayment,
+        returnUrl,
+        cancelUrl,
+      });
+
+      const orderId = createResponse.data?.result?.orderId;
+      const paypalPaymentId = createResponse.data?.result?.paymentId;
+      const approveUrl = createResponse.data?.result?.approveUrl;
+
+      if (!orderId) {
+        throw new Error('Ungültige Antwort vom Server');
+      }
+
+      // 2) Open PayPal's approval page. The server set return/cancel URLs that
+      //    bridge back to the app deep link, so the browser closes automatically
+      //    once the buyer approves or cancels.
+      const paypalHost = isProduction()
+        ? 'https://www.paypal.com'
+        : 'https://www.sandbox.paypal.com';
+      const checkoutUrl = approveUrl || `${paypalHost}/checkoutnow?token=${orderId}`;
+
+      const authResult = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectBase);
+
+      // If PayPal bounced the user back through the cancel deep link, abort
+      // without capturing.
+      if (authResult.type === 'success' && authResult.url?.startsWith(cancelUrl)) {
+        setError('PayPal-Zahlung wurde abgebrochen.');
+        return;
+      }
+
+      // 3) Capture the order. If the buyer did not approve, the server-side
+      //    capture throws and we surface an error instead of a fake success.
+      const captureResponse = await api.post('/payments/paypal/capture', {
+        orderId,
+      });
+
+      const capturedPayment = captureResponse.data?.result;
+      const captureSucceeded =
+        captureResponse.data?.error === false &&
+        (capturedPayment?.status === 'succeeded' || !!capturedPayment?.usageId);
+
+      if (!captureSucceeded) {
+        throw new Error('PayPal-Zahlung wurde nicht abgeschlossen. Bitte erneut versuchen.');
+      }
+
+      // 4) Navigate to success only after the payment is actually captured
+      router.replace({
+        pathname: '/(modals)/payment-success',
+        params: {
+          paymentData: JSON.stringify({
+            orderId,
+            paymentId: paypalPaymentId,
+            bookingData,
+            paymentMethod: 'paypal',
+          }),
+        },
+      });
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        setError('Authentifizierung fehlgeschlagen. Bitte erneut anmelden.');
+        setTimeout(() => {
+          router.replace('/(auth)/login');
+        }, 2000);
+      } else if (err.response?.status === 500) {
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Serverfehler aufgetreten';
+        let userMessage = `PayPal-Zahlung fehlgeschlagen: ${errorMessage}`;
+
+        if (errorMessage.includes('PayPal configuration') || errorMessage.includes('PAYPAL_CLIENT_ID')) {
+          userMessage += '\n\nBitte kontaktieren Sie den Support. PayPal ist nicht korrekt konfiguriert.';
+        } else if (errorMessage.includes('Business not found')) {
+          userMessage += '\n\nDas ausgewählte Business wurde nicht gefunden. Bitte erneut versuchen.';
+        } else if (errorMessage.includes('Invalid totalAmount')) {
+          userMessage += '\n\nUngültiger Zahlungsbetrag. Bitte erneut versuchen.';
+        } else {
+          userMessage += '\n\nBitte erneut versuchen oder Support kontaktieren.';
+        }
+
+        setError(userMessage);
+      } else if (err.response?.status === 502) {
+        setError('Der Zahlungsdienst ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.');
+      } else {
+        setError(err.response?.data?.message || err.response?.data?.error || err.message || 'PayPal-Zahlung konnte nicht abgeschlossen werden');
       }
     } finally {
       setLoading(false);
@@ -511,103 +679,7 @@ export default function PaymentScreen() {
               if (paymentMethod === 'card') {
                 await createStripePaymentIntent();
               } else if (paymentMethod === 'paypal') {
-                // If PayPal is selected, call PayPal create endpoint instead of Stripe
-                try {
-                  setLoading(true);
-                  setError(null);
-
-                  if (!token) {
-                    setError('Bitte melden Sie sich an, um fortzufahren');
-                    router.replace('/(auth)/login');
-                    return;
-                  }
-
-                  // Ensure date is properly formatted
-                  if (!bookingData.date) {
-                    setError('Buchungsdatum fehlt');
-                    setLoading(false);
-                    return;
-                  }
-                  const parsedDatePaypal = new Date(bookingData.date);
-                  if (isNaN(parsedDatePaypal.getTime())) {
-                    setError('Ungültiges Buchungsdatum');
-                    setLoading(false);
-                    return;
-                  }
-                  const startTime = parsedDatePaypal.toISOString();
-
-                  // Ensure totalAmount is a number
-                  const totalAmount = typeof bookingData.pricing.total === 'string'
-                    ? parseFloat(bookingData.pricing.total)
-                    : Number(bookingData.pricing.total);
-
-                  if (isNaN(totalAmount) || totalAmount <= 0) {
-                    setError(`Ungültiger Gesamtbetrag: ${bookingData.pricing.total}`);
-                    setLoading(false);
-                    return;
-                  }
-
-                  const bookingDataForPayment = {
-                    businessId: bookingData.business.id,
-                    toiletId: bookingData.toilet.id,
-                    personCount: bookingData.personCount || 1,
-                    startTime,
-                    genderPreference: bookingData.userGender || 'Male',
-                    totalAmount,
-                  };
-
-                  const response = await api.post('/payments/paypal/create', {
-                    bookingData: bookingDataForPayment,
-                  });
-
-                  const orderId = response.data?.result?.orderId;
-                  const paypalPaymentId = response.data?.result?.paymentId;
-
-                  if (orderId) {
-                    // Navigate to payment success with booking data and PayPal info
-                    router.replace({
-                      pathname: '/(modals)/payment-success',
-                      params: {
-                        paymentData: JSON.stringify({
-                          orderId: orderId,
-                          paymentId: paypalPaymentId,
-                          bookingData: bookingData,
-                          paymentMethod: 'paypal',
-                        }),
-                      },
-                    });
-                  } else {
-                    throw new Error('Ungültige Antwort vom Server');
-                  }
-                } catch (err: any) {
-                  if (err.response?.status === 401) {
-                    setError('Authentifizierung fehlgeschlagen. Bitte erneut anmelden.');
-                    setTimeout(() => {
-                      router.replace('/(auth)/login');
-                    }, 2000);
-                  } else if (err.response?.status === 500) {
-                    const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Serverfehler aufgetreten';
-                    let userMessage = `PayPal-Zahlung fehlgeschlagen: ${errorMessage}`;
-
-                    if (errorMessage.includes('PayPal configuration') || errorMessage.includes('PAYPAL_CLIENT_ID')) {
-                      userMessage += '\n\nBitte kontaktieren Sie den Support. PayPal ist nicht korrekt konfiguriert.';
-                    } else if (errorMessage.includes('Business not found')) {
-                      userMessage += '\n\nDas ausgewählte Business wurde nicht gefunden. Bitte erneut versuchen.';
-                    } else if (errorMessage.includes('Invalid totalAmount')) {
-                      userMessage += '\n\nUngültiger Zahlungsbetrag. Bitte erneut versuchen.';
-                    } else {
-                      userMessage += '\n\nBitte erneut versuchen oder Support kontaktieren.';
-                    }
-
-                    setError(userMessage);
-                  } else if (err.response?.status === 502) {
-                    setError('Der Zahlungsdienst ist vorübergehend nicht verfügbar. Bitte später erneut versuchen.');
-                  } else {
-                    setError(err.response?.data?.message || err.response?.data?.error || err.message || 'PayPal-Bestellung konnte nicht erstellt werden');
-                  }
-                } finally {
-                  setLoading(false);
-                }
+                await handlePayPalPayment();
               }
             }}
             style={styles.payButton}

@@ -132,7 +132,7 @@ export const businessService = {
    * Get the authenticated owner's business (requires auth)
    */
   getMyBusiness: async (): Promise<Business> => {
-    const response = await api.get('/business/my');
+    const response = await api.get('/business/my-business');
     return response.data?.result || response.data?.data || response.data;
   },
 
@@ -140,7 +140,7 @@ export const businessService = {
    * Update the authenticated owner's business (requires auth)
    */
   updateMyBusiness: async (data: Partial<Business> & Record<string, any>): Promise<Business> => {
-    const response = await api.put('/business/my', data);
+    const response = await api.patch('/business/my-business', data);
     return response.data?.result || response.data?.data || response.data;
   },
 };

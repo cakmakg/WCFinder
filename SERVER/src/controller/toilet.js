@@ -26,8 +26,42 @@ module.exports = {
       #swagger.summary = "List all toilets"
     */
     const { validateObjectId } = require('../middleware/validation');
+
+    // ✅ Batch fetch by multiple business IDs (comma-separated).
+    // Used by the mobile app to load toilets for all nearby businesses in a
+    // single request (avoids N requests / rate limiting). The generic
+    // getModelList sanitizer strips $in operators, so query directly here —
+    // safe because every ID is validated as an ObjectId first.
+    if (req.query.businessIds) {
+      const businessIds = String(req.query.businessIds)
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean);
+
+      if (businessIds.length === 0 || businessIds.length > 200) {
+        res.errorStatusCode = 400;
+        throw new Error('Invalid businessIds parameter');
+      }
+
+      const invalidId = businessIds.find((id) => !validateObjectId(id));
+      if (invalidId) {
+        res.errorStatusCode = 400;
+        throw new Error('Invalid business ID format');
+      }
+
+      logger.debug('Batch fetching toilets by business IDs', { count: businessIds.length });
+
+      const batchData = await Toilet.find({ business: { $in: businessIds } }).populate('business');
+
+      return res.status(200).send({
+        error: false,
+        details: { totalRecords: batchData.length },
+        result: batchData,
+      });
+    }
+
     const filter = {};
-    
+
     // ✅ SECURITY: Validate and sanitize business filter parameter
     if (req.query['filter[business]']) {
       const businessId = req.query['filter[business]'];

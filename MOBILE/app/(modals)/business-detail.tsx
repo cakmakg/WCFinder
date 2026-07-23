@@ -317,7 +317,9 @@ export default function BusinessDetailScreen() {
               onPress={() => {
                 if (toilets.length > 0 && bookingFormData) {
                   const basePrice = toilets[0]?.fee || 1.00;
-                  const serviceFee = 0.75;
+                  // Service fee is per person (must match SERVER + CLIENT — the
+                  // server charges exactly this client-computed total).
+                  const serviceFee = 0.75 * bookingFormData.personCount;
                   const total = (basePrice * bookingFormData.personCount) + serviceFee;
                   
                   const bookingData: BookingData = {

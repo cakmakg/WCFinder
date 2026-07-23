@@ -96,8 +96,11 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
     );
   }
 
+  // Service fee is charged per person (must match SERVER FEE_CONFIG.SERVICE_FEE
+  // and CLIENT BookingPanel — the server trusts the client-computed total).
+  const SERVICE_FEE_PER_PERSON = 0.75;
   const basePrice = toilets[0]?.fee || 1.00;
-  const serviceFee = 0.75;
+  const serviceFee = SERVICE_FEE_PER_PERSON * personCount;
   const total = (basePrice * personCount) + serviceFee;
 
   const handleReservation = () => {
@@ -236,7 +239,7 @@ export const BookingPanel: React.FC<BookingPanelProps> = ({
           </View>
           <View style={styles.priceRow}>
             <Text variant="bodyMedium" style={styles.priceLabel}>
-              Servicegebühr
+              Servicegebühr (€ {SERVICE_FEE_PER_PERSON.toFixed(2)} × {personCount})
             </Text>
             <Text variant="bodyMedium" style={styles.priceValue}>
               € {serviceFee.toFixed(2)}

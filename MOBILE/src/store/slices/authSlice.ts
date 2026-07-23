@@ -31,23 +31,7 @@ interface AuthState {
   token: string | null;
 }
 
-// Async function to get initial token from SecureStore
-const getInitialToken = async (): Promise<string | null> => {
-  try {
-    const token = await tokenStorage.getAccessToken();
-    return token;
-  } catch (error) {
-    console.error('Error reading token from SecureStore:', error);
-    return null;
-  }
-};
-
-// Async function to get initial user
-const getInitialUser = async (): Promise<User | null> => {
-  return await userStorage.get();
-};
-
-// Initial state - will be updated after async operations
+// Initial state - hydrated from SecureStore by the root layout / useAuth on mount
 const initialState: AuthState = {
   currentUser: null,
   loading: false,
@@ -67,6 +51,7 @@ const authSlice = createSlice({
     registerSuccess: (state, action: PayloadAction<any>) => {
       const userData = action.payload?.user || action.payload?.data?.user;
       const tokenData = action.payload?.bearer?.accessToken || action.payload?.token;
+      const refreshTokenData = action.payload?.bearer?.refreshToken;
 
       // Security: Sanitize user data
       const sanitizedUser: User | null = userData ? {
@@ -86,6 +71,10 @@ const authSlice = createSlice({
       // Store in SecureStore (async operations)
       if (tokenData) {
         tokenStorage.saveAccessToken(tokenData).catch(console.error);
+      }
+      // Persist refresh token so the session can be renewed silently later
+      if (refreshTokenData) {
+        tokenStorage.saveRefreshToken(refreshTokenData).catch(console.error);
       }
       if (sanitizedUser) {
         userStorage.save(sanitizedUser).catch(console.error);
@@ -95,6 +84,7 @@ const authSlice = createSlice({
     loginSuccess: (state, action: PayloadAction<any>) => {
       const userData = action.payload?.user || action.payload?.data?.user;
       const tokenData = action.payload?.bearer?.accessToken || action.payload?.token;
+      const refreshTokenData = action.payload?.bearer?.refreshToken;
 
       // Security: Sanitize user data
       const sanitizedUser: User | null = userData ? {
@@ -114,6 +104,10 @@ const authSlice = createSlice({
       // Store in SecureStore (async operations)
       if (tokenData) {
         tokenStorage.saveAccessToken(tokenData).catch(console.error);
+      }
+      // Persist refresh token so the session can be renewed silently later
+      if (refreshTokenData) {
+        tokenStorage.saveRefreshToken(refreshTokenData).catch(console.error);
       }
       if (sanitizedUser) {
         userStorage.save(sanitizedUser).catch(console.error);

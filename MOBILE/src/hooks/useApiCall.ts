@@ -72,7 +72,7 @@ const useApiCall = () => {
           else response = await axiosInstance.post(url, body);
         }
       } catch (requestError: any) {
-        console.error("❌ [useApiCall] Request failed:", {
+        if (__DEV__) console.error("❌ [useApiCall] Request failed:", {
           error: requestError,
           message: requestError.message,
           response: requestError.response?.data,
@@ -100,8 +100,8 @@ const useApiCall = () => {
       
       // Check for backend error flag
       if (data?.error === true) {
-        console.error(`❌ [useApiCall] Backend returned error:`, data);
-        const message = data?.message || errorMessage || "Bir hata oluştu.";
+        if (__DEV__) console.error(`❌ [useApiCall] Backend returned error:`, data);
+        const message = data?.message || errorMessage || "Ein Fehler ist aufgetreten.";
         if (errorAction) {
           dispatch(errorAction());
         }
@@ -122,7 +122,7 @@ const useApiCall = () => {
       const responseData = error.response?.data;
       const status = error.response?.status;
       
-      console.error(`❌ [useApiCall] API Call Failed [${method.toUpperCase()} ${url}]:`, {
+      if (__DEV__) console.error(`❌ [useApiCall] API Call Failed [${method.toUpperCase()} ${url}]:`, {
         status,
         statusText: error.response?.statusText,
         url: error.config?.url,
@@ -138,15 +138,15 @@ const useApiCall = () => {
       if (responseData?.message) {
         message = responseData.message;
       } else if (status === 401) {
-        message = "Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.";
+        message = "Benutzername oder Passwort ist falsch. Bitte versuchen Sie es erneut.";
       } else if (status === 403) {
-        message = "Bu işlem için yetkiniz bulunmamaktadır.";
+        message = "Sie sind für diese Aktion nicht berechtigt.";
       } else if (status === 404) {
-        message = "İstenen kaynak bulunamadı.";
+        message = "Die angeforderte Ressource wurde nicht gefunden.";
       } else if (status === 500) {
-        message = "Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.";
+        message = "Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut.";
       } else {
-        message = errorMessage || error.message || "Bir hata oluştu.";
+        message = errorMessage || error.message || "Ein Fehler ist aufgetreten.";
       }
       
       // Error action

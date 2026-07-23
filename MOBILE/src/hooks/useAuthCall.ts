@@ -16,16 +16,6 @@ import {
 } from '../store/slices/authSlice';
 import useApiCall from './useApiCall';
 
-/**
- * Masks sensitive data (password) before logging
- */
-const maskSensitiveData = (data: any) => {
-  if (!data || typeof data !== 'object') return data;
-  const safe = { ...data };
-  if (safe.password) safe.password = '***REDACTED***';
-  return safe;
-};
-
 const useAuthCall = () => {
   const router = useRouter();
   const dispatch = useDispatch();
@@ -41,7 +31,7 @@ const useAuthCall = () => {
         startAction: fetchStart,
         successAction: loginSuccess,
         errorAction: fetchFail,
-        successMessage: "Giriş işlemi başarılı.",
+        successMessage: "Anmeldung erfolgreich.",
         requiresAuth: false,
       });
 
@@ -66,7 +56,7 @@ const useAuthCall = () => {
         startAction: fetchStart,
         successAction: registerSuccess,
         errorAction: fetchFail,
-        successMessage: "Kayıt işlemi başarılı.",
+        successMessage: "Registrierung erfolgreich.",
         requiresAuth: false,
       });
       
@@ -87,7 +77,7 @@ const useAuthCall = () => {
         startAction: fetchStart,
         successAction: logoutSuccess,
         errorAction: fetchFail,
-        successMessage: "Çıkış işlemi başarılı.",
+        successMessage: "Abmeldung erfolgreich.",
         requiresAuth: true,
       });
     } catch (error) {
