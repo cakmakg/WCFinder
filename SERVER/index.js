@@ -184,6 +184,12 @@ app.use(cors({
     optionsSuccessStatus: 200, // OPTIONS request'ler için 200 döndür
 }));
 
+// ✅ Stripe Webhook Raw Body
+// Stripe imza doğrulaması (constructEvent) gövdenin BYTE BİRİMİNDE değişmemesini
+// şart koşar. express.json() gövdeyi parse edip Buffer'ı yok ettiği için bu mount
+// express.json()'dan ÖNCE gelmek zorunda; aksi halde her webhook 400 döner.
+app.use('/api/payments/webhook/stripe', express.raw({ type: 'application/json' }));
+
 // ✅ Body Parser (JSON)
 app.use(express.json({ 
     limit: process.env.MAX_BODY_SIZE || '10mb',

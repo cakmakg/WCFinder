@@ -169,7 +169,10 @@ const validateURL = (url) => {
 const validateAndSanitize = (req, res, next) => {
     try {
         // SECURITY: Limit request body size to prevent DoS attacks
-        if (req.body && typeof req.body === 'object') {
+        // Buffer gövdeler (Stripe webhook raw body) sanitize EDİLMEZ: Buffer da
+        // typeof 'object' olduğu için sanitizeInput onu {0:..,1:..} nesnesine
+        // çevirir ve imza doğrulaması için gereken byte'lar kaybolur.
+        if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
             const bodyString = JSON.stringify(req.body);
             const MAX_BODY_SIZE = 100000; // 100KB limit
             if (bodyString.length > MAX_BODY_SIZE) {

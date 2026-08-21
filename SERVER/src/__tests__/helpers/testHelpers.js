@@ -14,6 +14,10 @@ function createApp() {
 
   require('express-async-errors');
 
+  // Stripe webhook raw body — index.js ile aynı sırada mount edilir, aksi halde
+  // testler imza doğrulamasının bozulduğunu yakalayamaz.
+  app.use('/api/payments/webhook/stripe', express.raw({ type: 'application/json' }));
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
