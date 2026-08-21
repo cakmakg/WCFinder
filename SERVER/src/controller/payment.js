@@ -382,9 +382,22 @@ module.exports = {
       { _id: req.params.id },
       ["usageId", "userId", "businessId"]
     );
+    const payment = data[0] || null;
+
+    // ✅ SECURITY: Route yalnızca isLogin ile korunuyor; sahiplik kontrolü olmadan
+    // her oturum açmış kullanıcı başkasının ödeme kaydını (tutar, IP, user agent,
+    // gateway yanıtı) okuyabiliyordu.
+    if (payment && req.user.role !== "admin") {
+      const ownerId = payment.userId?._id || payment.userId;
+      if (!ownerId || ownerId.toString() !== req.user._id.toString()) {
+        res.errorStatusCode = 403;
+        throw new Error("NoPermission: You can only view your own payments.");
+      }
+    }
+
     res.status(200).send({
       error: false,
-      result: data[0] || null,
+      result: payment,
     });
   },
 
