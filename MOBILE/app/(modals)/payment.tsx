@@ -89,6 +89,19 @@ export default function PaymentScreen() {
     checkAuth();
   }, [token, currentUser]);
 
+  // Switching the payment method invalidates any Stripe intent that was already
+  // initialized. Reset it so the pay button reappears — otherwise selecting card,
+  // starting it, then switching to PayPal left the user with no way to pay.
+  const changePaymentMethod = (method: 'card' | 'paypal') => {
+    if (method === paymentMethod) return;
+    setPaymentMethod(method);
+    setClientSecret(null);
+    setPaymentId(null);
+    setCardDetails(null);
+    setCardError(null);
+    setError(null);
+  };
+
   // Handle card payment confirmation
   const handleCardPayment = async () => {
     if (!clientSecret || !cardDetails?.complete) {
@@ -325,9 +338,18 @@ export default function PaymentScreen() {
 
       const authResult = await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectBase);
 
+      // The session only resolves with type 'success' when PayPal returns through
+      // our redirect deep link. Any other outcome (dismiss/cancel) means the user
+      // closed PayPal without approving — abort without attempting a capture, which
+      // would otherwise throw on an unapproved order.
+      if (authResult.type !== 'success') {
+        setError('PayPal-Zahlung wurde abgebrochen.');
+        return;
+      }
+
       // If PayPal bounced the user back through the cancel deep link, abort
       // without capturing.
-      if (authResult.type === 'success' && authResult.url?.startsWith(cancelUrl)) {
+      if (authResult.url?.startsWith(cancelUrl)) {
         setError('PayPal-Zahlung wurde abgebrochen.');
         return;
       }
@@ -525,21 +547,21 @@ export default function PaymentScreen() {
             </Text>
 
             <RadioButton.Group
-              onValueChange={(value) => setPaymentMethod(value as 'card' | 'paypal')}
+              onValueChange={(value) => changePaymentMethod(value as 'card' | 'paypal')}
               value={paymentMethod}
             >
               <List.Item
                 title="Kredit-/Debitkarte"
                 left={() => <List.Icon icon="credit-card-outline" />}
                 right={() => <RadioButton value="card" />}
-                onPress={() => setPaymentMethod('card')}
+                onPress={() => changePaymentMethod('card')}
               />
 
               <List.Item
                 title="PayPal"
                 left={() => <List.Icon icon="wallet-outline" />}
                 right={() => <RadioButton value="paypal" />}
-                onPress={() => setPaymentMethod('paypal')}
+                onPress={() => changePaymentMethod('paypal')}
               />
             </RadioButton.Group>
           </Card.Content>
@@ -651,20 +673,6 @@ export default function PaymentScreen() {
                   </Text>
                 </View>
               )}
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* PayPal Payment Info - Show when PayPal is selected and clientSecret exists */}
-        {clientSecret && paymentMethod === 'paypal' && (
-          <Card style={styles.card}>
-            <Card.Content>
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                PayPal-Zahlung
-              </Text>
-              <Text variant="bodyMedium" style={styles.infoText}>
-                PayPal-Zahlung ist derzeit in Entwicklung. Bitte kontaktieren Sie den Support, um Ihre Buchung abzuschließen.
-              </Text>
             </Card.Content>
           </Card>
         )}
