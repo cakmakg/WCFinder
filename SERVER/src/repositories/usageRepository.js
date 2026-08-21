@@ -6,8 +6,14 @@ const Usage = require("../models/usage");
  * Usage Repository - Data Access Layer
  */
 class UsageRepository {
-  async findById(id) {
-    return await Usage.findById(id);
+  async findById(id, options = {}) {
+    let query = Usage.findById(id);
+    // populate desteği: çağıranlar { populate: [{ path, select }, ...] } geçebilir.
+    // Bu olmadan sendPaymentSuccessEmail user'ı populate edemez ve mail gitmez.
+    if (options.populate) {
+      query = query.populate(options.populate);
+    }
+    return await query;
   }
 
   async findOne(filter) {
