@@ -45,6 +45,25 @@ class PaymentRepository {
     });
   }
 
+  /**
+   * Ödemeyi atomik olarak "succeeded" yapar — yalnızca ilk çağrı kazanır.
+   *
+   * Aynı ödeme için frontend'in /stripe/confirm çağrısı ile Stripe'ın
+   * payment_intent.succeeded webhook'u (ve webhook'un retry teslimatları)
+   * birlikte gelir. Koşulsuz güncellemede her iki yol da usage oluşturup
+   * işletme bakiyesini artırdığı için bakiye mükerrer artıyordu.
+   *
+   * @returns {Promise<Object|null>} İlk kez succeeded yapıldıysa güncel kayıt,
+   *                                 ödeme zaten succeeded ise null.
+   */
+  async markSucceededOnce(id, data = {}) {
+    return await Payment.findOneAndUpdate(
+      { _id: id, status: { $ne: "succeeded" } },
+      { ...data, status: "succeeded" },
+      { new: true, runValidators: true }
+    );
+  }
+
   async updateMany(filter, update) {
     return await Payment.updateMany(filter, update);
   }

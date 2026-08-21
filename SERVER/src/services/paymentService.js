@@ -813,12 +813,20 @@ class PaymentService {
     const request = new paypal.orders.OrdersCaptureRequest(orderId);
     const capture = await paypalClient.execute(request);
 
-    // Payment durumunu güncelle
-    await paymentRepository.findByIdAndUpdate(payment._id, {
-      status: "succeeded",
+    // Payment durumunu atomik olarak güncelle (mükerrer capture/onay çağrılarında
+    // usage'ın ikinci kez oluşmasını ve bakiyenin iki kez artmasını engeller).
+    const claimed = await paymentRepository.markSucceededOnce(payment._id, {
       transactionId: capture.result.purchase_units[0].payments.captures[0].id,
       gatewayResponse: capture.result,
     });
+
+    if (!claimed) {
+      logger.info("PayPal payment already captured, skipping", {
+        paymentId: payment._id.toString(),
+        orderId,
+      });
+      return await paymentRepository.findById(payment._id);
+    }
 
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
@@ -908,11 +916,20 @@ class PaymentService {
       throw new Error("Unauthorized");
     }
 
-    // Payment durumunu güncelle
-    await paymentRepository.findByIdAndUpdate(payment._id, {
-      status: "succeeded",
+    // Payment durumunu atomik olarak güncelle. Aynı ödeme için Stripe webhook'u
+    // da çalıştığından, usage oluşturma ve bakiye artırma yalnızca ilk kazanan
+    // yolda yapılmalı (bkz. paymentRepository.markSucceededOnce).
+    const claimed = await paymentRepository.markSucceededOnce(payment._id, {
       transactionId: paymentIntentId,
     });
+
+    if (!claimed) {
+      logger.info("Payment already completed by another path, skipping", {
+        paymentId: payment._id.toString(),
+        paymentIntentId,
+      });
+      return await paymentRepository.findById(payment._id);
+    }
 
     // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
     if (!payment.usageId) {
@@ -1167,11 +1184,21 @@ class PaymentService {
       });
 
       if (payment) {
-        await paymentRepository.findByIdAndUpdate(payment._id, {
-          status: "succeeded",
+        const claimed = await paymentRepository.markSucceededOnce(payment._id, {
           transactionId: paymentIntent.id,
           gatewayResponse: paymentIntent,
         });
+
+        // Stripe aynı event'i birden fazla kez teslim edebilir ve frontend
+        // /stripe/confirm çağrısı da aynı ödemeyi tamamlar. İlk kazanan dışındaki
+        // teslimatlarda hiçbir yan etki uygulanmaz.
+        if (!claimed) {
+          logger.info("Stripe webhook: payment already succeeded, skipping", {
+            paymentId: payment._id.toString(),
+            paymentIntentId: paymentIntent.id,
+          });
+          return;
+        }
 
         // ✅ Eğer usageId yoksa (booking'den geldiyse), usage oluştur
         if (!payment.usageId) {
