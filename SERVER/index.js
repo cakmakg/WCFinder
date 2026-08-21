@@ -197,10 +197,43 @@ app.use(express.json({
 }));
 
 // ✅ URL Encoded (form data)
-app.use(express.urlencoded({ 
-    extended: true, 
-    limit: process.env.MAX_BODY_SIZE || '10mb' 
+app.use(express.urlencoded({
+    extended: true,
+    limit: process.env.MAX_BODY_SIZE || '10mb'
 }));
+
+// ✅ Health Check Endpoints (monitoring / uptime için)
+// Auth, rate limiting ve request logger'dan ÖNCE mount edilir:
+// - Uptime ping'leri auth gerektirmez ve rate limit'e takılmaz
+// - Sık ping'ler request log'unu kirletmez
+// Liveness: process ayakta mı? Readiness: bağımlılıklar (DB) hazır mı?
+const mongoose = require('mongoose');
+
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        version: '2.0.0'
+    });
+});
+
+app.get('/health/ready', (req, res) => {
+    // mongoose.connection.readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+    const dbState = mongoose.connection.readyState;
+    const dbConnected = dbState === 1;
+    res.status(dbConnected ? 200 : 503).json({
+        status: dbConnected ? 'ready' : 'not_ready',
+        checks: {
+            database: {
+                status: dbConnected ? 'up' : 'down',
+                readyState: dbState
+            }
+        },
+        timestamp: new Date().toISOString()
+    });
+});
 
 // ✅ Request Logger (tüm istekleri logla)
 app.use(require('./src/middleware/requestLogger'));
