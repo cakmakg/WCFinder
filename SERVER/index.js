@@ -304,6 +304,9 @@ const paymentLimiter = rateLimit({
     },
     standardHeaders: true,
     legacyHeaders: false,
+    // Webhook'lar Stripe'ın IP'lerinden gelir ve imza ile doğrulanır; rate limit'e
+    // takılan bir teslimat kaybolur (Stripe yeniden dener ama ödeme onayı gecikir).
+    skip: (req) => req.originalUrl.startsWith('/api/payments/webhook'),
     trustProxy: process.env.TRUST_PROXY === 'true',
 });
 app.use('/api/payments', paymentLimiter);
@@ -319,14 +322,20 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
-        // Health check endpoint'lerini rate limit'ten muaf tut
-        if (req.path === '/' || req.path.startsWith('/documents')) {
+        // app.use('/api', limiter) mount prefix'i soyduğu için req.path burada
+        // '/auth/login' gibi görünür; karşılaştırmalar originalUrl üzerinden yapılır.
+        const url = req.originalUrl;
+        // Health check / statik doküman endpoint'lerini muaf tut
+        if (url === '/' || url.startsWith('/documents')) {
             return true;
         }
-        // ✅ Auth endpoint'leri zaten yukarıda handle edildi (skip et)
-        if (req.path === '/api/auth/login' || req.path === '/api/auth/register' || 
-            req.path.startsWith('/api/auth/login') || req.path.startsWith('/api/auth/register')) {
-            return true; // Zaten authLimiter handle ediyor
+        // ✅ Auth endpoint'leri zaten authLimiter tarafından handle ediliyor
+        if (url.startsWith('/api/auth/login') || url.startsWith('/api/auth/register')) {
+            return true;
+        }
+        // ✅ Ödeme webhook'ları imza ile doğrulanır, rate limit uygulanmaz
+        if (url.startsWith('/api/payments/webhook')) {
+            return true;
         }
         return false;
     },
