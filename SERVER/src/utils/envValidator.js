@@ -133,7 +133,13 @@ const validateEnvironment = (env = process.env.NODE_ENV || 'development') => {
     } else if (env === 'development') {
         allRequired.push(...REQUIRED_ENV_VARS.development);
     }
-    
+
+    // Storage driver-specific requirements: with the S3/R2 driver the invoice
+    // credentials must be present, otherwise writes fail at runtime (GoBD).
+    if ((process.env.STORAGE_DRIVER || 'local').toLowerCase() === 's3') {
+        allRequired.push('S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY');
+    }
+
     // Validate each required variable
     for (const varName of allRequired) {
         const value = process.env[varName];

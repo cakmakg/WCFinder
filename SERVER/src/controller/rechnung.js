@@ -9,6 +9,7 @@ const Payout = require('../models/payout');
 const Business = require('../models/business');
 const RechnungService = require('../services/rechnungService');
 const XRechnungService = require('../services/xrechnungService');
+const storage = require('../services/storage');
 const path = require('path');
 const fs = require('fs');
 const logger = require('../utils/logger');
@@ -355,16 +356,16 @@ module.exports = {
                 throw new Error("PDF not found");
             }
             
-            const pdfPath = path.join(__dirname, '../../public', rechnung.pdfPfad);
-            
-            if (!fs.existsSync(pdfPath)) {
+            if (!(await storage.objectExists(rechnung.pdfPfad))) {
                 res.errorStatusCode = 404;
                 throw new Error("PDF file not found on server");
             }
-            
+
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="${rechnung.rechnungsnummer}.pdf"`);
-            res.sendFile(pdfPath);
+            const pdfStream = await storage.getReadStream(rechnung.pdfPfad);
+            pdfStream.on('error', () => res.destroy());
+            pdfStream.pipe(res);
             
         } catch (error) {
             throw error;
@@ -401,17 +402,17 @@ module.exports = {
                 await RechnungService.generiereXRechnung(rechnung, benutzer);
             }
             
-            const xmlPath = path.join(__dirname, '../../public', rechnung.xrechnungPfad);
-            
-            if (!fs.existsSync(xmlPath)) {
+            if (!(await storage.objectExists(rechnung.xrechnungPfad))) {
                 // Yeniden oluştur
                 const benutzer = req.user?.username || req.user?.email || 'System';
                 await RechnungService.generiereXRechnung(rechnung, benutzer);
             }
-            
+
             res.setHeader('Content-Type', 'application/xml');
             res.setHeader('Content-Disposition', `attachment; filename="${rechnung.rechnungsnummer}_xrechnung.xml"`);
-            res.sendFile(path.join(__dirname, '../../public', rechnung.xrechnungPfad));
+            const xmlStream = await storage.getReadStream(rechnung.xrechnungPfad);
+            xmlStream.on('error', () => res.destroy());
+            xmlStream.pipe(res);
             
         } catch (error) {
             throw error;
@@ -870,20 +871,14 @@ module.exports = {
                 throw new Error("GoBD: Nur Entwürfe können gelöscht werden. Versendete Rechnungen müssen storniert werden.");
             }
             
-            // PDF'i sil
+            // PDF'i sil (idempotent – fehlende Datei ist ok)
             if (rechnung.pdfPfad) {
-                const pdfPath = path.join(__dirname, '../../public', rechnung.pdfPfad);
-                if (fs.existsSync(pdfPath)) {
-                    fs.unlinkSync(pdfPath);
-                }
+                await storage.deleteObject(rechnung.pdfPfad);
             }
-            
+
             // XRechnung XML'i sil
             if (rechnung.xrechnungPfad) {
-                const xmlPath = path.join(__dirname, '../../public', rechnung.xrechnungPfad);
-                if (fs.existsSync(xmlPath)) {
-                    fs.unlinkSync(xmlPath);
-                }
+                await storage.deleteObject(rechnung.xrechnungPfad);
             }
             
             await Rechnung.deleteOne({ _id: req.params.id });

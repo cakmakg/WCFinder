@@ -12,6 +12,7 @@ const Business = require('../models/business');
 const User = require('../models/user');
 const MonthlyReport = require('../models/monthlyReport');
 const XRechnungService = require('./xrechnungService');
+const storage = require('./storage');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
@@ -391,15 +392,10 @@ class RechnungService {
         try {
             await rechnung.populate('rechnungsempfaenger.businessId');
             
-            const rechnungenDir = path.join(__dirname, '../../public/rechnungen');
-            if (!fs.existsSync(rechnungenDir)) {
-                fs.mkdirSync(rechnungenDir, { recursive: true });
-            }
-            
             const dateiname = `${rechnung.rechnungsnummer}.pdf`;
-            const dateipfad = path.join(rechnungenDir, dateiname);
-            
-            const doc = new PDFDocument({ 
+            const speicherRef = `/rechnungen/${dateiname}`;
+
+            const doc = new PDFDocument({
                 margin: 50,
                 size: 'A4',
                 info: {
@@ -411,8 +407,14 @@ class RechnungService {
                     CreationDate: new Date()
                 }
             });
-            const stream = fs.createWriteStream(dateipfad);
-            doc.pipe(stream);
+            // PDF in den Speicher puffern statt direkt auf Disk – wird über den
+            // Storage-Adapter geschrieben (GoBD-taugliche, dauerhafte Ablage).
+            const pdfChunks = [];
+            doc.on('data', (chunk) => pdfChunks.push(chunk));
+            const pdfFertig = new Promise((resolve, reject) => {
+                doc.on('end', () => resolve(Buffer.concat(pdfChunks)));
+                doc.on('error', reject);
+            });
             
             // === HEADER ===
             this.generiereKopfzeile(doc, rechnung);
@@ -441,22 +443,19 @@ class RechnungService {
             this.generiereFusszeile(doc, rechnung);
             
             doc.end();
-            
-            await new Promise((resolve, reject) => {
-                stream.on('finish', resolve);
-                stream.on('error', reject);
-            });
-            
+
+            const pdfBuffer = await pdfFertig;
+            await storage.putObject(speicherRef, pdfBuffer, 'application/pdf');
+
             // Audit Log
             rechnung.addAuditLog('pdf_generiert', benutzer, `PDF erstellt: ${dateiname}`);
-            
-            // Hash für GoBD
-            const pdfContent = fs.readFileSync(dateipfad);
-            const hashWert = crypto.createHash('sha256').update(pdfContent).digest('hex');
+
+            // Hash für GoBD (aus dem Buffer berechnet)
+            const hashWert = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
             rechnung.archivierung = rechnung.archivierung || {};
             rechnung.archivierung.hashWert = hashWert;
-            
-            return `/rechnungen/${dateiname}`;
+
+            return speicherRef;
             
         } catch (error) {
             console.error('❌ Fehler beim Generieren der PDF:', error);

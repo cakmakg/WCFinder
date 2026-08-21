@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const storage = require('./storage');
 
 /**
  * XRechnung XML Generator
@@ -473,19 +474,13 @@ class XRechnungService {
      */
     static async saveXML(rechnung) {
         const xmlContent = await this.generateXML(rechnung);
-        
-        // Create directory if not exists
-        const xrechnungDir = path.join(__dirname, '../../public/rechnungen/xrechnung');
-        if (!fs.existsSync(xrechnungDir)) {
-            fs.mkdirSync(xrechnungDir, { recursive: true });
-        }
-        
+
         const filename = `${rechnung.rechnungsnummer}_xrechnung.xml`;
-        const filepath = path.join(xrechnungDir, filename);
-        
-        fs.writeFileSync(filepath, xmlContent, 'utf8');
-        
-        return `/rechnungen/xrechnung/${filename}`;
+        const speicherRef = `/rechnungen/xrechnung/${filename}`;
+
+        await storage.putObject(speicherRef, Buffer.from(xmlContent, 'utf8'), 'application/xml');
+
+        return speicherRef;
     }
     
     /**
