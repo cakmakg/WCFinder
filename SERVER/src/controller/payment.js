@@ -44,7 +44,7 @@ const paymentService = require("../services/paymentService");
 const paymentRepository = require("../repositories/paymentRepository");
 const getStripe = require("../config/stripe");
 const logger = require("../utils/logger");
-const { validateObjectId } = require("../middleware/validation");
+const { validateObjectId, unescapeHtml } = require("../middleware/validation");
 
 module.exports = {
   /**
@@ -242,8 +242,12 @@ module.exports = {
       #swagger.tags = ["Payments"]
       #swagger.summary = "PayPal redirect bridge to app deep link"
     */
-    const to = req.query.to;
-    const token = req.query.token;
+    // Global sanitizer query değerlerini HTML-escape ediyor ("wcfinder://" ->
+    // "wcfinder:&#x2F;&#x2F;"); ham deep-link'i geri çözmeden doğrulama her
+    // zaman başarısız oluyordu. Çözülen değer aşağıdaki beyaz listeden geçmek
+    // zorunda, bu yüzden open-redirect koruması aynen korunur.
+    const to = unescapeHtml(req.query.to);
+    const token = unescapeHtml(req.query.token);
 
     if (typeof to !== "string" || !/^(wcfinder|exp|exps):\/\//i.test(to)) {
       res.errorStatusCode = 400;

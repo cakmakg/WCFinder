@@ -166,6 +166,35 @@ const validateURL = (url) => {
  * - Efficient string operations
  * - Early return on invalid input
  */
+/**
+ * escapeHtml'in tersi.
+ *
+ * validateAndSanitize tum query/body string'lerini XSS'e karşı escape eder; bu
+ * PayPal deep-link köprüsü gibi ham URL'i tekrar doğrulaması gereken yerlerde
+ * değeri bozar (wcfinder://... -> wcfinder:&#x2F;&#x2F;...). Çözülen değer
+ * doğrudan kullanılmaz; çağıran taraf kendi beyaz listesiyle yeniden doğrular.
+ */
+const unescapeHtml = (text) => {
+    if (typeof text !== 'string') return text;
+
+    const map = {
+        '&#x2F;': '/',
+        '&#x60;': '`',
+        '&#x3D;': '=',
+        '&quot;': '"',
+        '&#039;': "'",
+        '&lt;': '<',
+        '&gt;': '>',
+        '&amp;': '&' // en son: cift cozumlemeyi onlemek icin
+    };
+
+    let result = text;
+    for (const [entity, char] of Object.entries(map)) {
+        result = result.split(entity).join(char);
+    }
+    return result;
+};
+
 const validateAndSanitize = (req, res, next) => {
     try {
         // SECURITY: Limit request body size to prevent DoS attacks
@@ -271,6 +300,7 @@ const commonSchemas = {
 module.exports = {
     validateAndSanitize,
     validateSchema,
+    unescapeHtml,
     validateEmail,
     validatePassword,
     validateObjectId,
