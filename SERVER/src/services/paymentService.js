@@ -841,7 +841,9 @@ class PaymentService {
         personCount: personCount,
         startTime: new Date(metadata.startTime),
         genderPreference: metadata.genderPreference,
-        basePrice: payment.amount - serviceFee, // Service fee'yi çıkar
+        // basePrice kişi başıdır: Usage pre-save hook'u totalFee'yi
+        // (basePrice * personCount) + serviceFee olarak yeniden hesaplar.
+        basePrice: (payment.amount - serviceFee) / personCount,
         serviceFee: serviceFee,
         totalFee: payment.amount,
         status: 'pending',
@@ -1009,7 +1011,8 @@ class PaymentService {
         personCount: usagePersonCount,
         startTime: startTimeObj,
         genderPreference: metadata.genderPreference,
-        basePrice: payment.amount - usageServiceFee, // Service fee'yi çıkar
+        // basePrice kişi başıdır (bkz. Usage pre-save totalFee hesabı)
+        basePrice: (payment.amount - usageServiceFee) / usagePersonCount,
         serviceFee: usageServiceFee,
         totalFee: payment.amount,
         status: 'pending',
@@ -1213,7 +1216,8 @@ class PaymentService {
             personCount: webhookPersonCount,
             startTime: new Date(metadata.startTime),
             genderPreference: metadata.genderPreference,
-            basePrice: payment.amount - webhookServiceFee, // Service fee'yi çıkar
+            // basePrice kişi başıdır (bkz. Usage pre-save totalFee hesabı)
+            basePrice: (payment.amount - webhookServiceFee) / webhookPersonCount,
             serviceFee: webhookServiceFee,
             totalFee: payment.amount,
             status: 'pending',
