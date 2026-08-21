@@ -129,7 +129,7 @@ Vite zeigt die lokale URL (z. B. `http://localhost:5173`) an.
   - `owner` – Geschäftsinhaber (WC-Betreiber)
   - `admin` – Plattform-Administrator
 
-Der erste Admin wird über ein lokales Script erstellt (siehe `CREATE_ADMIN_USER.md`, nicht auf GitHub).
+Der erste Admin wird über ein lokales Script erstellt (siehe `docs/DEVELOPMENT.md`).
 
 ---
 
@@ -138,9 +138,9 @@ Der erste Admin wird über ein lokales Script erstellt (siehe `CREATE_ADMIN_USER
 - **Stripe** und **PayPal** Integration
 - **Service Fee** pro Nutzung für die Plattform
 - Restbetrag wird dem Business gutgeschrieben (Auszahlung über Admin-Panel)
-- Details lokal dokumentiert in:
-  - `COMMISSION_SYSTEM_DOCUMENTATION.md`
-  - `STRIPE_TEST_CARDS.md`
+- Details dokumentiert in:
+  - `docs/ARCHITECTURE.md` (Zahlungs- & Kommissionssystem)
+  - `docs/DEVELOPMENT.md` (Stripe-Testkarten)
 
 ---
 
@@ -149,13 +149,11 @@ Der erste Admin wird über ein lokales Script erstellt (siehe `CREATE_ADMIN_USER
 Viele detaillierte Dokumente (`*.md`) werden per `.gitignore` **nicht** zu GitHub gepusht, sind aber im Projektordner vorhanden, z. B.:
 
 - **`prd.md`** – Product Requirements Document
-- **`CLIENT/docs/ARCHITECTURE.md`** – Architektur
-- **`ADMIN_PANEL_GUIDE.md`** – Admin-Panel & Business-Management
-- **`RECHNUNG_SYSTEM_COMPLETE.md`** – deutsches Rechnungssystem (XRechnung / EN 16931)
-- **`SECURITY_REVIEW.md`** – ausführlicher Security-Review
-- **`CLEAN_CODE_IMPROVEMENTS.md`** – Clean-Code- & Sicherheitsverbesserungen
-- **`RENDER_VERCEL_DEPLOYMENT.md`** – Backend (Render) + Frontend (Vercel)
-- **`DEPLOYMENT_CHECKLIST.md`, `PRODUCTION_DEPLOYMENT.md`** – weitere Deployment-Guides
+- **`docs/ARCHITECTURE.md`** – Systemarchitektur, Auth, Zahlungs-/Kommissions- & Rechnungssystem
+- **`docs/FEATURES.md`** – Funktionsübersicht (Nutzer, Owner, Admin-Panel, Rechnung, SEO)
+- **`docs/DEPLOYMENT.md`** – Deployment (Render/Vercel/Railway), Env-Variablen, MongoDB Atlas
+- **`docs/DEVELOPMENT.md`** – lokale Befehle, Admin-Erstellung, Stripe-Testkarten
+- **`docs/SECURITY.md`** – Security-Review & Audit
 
 Diese Dateien sind für Entwicklung und Betrieb wichtig, werden aber nicht veröffentlicht.
 
@@ -163,7 +161,7 @@ Diese Dateien sind für Entwicklung und Betrieb wichtig, werden aber nicht verö
 
 ## 🔒 Sicherheit (Kurzfassung)
 
-Details siehe `SECURITY_REVIEW.md` (lokal).
+Details siehe `docs/SECURITY.md` (lokal).
 
 - **Passwort-Hashing** mit PBKDF2 (`SECRET_KEY`, konfigurierbare Runden)
 - **Input-Validierung & Sanitizing** (Schutz vor XSS / NoSQL-Injections)
@@ -216,7 +214,7 @@ npm run lint
 - **Vercel Env**
   - `VITE_BASE_URL` = Render-Backend-URL (z. B. `https://wcfinder-backend.onrender.com`)
 
-Detailierte Schritt-für-Schritt-Anleitung: `RENDER_VERCEL_DEPLOYMENT.md` (lokal).
+Detailierte Schritt-für-Schritt-Anleitung: `docs/DEPLOYMENT.md` (lokal).
 
 ---
 
