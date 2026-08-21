@@ -53,6 +53,19 @@ const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+
+    // DSGVO Art. 17: Bei einer Löschung wird das Konto anonymisiert (nicht hart
+    // gelöscht), damit referenzierte, aufbewahrungspflichtige Datensätze
+    // (Rechnungen/Zahlungen, §147 AO / GoBD) integer bleiben. Diese Flags
+    // markieren ein anonymisiertes Konto.
+    isDeleted: {
+        type: Boolean,
+        default: false,
+        index: true,
+    },
+    deletedAt: {
+        type: Date,
+    },
 },
 {
     collection: "users",

@@ -5,7 +5,8 @@
 const router = require('express').Router()
 /* ------------------------------------------------------- */
 
-const { list, create, read, update, deletee, deleteMe } = require('../controller/user');
+const { list, create, read, update, deletee } = require('../controller/user');
+const { exportMe, deleteMe } = require('../controller/gdpr');
 const { isLogin, isAdmin, isSelfOrAdmin } = require('../middleware/permissions');
 
 
@@ -15,9 +16,14 @@ router.route('/')
  .get(isAdmin, list) // Kullanıcıları SADECE Admin listeleyebilir
  .post(create);      // Yeni kullanıcı oluşturma (register) herkese açık
 
-// ✅ YENİ: Kullanıcının kendi profilini silmesi için /users/me endpoint'i (daha güvenli)
+// DSGVO Art. 15: Kullanıcı kendi verisini JSON olarak dışa aktarır
+router.route('/me/export')
+    .get(isLogin, exportMe);
+
+// DSGVO Art. 17: Kullanıcı kendi hesabını siler (hesap anonimleştirilir,
+// yasal saklama zorunlu belgeler anonim korunur)
 router.route('/me')
-    .delete(isLogin, deleteMe); // Kullanıcı sadece kendi profilini silebilir
+    .delete(isLogin, deleteMe);
 
 router.route('/:id')
 .get(isLogin, isSelfOrAdmin, read)       // Kullanıcı kendi profilini veya Admin herkesinkini görebilir
