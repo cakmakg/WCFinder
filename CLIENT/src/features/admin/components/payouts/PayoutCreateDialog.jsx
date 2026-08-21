@@ -70,11 +70,11 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
       setFormData(prev => ({
         ...prev,
         businessId: businessData.businessId,
-        amount: businessData.totalAmount.toFixed(2)
+        amount: (Number(businessData.totalAmount) || 0).toFixed(2)
       }));
       setSelectedBusiness({
-        _id: businessData.businessId,
-        name: businessData.businessName
+        businessId: businessData.businessId,
+        businessName: businessData.businessName
       });
       setPendingPayments(businessData.payments || []);
     }
@@ -89,44 +89,38 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
 
   const fetchBusinessesWithPendingPayments = async () => {
     try {
-      const data = await payoutService.getBusinessesWithPayouts();
-      setBusinesses(data.businesses || []);
+      // Geschäfte MIT ausstehenden Zahlungen (all-pending liefert je Geschäft
+      // bereits businessName, totalPending und payments[]).
+      const data = await payoutService.getAllPendingPayouts();
+      const result = data?.result || {};
+      setBusinesses(Array.isArray(result.businesses) ? result.businesses : []);
     } catch (error) {
       console.error('Error fetching businesses:', error);
       toastErrorNotify('Fehler beim Laden der Geschäfte');
     }
   };
 
-  // Handle business selection
-  const handleBusinessSelect = async (event, value) => {
+  // Handle business selection — ausstehende Zahlungen & Betrag kommen direkt
+  // aus dem gewählten Eintrag (kein separater Endpunkt nötig).
+  const handleBusinessSelect = (event, value) => {
     setSelectedBusiness(value);
-    setFormData(prev => ({
-      ...prev,
-      businessId: value?._id || ''
-    }));
 
-    if (value?._id) {
-      try {
-        const data = await payoutService.getPendingPayoutsByBusiness(value._id);
-        setPendingPayments(data.pendingPayments || []);
-
-        // Calculate total amount
-        const total = data.pendingPayments.reduce(
-          (sum, payment) => sum + (Number(payment.businessFee) || 0),
-          0
-        );
-        setFormData(prev => ({
-          ...prev,
-          amount: total.toFixed(2)
-        }));
-      } catch (error) {
-        console.error('Error fetching pending payments:', error);
-        setPendingPayments([]);
-      }
+    if (value) {
+      const payments = value.payments || [];
+      const total =
+        Number(value.totalPending) ||
+        payments.reduce((sum, p) => sum + (Number(p.businessFee) || 0), 0);
+      setPendingPayments(payments);
+      setFormData(prev => ({
+        ...prev,
+        businessId: value.businessId || '',
+        amount: total.toFixed(2)
+      }));
     } else {
       setPendingPayments([]);
       setFormData(prev => ({
         ...prev,
+        businessId: '',
         amount: ''
       }));
     }
@@ -180,9 +174,11 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
         businessId: formData.businessId,
         amount: Number(formData.amount),
         paymentMethod: formData.paymentMethod,
-        description: formData.description || undefined,
-        referenceNumber: formData.referenceNumber || undefined,
-        paymentIds: pendingPayments.map(p => p._id)
+        // Server erwartet `notes` (nicht description); Referenz mit einbetten,
+        // damit keine Eingabe still verworfen wird.
+        notes: [formData.description, formData.referenceNumber]
+          .filter(Boolean)
+          .join(' · ') || undefined,
       };
 
       await payoutService.createPayout(payoutData);
@@ -247,7 +243,8 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
               value={selectedBusiness}
               onChange={handleBusinessSelect}
               options={businesses}
-              getOptionLabel={(option) => option.name || ''}
+              getOptionLabel={(option) => option.businessName || ''}
+              isOptionEqualToValue={(option, value) => option.businessId === value.businessId}
               disabled={!!businessData || loading}
               renderInput={(params) => (
                 <TextField
@@ -261,9 +258,9 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
               renderOption={(props, option) => (
                 <Box component="li" {...props}>
                   <Box>
-                    <Typography variant="body1">{option.name}</Typography>
+                    <Typography variant="body1">{option.businessName}</Typography>
                     <Typography variant="caption" sx={{ color: COLORS.textSecondary }}>
-                      {option.address?.street}, {option.address?.city}
+                      {option.paymentCount} ausstehende Zahlung(en)
                     </Typography>
                   </Box>
                 </Box>
@@ -383,7 +380,7 @@ const PayoutCreateDialog = ({ open, onClose, onSuccess, businessData = null }) =
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="body2" sx={{ color: COLORS.textPrimary }}>Geschäft:</Typography>
               <Typography variant="body2" fontWeight={600} sx={{ color: COLORS.textPrimary }}>
-                {selectedBusiness?.name || '-'}
+                {selectedBusiness?.businessName || '-'}
               </Typography>
             </Box>
             <Box display="flex" justifyContent="space-between" mb={1}>

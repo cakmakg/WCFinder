@@ -131,46 +131,38 @@ const PayoutsPage = () => {
       setLoading(true);
       const data = await payoutService.getAllPendingPayouts();
 
-      // Group by business
-      const groupedPayouts = groupPayoutsByBusiness(data.pendingPayments || []);
-      setPendingPayouts(groupedPayouts);
+      // Server liefert { error, result: { businesses, totalPending, businessCount } }
+      // und gruppiert bereits nach Geschäft — direkt auf die Tabellen-Form mappen.
+      const result = data?.result || {};
+      const businesses = Array.isArray(result.businesses) ? result.businesses : [];
 
-      // Calculate stats
-      const stats = payoutService.calculateTotalPending(data.pendingPayments || []);
-      setPayoutStats(stats);
+      const mapped = businesses.map((b) => ({
+        businessId: b.businessId,
+        businessName: b.businessName || 'Unbekanntes Geschäft',
+        payments: b.payments || [],
+        totalAmount: Number(b.totalPending) || 0,
+        paymentCount: Number(b.paymentCount) || 0,
+      }));
+      setPendingPayouts(mapped);
+
+      const totalPending = Number(result.totalPending) || 0;
+      const businessCount = result.businessCount ?? businesses.length;
+      const paymentCount = businesses.reduce(
+        (sum, b) => sum + (Number(b.paymentCount) || 0),
+        0
+      );
+      setPayoutStats({
+        totalPending,
+        businessCount,
+        paymentCount,
+        averagePerBusiness: businessCount > 0 ? totalPending / businessCount : 0,
+      });
     } catch (error) {
       console.error('Error fetching pending payouts:', error);
       toastErrorNotify('Fehler beim Laden der ausstehenden Auszahlungen');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Group payouts by business
-  const groupPayoutsByBusiness = (payments) => {
-    const grouped = {};
-
-    payments.forEach((payment) => {
-      const businessId = payment.business?._id || payment.businessId;
-      const businessName = payment.business?.name || 'Unbekanntes Geschäft';
-
-      if (!grouped[businessId]) {
-        grouped[businessId] = {
-          businessId,
-          businessName,
-          business: payment.business,
-          payments: [],
-          totalAmount: 0,
-          paymentCount: 0
-        };
-      }
-
-      grouped[businessId].payments.push(payment);
-      grouped[businessId].totalAmount += Number(payment.businessFee) || 0;
-      grouped[businessId].paymentCount += 1;
-    });
-
-    return Object.values(grouped);
   };
 
   // Handle create payout dialog

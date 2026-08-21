@@ -99,19 +99,18 @@ const PayoutHistoryTable = () => {
       setLoading(true);
       const data = await payoutService.getBusinessesWithPayouts();
 
-      // Flatten payouts from businesses
+      // Server liefert { error, result: [ { _id, businessName, payouts[] } ] }
+      const businesses = Array.isArray(data?.result) ? data.result : [];
       const allPayouts = [];
-      if (data.businesses) {
-        data.businesses.forEach(business => {
-          business.payouts?.forEach(payout => {
-            allPayouts.push({
-              ...payout,
-              businessName: business.name,
-              businessId: business._id
-            });
+      businesses.forEach(business => {
+        business.payouts?.forEach(payout => {
+          allPayouts.push({
+            ...payout,
+            businessName: business.businessName,
+            businessId: business._id
           });
         });
-      }
+      });
 
       setPayouts(allPayouts);
     } catch (error) {
