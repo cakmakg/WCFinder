@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check src/services/paymentService.js)",
+      "Bash(node --check src/controller/payment.js)",
+      "Bash(node -e \"require\\('./src/services/paymentService.js'\\); console.log\\('loads OK'\\);\")",
+      "Bash(node --check src/controller/business.js)",
+      "Bash(node --check src/models/review.js)",
+      "Bash(node --check src/models/toilet.js)",
+      "Bash(node -e \"require\\('./src/models/review.js'\\); require\\('./src/models/toilet.js'\\); console.log\\('models OK'\\);\")",
+      "Bash(node -e \"require\\('./src/services/paymentService.js'\\); console.log\\('load OK'\\);\")",
+      "Bash(npm audit *)",
+      "Bash(npm ls *)",
+      "Bash(grep -E \"AdminPanel|AdminLayout|dashboard\\\\\\\\\\\\\\\\\\(StatCard|RevenueChart|ChannelDistributionChart|RecentActivities|BusinessTable|UsersTable\\)\" -A 3)",
+      "Bash(git push *)",
+      "Bash(npx jest *)"
+    ]
+  }
+}

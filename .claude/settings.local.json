@@ -22,7 +22,18 @@
       "Bash(npx tsc --noEmit)",
       "Bash(npm test -- --passWithNoTests)",
       "Bash(npm run lint)",
-      "Bash(claude mcp add n8n-mcp -e MCP_MODE=stdio -e LOG_LEVEL=error -e DISABLE_CONSOLE_OUTPUT=true -- npx n8n-mcp)"
+      "Bash(claude mcp add n8n-mcp -e MCP_MODE=stdio -e LOG_LEVEL=error -e DISABLE_CONSOLE_OUTPUT=true -- npx n8n-mcp)",
+      "Bash(node *)",
+      "Bash(npx jest *)",
+      "Bash(git checkout *)",
+      "Bash(git commit *)",
+      "Bash(git stash *)",
+      "Bash(curl -s -o /dev/null -w \"vite: %{http_code}\\\\n\" http://127.0.0.1:5173/)",
+      "Bash(curl -s -o /dev/null -w \"api: %{http_code}\\\\n\" http://localhost:8000/api)",
+      "Bash(xargs wc -l)",
+      "mcp__ide__getDiagnostics",
+      "Bash(STORAGE_DRIVER=s3 S3_BUCKET=b S3_ACCESS_KEY_ID=k S3_SECRET_ACCESS_KEY=s S3_ENDPOINT=https://acc.r2.cloudflarestorage.com node -e ' *)",
+      "Bash(STORAGE_DRIVER=s3 node -e ' *)"
     ]
   }
 }
