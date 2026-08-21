@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Container, Grid, Typography, Button, IconButton } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { Link as RouterLink } from "react-router-dom";
 import WcIcon from "@mui/icons-material/Wc";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
@@ -268,8 +269,8 @@ const StartPageFooter = ({ onPartnerClick }) => {
           </Typography>
           <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
             <Typography
-              component="a"
-              href="#"
+              component={RouterLink}
+              to="/datenschutz"
               sx={{
                 color: "#94a3b8",
                 textDecoration: "none",
@@ -280,8 +281,8 @@ const StartPageFooter = ({ onPartnerClick }) => {
               {t("startPage.footer.privacy")}
             </Typography>
             <Typography
-              component="a"
-              href="#"
+              component={RouterLink}
+              to="/agb"
               sx={{
                 color: "#94a3b8",
                 textDecoration: "none",
@@ -292,8 +293,8 @@ const StartPageFooter = ({ onPartnerClick }) => {
               {t("startPage.footer.terms")}
             </Typography>
             <Typography
-              component="a"
-              href="#"
+              component={RouterLink}
+              to="/impressum"
               sx={{
                 color: "#94a3b8",
                 textDecoration: "none",

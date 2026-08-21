@@ -20,6 +20,10 @@ import MyBookingsPage from '../pages/MyBookingsPage';
 import OwnerProfilePage from '../pages/OwnerProfilePage';
 import StartPage from '../pages/StartPage';
 import NotFoundPage from '../pages/NotFoundPage';
+import Impressum from '../pages/Impressum';
+import Datenschutz from '../pages/Datenschutz';
+import AGB from '../pages/AGB';
+import CookieConsent from '../components/legal/CookieConsent';
 
 // Admin paneli lazy: recharts/jspdf/xlsx zinciri ana bundle'a girmesin
 const AdminPanel = lazy(() => import('../pages/AdminPanel'));
@@ -74,6 +78,11 @@ const AppRouter = () => {
         
         {/* Home/Dashboard - PUBLIC! */}
         <Route path="/home" element={<Home />} />
+
+        {/* Rechtliche Seiten - PUBLIC (Impressumspflicht, DSGVO) */}
+        <Route path="/impressum" element={<Impressum />} />
+        <Route path="/datenschutz" element={<Datenschutz />} />
+        <Route path="/agb" element={<AGB />} />
         
         {/* ========== PRIVATE ROUTES (Login gerektirir) ========== */}
         
@@ -93,6 +102,7 @@ const AppRouter = () => {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>
+      <CookieConsent />
     </Router>
   );
 
