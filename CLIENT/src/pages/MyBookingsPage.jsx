@@ -53,6 +53,7 @@ const MyBookingsPage = () => {
 
   const [user, setUser] = useState(baseUser);
   const [loadingUser, setLoadingUser] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -144,6 +145,38 @@ const MyBookingsPage = () => {
       else if (err.response?.status === 404) errorMessage = 'Benutzer nicht gefunden.';
       else if (err.response?.status === 401) errorMessage = 'Nicht angemeldet.';
       throw new Error(errorMessage);
+    }
+  };
+
+  // DSGVO Art. 15: Kişisel veriyi JSON dosyası olarak indir
+  const handleExportData = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const data = await apiCall({
+        url: `/users/me/export`,
+        method: 'get',
+        requiresAuth: true,
+        errorMessage: 'Fehler beim Herunterladen Ihrer Daten.',
+      });
+      // Transport-Flag entfernen, nur die eigentlichen Daten exportieren
+      const exportPayload = { ...(data || {}) };
+      delete exportPayload.error;
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+        type: 'application/json',
+      });
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = `wcfinder-datenexport-${user?._id || 'konto'}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(href);
+    } catch {
+      // Fehlermeldung wird bereits von apiCall als Toast angezeigt
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -278,6 +311,8 @@ const MyBookingsPage = () => {
             paymentMethods={paymentMethods}
             onUpdateProfile={handleProfileUpdate}
             onDeleteProfile={handleDeleteProfile}
+            onExportData={handleExportData}
+            exporting={exporting}
           />
         )}
 

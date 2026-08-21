@@ -21,6 +21,8 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CloseIcon from '@mui/icons-material/Close';
+import CloudDownloadOutlinedIcon from '@mui/icons-material/CloudDownloadOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import { COLORS, RADII, SHADOWS } from '../../theme/designTokens';
 
 const SectionHeader = ({ icon: Icon, title }) => (
@@ -95,7 +97,7 @@ const gradientButtonSx = {
   '&:active': { transform: 'translateY(0) scale(0.98)' },
 };
 
-const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile }) => {
+const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile, onExportData, exporting = false }) => {
   const reduce = useReducedMotion();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -342,8 +344,55 @@ const ProfileTab = ({ user, paymentMethods, onUpdateProfile, onDeleteProfile }) 
           </Paper>
         </motion.div>
 
-        {/* Profil löschen */}
+        {/* Meine Daten (DSGVO Art. 15 — Auskunft) */}
         <motion.div {...cardMotionProps(2)} style={{ minWidth: 0, gridColumn: '1 / -1' }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: RADII.card,
+              border: `1px solid ${COLORS.border}`,
+              bgcolor: COLORS.accentBoxBg,
+              borderLeft: `3px solid ${COLORS.primary}`,
+              boxShadow: SHADOWS.subtle,
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                <ShieldOutlinedIcon sx={{ color: COLORS.primary, fontSize: 22, mt: 0.3, flexShrink: 0 }} />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.3, color: COLORS.textHeading }}>
+                    Meine Daten herunterladen
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: COLORS.textSecondary }}>
+                    Laden Sie eine Kopie der zu Ihrer Person gespeicherten Daten herunter (DSGVO Art. 15).
+                  </Typography>
+                </Box>
+              </Box>
+              <Button
+                variant="outlined"
+                startIcon={<CloudDownloadOutlinedIcon />}
+                onClick={onExportData}
+                disabled={exporting || typeof onExportData !== 'function'}
+                sx={{
+                  borderRadius: RADII.button,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  flexShrink: 0,
+                  ml: 2,
+                  color: COLORS.primary,
+                  borderColor: 'rgba(8,145,178,0.4)',
+                  '&:hover': { borderColor: COLORS.primary, backgroundColor: 'rgba(8,145,178,0.06)' },
+                }}
+              >
+                {exporting ? 'Wird erstellt…' : 'Daten herunterladen'}
+              </Button>
+            </Box>
+          </Paper>
+        </motion.div>
+
+        {/* Profil löschen */}
+        <motion.div {...cardMotionProps(3)} style={{ minWidth: 0, gridColumn: '1 / -1' }}>
           <Paper
             elevation={0}
             sx={{
