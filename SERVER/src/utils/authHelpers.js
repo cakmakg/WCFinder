@@ -71,10 +71,16 @@ const createJwtTokens = (user) => {
 
     const accessData = createAccessTokenPayload(user);
     
-    const accessToken = jwt.sign(accessData, process.env.ACCESS_KEY, { expiresIn: '1h' });
+    // Kisa omurlu access token: sizmasi halinde pencere dar kalir; istemciler
+    // 401'de /auth/refresh ile yenilerler.
+    const accessToken = jwt.sign(accessData, process.env.ACCESS_KEY, { expiresIn: '15m' });
+    // Refresh token oturum omrunu belirler. /auth/refresh YALNIZCA yeni bir
+    // accessToken doner, refresh token'i dondurmez; bu yuzden buradaki sure
+    // kullanicinin ne kadar sonra tekrar giris yapacagidir. Kisa tutulursa
+    // (or. 1h) hem web hem mobil her saat basi logout olur.
     const refreshToken = jwt.sign(
-        { _id: user._id, password: user.password }, 
-        process.env.REFRESH_KEY, 
+        { _id: user._id, password: user.password },
+        process.env.REFRESH_KEY,
         { expiresIn: '3d' }
     );
 

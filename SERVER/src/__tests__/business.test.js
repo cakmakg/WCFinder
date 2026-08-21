@@ -223,8 +223,9 @@ describe('Business Controller', () => {
         .patch(`/api/business/${business._id}/approve`)
         .send({ action: 'approve' });
 
-      // isAdmin returns 403 for both unauthenticated and non-admin users
-      expect(res.status).toBe(403);
+      // Kein/abgelaufenes Token -> 401 (nicht 403), damit der Client den
+      // Token erneuern und die Anfrage wiederholen kann.
+      expect(res.status).toBe(401);
     });
   });
 

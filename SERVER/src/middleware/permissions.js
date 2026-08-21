@@ -13,7 +13,13 @@ module.exports = {
     },
 
     isAdmin: (req, res, next) => {
-        if (req.user && req.user.isActive && req.user.role === 'admin') {
+        // Kimlik yok (token yok / süresi dolmuş) -> 401, böylece client token'ı
+        // yenileyip isteği tekrarlayabilir. Kimlik var ama yetki yok -> 403.
+        if (!req.user) {
+            res.errorStatusCode = 401;
+            throw new Error('NoPermission: You must login.');
+        }
+        if (req.user.isActive && req.user.role === 'admin') {
             next();
         } else {
             res.errorStatusCode = 403;
@@ -23,7 +29,12 @@ module.exports = {
 
     // ✅ YENİ: Owner veya Admin kontrolü
     isOwnerOrAdmin: (req, res, next) => {
-        if (req.user && req.user.isActive && 
+        // Kimlik yok -> 401 (refresh tetiklenir), kimlik var ama yetki yok -> 403.
+        if (!req.user) {
+            res.errorStatusCode = 401;
+            throw new Error('NoPermission: You must login.');
+        }
+        if (req.user.isActive &&
             (req.user.role === 'owner' || req.user.role === 'admin')) {
             next();
         } else {
